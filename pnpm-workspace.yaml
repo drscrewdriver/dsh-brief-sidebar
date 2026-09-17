@@ -1,0 +1,6 @@
+# pnpm 10+ blocks dependency install scripts by default; state them explicitly.
+# esbuild — tsdown's underlying bundler; without its binary the build fails
+# outright, so it must be allowed.
+allowBuilds:
+  esbuild: true
+  node-pty: false

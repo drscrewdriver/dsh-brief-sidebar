@@ -1,0 +1,16 @@
+{
+  "id": "dsh-external/dsh-todo-sidebar",
+  "version": "0.1.0",
+  "main": "./lib/index.mjs",
+  "description": "任务看板侧栏页：把会话的 `todos` 投影渲染成右侧栏的一个「任务」tab，并遮蔽 DSH 官方那条 composer 上方的 todo 面板。只读展示，不做写回。",
+  "engines": {
+    "dsh": ">=0.1.5-rc.1 <0.2.0-0"
+  },
+  "contributes": {
+    "tools": [],
+    "skills": []
+  },
+  "client": {
+    "main": "./lib/client.js"
+  }
+}
