@@ -4,18 +4,28 @@ import type { Context } from '@deepseek-ai/cordis';
 export interface TodoScope {
     readonly sessionId?: string;
 }
-export interface TodoBoardTabProps {
+export interface TodoSectionProps {
     /** The DSH locale lookup, passed down from `apply`. */
     t: (key: string) => string;
     /** The client root context (the tab body's only way to reach services). */
     ctx?: Context;
     /** The session this tab is scoped to. */
     scope?: TodoScope;
-    /** Whether the tab is the active one AND the panel is open. */
-    visible?: boolean;
 }
+/** Centred message block used by every non-list state. */
+export declare function Notice(props: {
+    title: string;
+    detail?: string;
+}): ReactNode;
 /**
- * The task board.
- * @param props - translation, client context, session scope, visibility.
+ * The progress section. The subscription is unconditional (a plain listener,
+ * not IO); the three-state contract of the projection is preserved verbatim.
+ * @param props - translation, client context, session scope.
  */
-export declare function TodoBoardTab(props: TodoBoardTabProps): ReactNode;
+export declare function TodoSection(props: TodoSectionProps): ReactNode;
+/**
+ * Backwards-compatible alias for the pre-summary export name. The component
+ * no longer owns the full-height shell — that moved to `SummaryTab` — so the
+ * alias exists only to keep import sites honest during the transition.
+ */
+export declare const TodoBoardTab: typeof TodoSection;

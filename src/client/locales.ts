@@ -20,8 +20,10 @@ export const NS = 'dsh-todo-sidebar'
 
 /** Simplified Chinese dictionary — the key-set source of truth. */
 export const zh = {
-  'tab.title': '任务',
-  'tab.desc': '当前会话的 todo 列表（只读）',
+  'tab.title': '概要',
+  'tab.desc': '当前会话的任务、产物与规划文件（只读）',
+  'section.progress': '进展',
+  'section.deliverables': '产物',
   'board.empty': '当前没有任务',
   'board.emptyHint': '模型调用 todo_write 之后，任务会出现在这里。',
   'board.unavailable': '任务暂不可用',
@@ -29,6 +31,10 @@ export const zh = {
   'status.pending': '待处理',
   'status.inProgress': '进行中',
   'status.completed': '已完成',
+  'deliverables.empty': '本回合暂无改动文件',
+  'deliverables.emptyHint': '会话里成功写入或修改文件后，它们会实时出现在这里。',
+  'deliverables.sessionTotal': '本会话共 {count} 个文件',
+  'deliverable.codeplanTag': '规划',
 }
 
 /** The key union: what a `t('…')` call may name inside this namespace. */
@@ -36,8 +42,10 @@ export type TodoKey = keyof typeof zh
 
 /** English dictionary, checked complete against the zh key set. */
 export const en: Record<TodoKey, string> = {
-  'tab.title': 'Tasks',
-  'tab.desc': 'Todo list of this session (read-only)',
+  'tab.title': 'Summary',
+  'tab.desc': 'Tasks, produced files and plan artifacts of this session (read-only)',
+  'section.progress': 'Progress',
+  'section.deliverables': 'Produced files',
   'board.empty': 'No tasks yet',
   'board.emptyHint': 'Tasks show up here once the model calls todo_write.',
   'board.unavailable': 'Tasks unavailable',
@@ -46,6 +54,10 @@ export const en: Record<TodoKey, string> = {
   'status.pending': 'Pending',
   'status.inProgress': 'In progress',
   'status.completed': 'Done',
+  'deliverables.empty': 'No files changed in this turn',
+  'deliverables.emptyHint': 'Files written or edited successfully in the session appear here live.',
+  'deliverables.sessionTotal': '{count} files in this session',
+  'deliverable.codeplanTag': 'Plan',
 }
 
 /**
@@ -55,3 +67,12 @@ export const en: Record<TodoKey, string> = {
  * threw.
  */
 export const dictionaries: Record<string, Record<string, string>> = { zh, en }
+
+/**
+ * Expand the one `{count}` placeholder the deliverables totals line uses. The
+ * locale binder is a plain key → string lookup (no interpolation machinery),
+ * mirroring how `progressLine` composes its summary from parts.
+ */
+export function expandCount(template: string, count: number): string {
+  return template.replace('{count}', String(count))
+}

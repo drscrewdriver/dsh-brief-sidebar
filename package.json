@@ -1,7 +1,7 @@
 {
   "name": "dsh-todo-sidebar",
-  "version": "0.1.0",
-  "description": "DSH web plugin (dsh-better-sidebar consumer): render the session's `todos` projection as a task board tab in the right sidebar, and shadow the official composer-band todo panel so the board is the single visible carrier. Read-only — no todo editing, no write-back.",
+  "version": "0.2.0",
+  "description": "DSH web plugin (dsh-better-sidebar consumer): render the session's at-a-glance summary — the `todos` projection board plus a live produced-files feed (codeplan artifacts marked) — as a summary tab in the right sidebar, and shadow the official composer-band todo panel so the board is the single visible carrier. Read-only.",
   "type": "module",
   "main": "lib/index.mjs",
   "types": "lib/types/index.d.ts",
@@ -41,7 +41,9 @@
     "plugin",
     "better-sidebar",
     "todo",
-    "task-board"
+    "task-board",
+    "summary",
+    "deliverables"
   ],
   "license": "MIT",
   "engines": {
@@ -80,6 +82,7 @@
     "tsdown": "^0.22.2",
     "tsx": "^4.23.12",
     "typescript": "^5.6.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "zod": "^4.4.3"
   }
 }

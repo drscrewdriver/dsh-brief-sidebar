@@ -1,5 +1,9 @@
 import type { Context } from '@deepseek-ai/cordis';
-/** Tab type id. Package-prefixed so it cannot collide with a built-in type. */
+/**
+ * Tab type id. Package-prefixed so it cannot collide with a built-in type.
+ * Unchanged since the 0.1.0 board tab: the summary tab REPLACES the board tab
+ * in place, so an opened or pinned tab survives the upgrade.
+ */
 export declare const TAB_ID = "dsh-todo-sidebar:board";
 /**
  * Position in the host's new-tab guide.

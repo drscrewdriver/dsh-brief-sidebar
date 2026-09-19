@@ -30,14 +30,19 @@
 import { createElement } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { BetterSidebarService, TabComponentProps } from 'dsh-better-sidebar/client/service'
-import { TodoBoardTab } from './TodoBoardTab'
+import { SummaryTab } from './SummaryTab'
 import { TodoIcon } from './TodoIcon'
 import { NS, dictionaries } from './locales'
 import { readTodos, unfinishedCount } from './todo/board'
 import { registerTodoDockShadow } from './todo/dock-shadow'
-import { todosSnapshot } from './todo/use-todos'
+import { TODOS_KEY } from './todo/use-todos'
+import { projectionSnapshot } from './use-projection'
 
-/** Tab type id. Package-prefixed so it cannot collide with a built-in type. */
+/**
+ * Tab type id. Package-prefixed so it cannot collide with a built-in type.
+ * Unchanged since the 0.1.0 board tab: the summary tab REPLACES the board tab
+ * in place, so an opened or pinned tab survives the upgrade.
+ */
 export const TAB_ID = 'dsh-todo-sidebar:board'
 
 /**
@@ -121,13 +126,13 @@ export function apply(ctx: Context): void {
          * shows no badge at all.
          */
         badge: (badgeCtx, badgeScope) => {
-          const todos = readTodos(todosSnapshot(badgeCtx, badgeScope.sessionId))
+          const todos = readTodos(projectionSnapshot(badgeCtx, badgeScope.sessionId, TODOS_KEY))
           if (todos === undefined) return null
           const pending = unfinishedCount(todos)
           return pending > 0 ? pending : null
         },
         component: (props: TabComponentProps) =>
-          createElement(TodoBoardTab, {
+          createElement(SummaryTab, {
             t,
             ctx: props.ctx,
             scope: props.scope,

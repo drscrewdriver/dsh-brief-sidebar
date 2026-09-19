@@ -20,6 +20,8 @@ export declare const NS = "dsh-todo-sidebar";
 export declare const zh: {
     'tab.title': string;
     'tab.desc': string;
+    'section.progress': string;
+    'section.deliverables': string;
     'board.empty': string;
     'board.emptyHint': string;
     'board.unavailable': string;
@@ -27,6 +29,10 @@ export declare const zh: {
     'status.pending': string;
     'status.inProgress': string;
     'status.completed': string;
+    'deliverables.empty': string;
+    'deliverables.emptyHint': string;
+    'deliverables.sessionTotal': string;
+    'deliverable.codeplanTag': string;
 };
 /** The key union: what a `t('…')` call may name inside this namespace. */
 export type TodoKey = keyof typeof zh;
@@ -39,3 +45,9 @@ export declare const en: Record<TodoKey, string>;
  * threw.
  */
 export declare const dictionaries: Record<string, Record<string, string>>;
+/**
+ * Expand the one `{count}` placeholder the deliverables totals line uses. The
+ * locale binder is a plain key → string lookup (no interpolation machinery),
+ * mirroring how `progressLine` composes its summary from parts.
+ */
+export declare function expandCount(template: string, count: number): string;

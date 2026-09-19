@@ -1,19 +1,14 @@
 /**
- * The task board tab body: the `todos` projection drawn in the sidebar.
+ * The progress section: the `todos` projection drawn as one part of the
+ * summary tab.
  *
- * This tab is where the todo list lives. The official composer-band panel is
- * shadowed by this plugin (see `todo/dock-shadow.tsx`), so the projection is
- * read here and rendered as an ordinary React view — no Canvas, no cross-package
- * dependency.
- *
- * Two better-sidebar contracts are honoured:
- *
- * 1. **Height contract.** The tab body mounts inside a full-height column flex
- *    host whose `.paneBody` is a definite-height BLOCK scroll container. The
- *    root declares `height: 100%` + `min-height: 0`, and the scrolling element
- *    is an inner div — not the root.
- * 2. **`visible` pause.** Nothing is drawn while the tab is not the active one,
- *    so a hidden tab does not re-render a list on every projection frame.
+ * The official composer-band panel is shadowed by this plugin (see
+ * `todo/dock-shadow.tsx`), so the projection is read here and rendered as an
+ * ordinary React view — no Canvas, no cross-package dependency. The full-height
+ * shell and the scroll container live on the summary tab (`../SummaryTab`);
+ * this component renders only its own slice and is the one section whose
+ * absent state must stay VISIBLE: the official dock is hidden while this
+ * plugin is mounted, so "unavailable" is a statement the reader needs.
  *
  * Colours come from `--dsw-alias-*` tokens only (skin contract), and the status
  * palette uses tokens that actually exist in the shipping theme:
@@ -31,15 +26,13 @@ export interface TodoScope {
   readonly sessionId?: string
 }
 
-export interface TodoBoardTabProps {
+export interface TodoSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
   t: (key: string) => string
   /** The client root context (the tab body's only way to reach services). */
   ctx?: Context
   /** The session this tab is scoped to. */
   scope?: TodoScope
-  /** Whether the tab is the active one AND the panel is open. */
-  visible?: boolean
 }
 
 /** Status → token colour for the pill's text and border. */
@@ -49,25 +42,22 @@ const STATUS_COLOR: Record<TodoStatus, string> = {
   pending: 'var(--dsw-alias-label-tertiary)',
 }
 
-const ROOT_STYLE: CSSProperties = {
-  display: 'flex',
-  flexDirection: 'column',
-  height: '100%',
-  minHeight: 0,
-  background: 'var(--dsw-alias-bg-layer-1)',
-  color: 'var(--dsw-alias-label-primary)',
-  font: 'inherit',
-  fontSize: 13,
+const SECTION_STYLE: CSSProperties = {
+  flexShrink: 0,
+  borderBottom: '1px solid var(--dsw-alias-border-secondary)',
 }
 
-const SCROLL_STYLE: CSSProperties = { flex: 1, minHeight: 0, overflow: 'auto' }
-
-const PROGRESS_STYLE: CSSProperties = {
-  padding: '10px 12px',
-  borderBottom: '1px solid var(--dsw-alias-border-secondary)',
+const HEADER_STYLE: CSSProperties = {
+  padding: '10px 12px 0',
   color: 'var(--dsw-alias-label-secondary)',
   fontSize: 12,
-  flexShrink: 0,
+  fontWeight: 600,
+}
+
+const PROGRESS_STYLE: CSSProperties = {
+  padding: '6px 12px 10px',
+  color: 'var(--dsw-alias-label-secondary)',
+  fontSize: 12,
 }
 
 const LIST_STYLE: CSSProperties = {
@@ -115,7 +105,7 @@ function contentStyle(status: TodoStatus): CSSProperties {
 }
 
 /** Centred message block used by every non-list state. */
-function Notice(props: { title: string; detail?: string }): ReactNode {
+export function Notice(props: { title: string; detail?: string }): ReactNode {
   return (
     <div
       style={{
@@ -146,24 +136,22 @@ function TodoRow(props: { item: TodoItem; t: (key: string) => string }): ReactNo
 }
 
 /**
- * The task board.
- * @param props - translation, client context, session scope, visibility.
+ * The progress section. The subscription is unconditional (a plain listener,
+ * not IO); the three-state contract of the projection is preserved verbatim.
+ * @param props - translation, client context, session scope.
  */
-export function TodoBoardTab(props: TodoBoardTabProps): ReactNode {
-  const { t, ctx, scope, visible = true } = props
+export function TodoSection(props: TodoSectionProps): ReactNode {
+  const { t, ctx, scope } = props
 
-  // The subscription is unconditional (a plain listener, not IO), but the body
-  // below is only built while the tab is actually on screen.
   const todos = useTodos(ctx, scope?.sessionId)
-
-  if (!visible) return null
 
   if (todos === undefined) {
     // `undefined` is the store's "capability absent": no session, or the host's
     // todo unit is unmounted. Say so rather than showing an empty board.
     return createElement(
       'div',
-      { style: ROOT_STYLE, 'data-dsh-todo-sidebar': 'board' },
+      { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'progress-section' },
+      createElement('div', { style: HEADER_STYLE }, t('section.progress')),
       createElement(Notice, { title: t('board.unavailable'), detail: t('board.unavailableHint') }),
     )
   }
@@ -171,7 +159,8 @@ export function TodoBoardTab(props: TodoBoardTabProps): ReactNode {
   if (todos.length === 0) {
     return createElement(
       'div',
-      { style: ROOT_STYLE, 'data-dsh-todo-sidebar': 'board' },
+      { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'progress-section' },
+      createElement('div', { style: HEADER_STYLE }, t('section.progress')),
       createElement(Notice, { title: t('board.empty'), detail: t('board.emptyHint') }),
     )
   }
@@ -180,16 +169,20 @@ export function TodoBoardTab(props: TodoBoardTabProps): ReactNode {
 
   return createElement(
     'div',
-    { style: ROOT_STYLE, 'data-dsh-todo-sidebar': 'board' },
+    { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'progress-section' },
+    createElement('div', { style: HEADER_STYLE }, t('section.progress')),
     createElement('div', { style: PROGRESS_STYLE }, progressLine(counts, t)),
     createElement(
-      'div',
-      { style: SCROLL_STYLE },
-      createElement(
-        'ul',
-        { style: LIST_STYLE },
-        todos.map((item, index) => createElement(TodoRow, { key: `${index}:${item.content}`, item, t })),
-      ),
+      'ul',
+      { style: LIST_STYLE },
+      todos.map((item, index) => createElement(TodoRow, { key: `${index}:${item.content}`, item, t })),
     ),
   )
 }
+
+/**
+ * Backwards-compatible alias for the pre-summary export name. The component
+ * no longer owns the full-height shell — that moved to `SummaryTab` — so the
+ * alias exists only to keep import sites honest during the transition.
+ */
+export const TodoBoardTab = TodoSection
