@@ -85,10 +85,23 @@ turn data（`SessionFace` 不暴露事件窗口，`IConversation` 不暴露回�
 
 ### codeplan 产物：产物分区的标注子集
 
+「规划」pill 的**判定依据是纯路径规则**：产出的文件路径归一化分隔符后命中 `.agents/plans/` 段
+（正反斜杠均可），即标注「规划」pill 并把 `.agents/plans/` 后的第一段（任务名）放进 `title`。
+插件不读文件内容、不校验写入者是不是 codeplan skill——任何写进该目录的文件都会带标；
+这样判定的好处是零额外数据链，代价是路径约定本身是唯一的真源（见缺口 K5）。
+
 codeplan skill 把 `spec.md` / `findings.md` / `checklist.md` / `tasks.md` 用 write 写到
-`$workspace\.agents\plans\<任务名>\` 下——这些文件天然出现在产物 fold 里，无需额外采集。分区把
-命中 `.agents/plans/<任务名>/`（正反斜杠均可识别）的行加「规划」pill，任务名进 `title`，与普通
-产物同列表混排。规划产物没有独立分区：它本来就是产物的一部分。
+`$workspace\.agents\plans\<任务名>\` 下——这些文件天然出现在产物 fold 里，无需额外采集。
+规划产物没有独立分区：它本来就是产物的一部分。
+
+### 点击打开：与对话流同一条 Sidebar 预览通道
+
+产物分区里每个路径行是一个按钮，点击走 `ctx.sidebarRight.openResource(<address>)`——与对话里
+「本次产出」chips、行内 `code` 提及完全同一条链路（ui-chat `openFile` 的做法）。地址由内联移植的
+`fileAddressFor`（源 `@deepseek-ai/dsh-util-workspace-path`）构造：相对路径、或会话工作区内
+的绝对路径，按 `dsh-resource://file/session/<id>/<相对路径>` 寻址（工作区前缀被剥掉）；工作区外的
+绝对路径在同一会话地址里保留绝对拼写。会话 cwd 从 `sessions.list` 快照读取，每次点击时现读。
+`sidebarRight` 服务缺席时行降级为纯文本（与产物投影缺席同一套降级纪律）。
 
 ### 遮蔽官方 dock：list 槽的 cell 竞争
 
@@ -131,6 +144,10 @@ codeplan skill 把 `spec.md` / `findings.md` / `checklist.md` / `tasks.md` 用 w
 - **K2** better-sidebar 面板/侧栏关闭时任务不可见（已确认接受）。
 - **K3** 上游重命名 `todo` cell → 遮蔽静默失效（fail-open，见上表）。
 - **K4** 记忆召回分区只有布局插槽：系统无默认记忆，数据链等记忆类插件注册投影 key 后接入。
+- **K5** 「规划」pill 是纯路径前缀判定（`.agents/plans/` 段），不校验写入者：非 codeplan 来源
+  写进该目录的文件也会带标；codeplan 换产物目录约定时需同步 `summary/deliverables.ts` 的常量。
+- **K6** 路径行点击打开依赖宿主 `sidebarRight` 服务（可选消费）；缺席的部署上产物行不可点击，
+  仅纯文本展示。
 
 ## 开发
 

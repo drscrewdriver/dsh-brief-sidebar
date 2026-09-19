@@ -22,6 +22,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import { DELIVERABLES_KEY } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
+import { sidebarFileOpener } from '../file-open'
 import { basename, readDeliverables, splitCodeplanPath } from './deliverables'
 import { expandCount } from '../locales'
 
@@ -73,6 +74,19 @@ const PATH_STYLE: CSSProperties = {
   color: 'var(--dsw-alias-label-secondary)',
 }
 
+/** Row-as-button reset: the row itself is the click target, content unchanged. */
+const BUTTON_STYLE: CSSProperties = {
+  ...PATH_STYLE,
+  background: 'none',
+  border: 'none',
+  font: 'inherit',
+  fontSize: 'inherit',
+  color: 'var(--dsw-alias-label-secondary)',
+  padding: 0,
+  textAlign: 'left',
+  cursor: 'pointer',
+}
+
 /** The codeplan pill: same form as the status pills, tertiary emphasis. */
 const TAG_STYLE: CSSProperties = {
   flexShrink: 0,
@@ -85,16 +99,35 @@ const TAG_STYLE: CSSProperties = {
   whiteSpace: 'nowrap',
 }
 
-/** One produced-file row; a codeplan artifact carries the pill. */
-function PathRow(props: { path: string; t: (key: string) => string }): ReactNode {
-  const { path, t } = props
+/**
+ * One produced-file row. When the sidebar opener is available the row is a
+ * button that routes the path to the Sidebar preview (the same channel the
+ * conversation's produced-file chips use); otherwise it degrades to a plain
+ * span. A codeplan artifact carries the pill either way.
+ */
+function PathRow(props: {
+  path: string
+  t: (key: string) => string
+  open?: (path: string) => void
+}): ReactNode {
+  const { path, t, open } = props
   const plan = splitCodeplanPath(path)
   const title = plan === null ? path : `${t('deliverable.codeplanTag')}: ${plan.task} · ${path}`
+  const label = basename(path)
+  const content = plan === null ? null : createElement('span', { style: TAG_STYLE }, t('deliverable.codeplanTag'))
+  if (open === undefined) {
+    return createElement(
+      'li',
+      { style: ROW_STYLE },
+      content,
+      createElement('span', { style: PATH_STYLE, title }, label),
+    )
+  }
   return createElement(
     'li',
     { style: ROW_STYLE },
-    plan === null ? null : createElement('span', { style: TAG_STYLE }, t('deliverable.codeplanTag')),
-    createElement('span', { style: PATH_STYLE, title }, basename(path)),
+    content,
+    createElement('button', { style: BUTTON_STYLE, title, onClick: () => { open(path) } }, label),
   )
 }
 
@@ -110,6 +143,10 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
 
   // Capability absent — the optional unit never registered. Hide, don't nag.
   if (view === undefined) return null
+
+  // Optional click-to-preview: rows degrade to plain text where the sidebar
+  // service is absent (the opener resolves the session cwd per click).
+  const open = sidebarFileOpener(ctx, scope?.sessionId)
 
   const latestPaths = view.latest?.paths ?? []
 
@@ -144,7 +181,7 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
     createElement(
       'ul',
       { style: LIST_STYLE },
-      latestPaths.map(path => createElement(PathRow, { key: path, path, t })),
+      latestPaths.map(path => createElement(PathRow, { key: path, path, t, open })),
     ),
     createElement(
       'div',

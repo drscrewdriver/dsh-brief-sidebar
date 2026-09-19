@@ -32,8 +32,11 @@ const t = (key: string): string => (zh as Record<string, string>)[key] ?? key
 /** The session id every fixture is scoped to. */
 const SESSION = 'session-1'
 
+/** URLs the fixture sidebar service has been asked to open (per test). */
+const OPENED_URLS: string[] = []
+
 /** A context whose `sessions` service resolves the given raw projection values by key. */
-function ctxWithProjections(values: Record<string, unknown>): Context {
+function ctxWithProjections(values: Record<string, unknown>, options?: { sidebar?: boolean }): Context {
   const sessions = {
     binding: (id: string) =>
       id === SESSION
@@ -48,8 +51,15 @@ function ctxWithProjections(values: Record<string, unknown>): Context {
           },
         }
         : undefined,
+    list: { getSnapshot: () => ({ byId: { [SESSION]: { cwd: 'E:\\w' } } }) },
   }
-  return { get: (name: string) => (name === 'sessions' ? sessions : undefined) } as unknown as Context
+  const sidebarRight = options?.sidebar === false
+    ? undefined
+    : { openResource: (url: string) => { OPENED_URLS.push(url) } }
+  return {
+    get: (name: string) =>
+      name === 'sessions' ? sessions : name === 'sidebarRight' ? sidebarRight : undefined,
+  } as unknown as Context
 }
 
 /** A context carrying no sessions service at all. */
@@ -223,6 +233,27 @@ describe('deliverables section three-state', () => {
       createElement(DeliverablesSection, { t, ctx, scope: { sessionId: SESSION } }),
     )
     expect(markup).toContain('data-dsh-todo-sidebar="deliverables-section"')
+  })
+
+  it('renders each path as a button routed to the sidebar preview when available', () => {
+    OPENED_URLS.length = 0
+    const ctx = ctxWithProjections({ dshSummaryDeliverables: VIEW })
+    const markup = renderToStaticMarkup(
+      createElement(DeliverablesSection, { t, ctx, scope: { sessionId: SESSION } }),
+    )
+    expect(markup).toContain('<button')
+    // Clicking routes the session-scoped file address through the fixture.
+    const button = /<button[^>]*>/.exec(markup)?.[0] ?? ''
+    expect(button).toContain('cursor:pointer')
+  })
+
+  it('degrades to a plain row when the sidebar service is absent', () => {
+    const ctx = ctxWithProjections({ dshSummaryDeliverables: VIEW }, { sidebar: false })
+    const markup = renderToStaticMarkup(
+      createElement(DeliverablesSection, { t, ctx, scope: { sessionId: SESSION } }),
+    )
+    expect(markup).not.toContain('<button')
+    expect(markup).toContain('report.html')
   })
 })
 
