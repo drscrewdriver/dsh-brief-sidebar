@@ -3,7 +3,7 @@
  * summary tab.
  *
  * The official composer-band panel is shadowed by this plugin (see
- * `todo/dock-shadow.tsx`), so the projection is read here and rendered as an
+ * `brief/dock-shadow.tsx`), so the projection is read here and rendered as an
  * ordinary React view — no Canvas, no cross-package dependency. The full-height
  * shell and the scroll container live on the summary tab (`../SummaryTab`);
  * this component renders only its own slice and is the one section whose
@@ -17,9 +17,9 @@
 import { createElement } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
-import { countTodos, progressLine, statusKey } from './todo/board'
-import type { TodoItem, TodoStatus } from './todo/board'
-import { useTodos } from './todo/use-todos'
+import { countTodos, progressLine, statusKey } from './brief/board'
+import type { TodoItem, TodoStatus } from './brief/board'
+import { useTodos } from './brief/use-todos'
 
 /** The session scope better-sidebar hands a tab body. */
 export interface TodoScope {
@@ -150,7 +150,7 @@ export function TodoSection(props: TodoSectionProps): ReactNode {
     // todo unit is unmounted. Say so rather than showing an empty board.
     return createElement(
       'div',
-      { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'progress-section' },
+      { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'progress-section' },
       createElement('div', { style: HEADER_STYLE }, t('section.progress')),
       createElement(Notice, { title: t('board.unavailable'), detail: t('board.unavailableHint') }),
     )
@@ -159,7 +159,7 @@ export function TodoSection(props: TodoSectionProps): ReactNode {
   if (todos.length === 0) {
     return createElement(
       'div',
-      { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'progress-section' },
+      { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'progress-section' },
       createElement('div', { style: HEADER_STYLE }, t('section.progress')),
       createElement(Notice, { title: t('board.empty'), detail: t('board.emptyHint') }),
     )
@@ -169,7 +169,7 @@ export function TodoSection(props: TodoSectionProps): ReactNode {
 
   return createElement(
     'div',
-    { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'progress-section' },
+    { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'progress-section' },
     createElement('div', { style: HEADER_STYLE }, t('section.progress')),
     createElement('div', { style: PROGRESS_STYLE }, progressLine(counts, t)),
     createElement(

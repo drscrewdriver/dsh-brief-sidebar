@@ -1,5 +1,5 @@
 /**
- * Node half of the todo sidebar plugin.
+ * Node half of the brief sidebar plugin.
  *
  * The Cordis loader needs an entry point for the profile row; the browser half
  * (`./client`, served by `dsh-client-modules`) renders the summary tab.
@@ -21,7 +21,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { registerDeliverablesProjection } from './projection/register'
 
 /** Profile row identity. */
-export const name = 'dsh-todo-sidebar'
+export const name = 'dsh-brief-sidebar'
 
 /**
  * Node-face apply.

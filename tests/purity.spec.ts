@@ -96,7 +96,7 @@ describe('source tree', () => {
 
 describe('manifest', () => {
   it('audits the package it thinks it is auditing', () => {
-    expect(MANIFEST.name).toBe('dsh-todo-sidebar')
+    expect(MANIFEST.name).toBe('dsh-brief-sidebar')
   })
 
   it('declares no cordis dependency under any name', () => {
@@ -163,7 +163,7 @@ describe('localisation', () => {
 
 describe('source layout', () => {
   it('keeps the pure read side free of React', () => {
-    const board = read(join('src', 'client', 'todo', 'board.ts'))
+    const board = read(join('src', 'client', 'brief', 'board.ts'))
     expect(board).not.toMatch(/from\s+['"]react['"]/)
     expect(board).not.toMatch(/from\s+['"]@deepseek-ai\/cordis['"]/)
   })

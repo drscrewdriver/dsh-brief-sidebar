@@ -44,6 +44,9 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.7(@types/node@22.20.3)(jsdom@26.1.0)(tsx@4.23.13)
+      zod:
+        specifier: ^4.4.3
+        version: 4.6.5
 
 packages:
 

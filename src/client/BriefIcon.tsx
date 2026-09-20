@@ -11,7 +11,7 @@ import type { ReactNode } from 'react'
  * vocabulary the board paints.
  * @param size - square edge in px (the host passes its own tab-icon size).
  */
-export function TodoIcon(size: number): ReactNode {
+export function BriefIcon(size: number): ReactNode {
   return (
     <svg
       width={size}

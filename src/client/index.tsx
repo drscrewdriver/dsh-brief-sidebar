@@ -25,17 +25,17 @@
  *   body receives `TabComponentProps` (`ctx` + `scope` + `visible`) and NOT the
  *   framework's session-scoped slot props.
  * - `conversation.input.dock` is the DSH slot the official todo panel occupies;
- *   see `todo/dock-shadow.tsx` for why a lower priority wins the cell.
+ *   see `brief/dock-shadow.tsx` for why a lower priority wins the cell.
  */
 import { createElement } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { BetterSidebarService, TabComponentProps } from 'dsh-better-sidebar/client/service'
 import { SummaryTab } from './SummaryTab'
-import { TodoIcon } from './TodoIcon'
+import { BriefIcon } from './BriefIcon'
 import { NS, dictionaries } from './locales'
-import { readTodos, unfinishedCount } from './todo/board'
-import { registerTodoDockShadow } from './todo/dock-shadow'
-import { TODOS_KEY } from './todo/use-todos'
+import { readTodos, unfinishedCount } from './brief/board'
+import { registerTodoDockShadow } from './brief/dock-shadow'
+import { TODOS_KEY } from './brief/use-todos'
 import { projectionSnapshot } from './use-projection'
 
 /**
@@ -43,7 +43,7 @@ import { projectionSnapshot } from './use-projection'
  * Unchanged since the 0.1.0 board tab: the summary tab REPLACES the board tab
  * in place, so an opened or pinned tab survives the upgrade.
  */
-export const TAB_ID = 'dsh-todo-sidebar:board'
+export const TAB_ID = 'dsh-brief-sidebar:board'
 
 /**
  * Position in the host's new-tab guide.
@@ -83,7 +83,7 @@ export function apply(ctx: Context): void {
   // 1. Plugin-owned dictionaries, in one registration.
   const locale: LocaleLike | undefined = ctx.get('locale')
   if (locale !== undefined) {
-    ctx.effect(() => locale.register(NS, dictionaries), 'dsh-todo-sidebar: dictionaries')
+    ctx.effect(() => locale.register(NS, dictionaries), 'dsh-brief-sidebar: dictionaries')
   }
 
   /**
@@ -107,7 +107,7 @@ export function apply(ctx: Context): void {
   if (bar === undefined) return
 
   // 3. Hide the official composer-band panel (reversible on unload).
-  ctx.effect(() => registerTodoDockShadow(ctx) ?? NOOP, 'dsh-todo-sidebar: dock shadow')
+  ctx.effect(() => registerTodoDockShadow(ctx) ?? NOOP, 'dsh-brief-sidebar: dock shadow')
 
   // 4. The board.
   ctx.effect(
@@ -116,7 +116,7 @@ export function apply(ctx: Context): void {
         id: TAB_ID,
         title: () => t('tab.title'),
         description: () => t('tab.desc'),
-        icon: (size: number) => TodoIcon(size),
+        icon: (size: number) => BriefIcon(size),
         order: TAB_ORDER,
         // Shorthand for `dedupeKey: () => id`: reopening focuses the existing tab.
         single: true,
@@ -139,6 +139,6 @@ export function apply(ctx: Context): void {
             visible: props.visible,
           }),
       }),
-    'dsh-todo-sidebar: tab',
+    'dsh-brief-sidebar: tab',
   )
 }

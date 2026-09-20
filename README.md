@@ -1,35 +1,45 @@
-# dsh-todo-sidebar
+# dsh-brief-sidebar
 
-DSH web 插件（`dsh-better-sidebar` 消费方）：把会话的**概要状态**渲染成右侧栏里的一个「概要」tab——
-上半是 `todos` 投影的**进展**看板，下面是**产物**分区（`dshSummaryDeliverables` 投影，回合内实时
-展示成功写入/修改的文件，codeplan 规划产物以「规划」pill 行内标注），并**遮蔽** DSH 官方那条
-composer 上方的 todo 面板，使看板成为 todo 的唯一可见载体。
+DSH web 插件（`dsh-better-sidebar` 消费方），仓库/包名 **`dsh-brief-sidebar`**（会话简报侧栏）。
+把会话的**简报（brief）**渲染成右侧栏里的一个「概要」tab，简报由两张列表构成：
+
+- **todo 列表** —— `todos` 投影的**进展**看板，展示当前会话任务的三态与进度摘要；
+- **产物列表** —— `dshSummaryDeliverables` 投影的**产物**分区，回合内实时展示成功写入/修改的文件，
+  codeplan 规划产物以「规划」pill 行内标注。
+
+同时**遮蔽** DSH 官方那条 composer 上方的 todo 面板，使看板成为 todo 的唯一可见载体。
 
 只读展示：不做编辑、不做写回、不做多会话聚合、不复制任何第三方渲染层。
+
+**命名边界**：本插件的身份标识（包名 / plugin id / cordis bundle id / locale 命名空间 / DOM 钩子
+`data-dsh-brief-sidebar`）一律用 `brief`；而 `todos` 投影、`todo_write` 工具、官方 `{ id: 'todo' }`
+dock cell、`dsh-tool-todo` 属于 DSH 上游领域，沿用 `todo` 原词，不随本插件改名。
+
+**记忆系统**：简报的第三个分区（记忆召回）目前**仅预留布局插槽**，处于**规划中**，本期不渲染——见 R11 / K4。
 
 ## 需求映射
 
 | 编号 | 需求 | 实现位置 |
 |---|---|---|
-| R1 | 插件挂载期间官方 todo 条完全不渲染 | `src/client/todo/dock-shadow.tsx` |
+| R1 | 插件挂载期间官方 todo 条完全不渲染 | `src/client/brief/dock-shadow.tsx` |
 | R2 | 新建独立插件，向 better-sidebar 注册「概要」tab | `src/client/index.tsx` |
-| R3 | 数据只来自 Host 计算的 `todos` 投影，无客户端折叠、无写回 | `src/client/todo/use-todos.ts` + `board.ts` |
-| R4 | 普通 React + `--dsw-alias-*` token，与 Canvas 插件零代码/命名关系 | `src/client/TodoBoardTab.tsx`（TodoSection）+ `TodoIcon.tsx` |
+| R3 | 数据只来自 Host 计算的 `todos` 投影，无客户端折叠、无写回 | `src/client/brief/use-todos.ts` + `board.ts` |
+| R4 | 普通 React + `--dsw-alias-*` token，与 Canvas 插件零代码/命名关系 | `src/client/TodoBoardTab.tsx`（TodoSection）+ `BriefIcon.tsx` |
 | R5 | 可逆：插件禁用/卸载后官方 dock 自动恢复 | 所有注册都走 `ctx.effect`，disposer 随 fiber 回收 |
 | R6 | 非破坏：不改 DSH checkout / better-sidebar / canvas 插件 | 本包自持，未触碰上述任何仓库 |
 | R7 | tab 升级为「概要」，`TAB_ID` 不变（原位替换，已打开的 tab 不失联） | `src/client/SummaryTab.tsx` + `index.tsx` |
 | R8 | 分区一「进展」：todos 三态契约下沉到分区级 | `src/client/TodoBoardTab.tsx` |
 | R9 | 分区二「产物」：最新回合实时列表 + 会话累计汇总，host 半部注册投影 | `src/projection/*` + `src/client/summary/*` |
 | R10 | codeplan 产物是产物分区的标注子集（行内「规划」pill），非独立分区 | `src/client/summary/deliverables.ts` + `DeliverablesSection.tsx` |
-| R11 | 记忆召回：仅预留布局插槽（分区序列最底），本期不渲染 | `src/client/SummaryTab.tsx` 插槽注释 |
+| R11 | 记忆召回：仅预留布局插槽（分区序列最底），**规划中**，本期不渲染 | `src/client/SummaryTab.tsx` 插槽注释 / K4 |
 | R12 | 行为保持：遮蔽、badge、`visible` 暂停、高度契约、0.1.5 适配 | 各处，见下文 |
 | R13 | host 半部不做同步 IO，投影为可选贡献（`ctx.inject` 等待） | `src/index.ts` + `src/projection/register.ts` |
 
 ## 安装
 
 ```powershell
-dsh plugin --profile web add <dsh-todo-sidebar-0.2.0.tgz>
-# 或从仓库：dsh plugin --profile web add github:<owner>/dsh-todo-sidebar#<ref>
+dsh plugin --profile web add <dsh-brief-sidebar-0.3.0.tgz>
+# 或从仓库：dsh plugin --profile web add github:<owner>/dsh-brief-sidebar#<ref>
 ```
 
 `--profile` 必须紧跟 `plugin` 之后。安装后刷新 `http://127.0.0.1:3080`。
@@ -130,7 +140,7 @@ codeplan skill 把 `spec.md` / `findings.md` / `checklist.md` / `tasks.md` 用 w
 
 | 风险 | 后果 | 自检方法 |
 |---|---|---|
-| 上游重命名 `todo` cell id | 遮蔽静默失效，官方面板复现（**fail-open**：数据不丢，只是重复显示） | 控制台执行 `ctx.slots.entriesOfSlot('conversation.input.dock').filter(e => e.options.id === 'todo')`，应只剩本插件的条目（`registrant: 'dsh-todo-sidebar'`、`priority: -1`） |
+| 上游重命名 `todo` cell id | 遮蔽静默失效，官方面板复现（**fail-open**：数据不丢，只是重复显示） | 控制台执行 `ctx.slots.entriesOfSlot('conversation.input.dock').filter(e => e.options.id === 'todo')`，应只剩本插件的条目（`registrant: 'dsh-brief-sidebar'`、`priority: -1`） |
 | better-sidebar 面板/侧栏关闭 | 任务不可见 | tab badge 显示未完成数作为线索 |
 | 上游改 `todos` 投影 key 或字段 | 看板显示「不可用」或丢弃非法条目 | `dsh-tool-todo` 的 `types.d.ts` 中 `SessionProjectionMap.todos` 仍是唯一真源 |
 | better-sidebar API 漂移 | 注册面失效 | 只用 `registerTab` 的基本字段（`id/title/description/icon/order/single/badge/component`）；`peerDependencies` 放宽为 `>=0.18.1`，`devDependencies` 钉当前运行版 |
@@ -143,7 +153,7 @@ codeplan skill 把 `spec.md` / `findings.md` / `checklist.md` / `tasks.md` 用 w
   后续可 gate on `prefs.tabsEnabled`，本次不做（用户已选「完全隐藏」）。
 - **K2** better-sidebar 面板/侧栏关闭时任务不可见（已确认接受）。
 - **K3** 上游重命名 `todo` cell → 遮蔽静默失效（fail-open，见上表）。
-- **K4** 记忆召回分区只有布局插槽：系统无默认记忆，数据链等记忆类插件注册投影 key 后接入。
+- **K4** 记忆召回分区只有布局插槽（**规划中**）：系统无默认记忆，数据链等记忆类插件注册投影 key 后接入。
 - **K5** 「规划」pill 是纯路径前缀判定（`.agents/plans/` 段），不校验写入者：非 codeplan 来源
   写进该目录的文件也会带标；codeplan 换产物目录约定时需同步 `summary/deliverables.ts` 的常量。
 - **K6** 路径行点击打开依赖宿主 `sidebarRight` 服务（可选消费）；缺席的部署上产物行不可点击，

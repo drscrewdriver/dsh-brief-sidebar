@@ -1,11 +1,11 @@
 /**
- * tsdown build for dsh-todo-sidebar.
+ * tsdown build for dsh-brief-sidebar.
  *
  * - `lib/index.mjs` — the host half (plain ESM node). The Cordis loader needs an
  *   entry point for the profile row; this plugin's behaviour is entirely in the
  *   browser half, so this half installs nothing and owns no state.
  * - `lib/client.js` — the browser client bundle, emitted as a CJS closure
- *   factory registering under the package-name id `dsh-todo-sidebar` (the
+ *   factory registering under the package-name id `dsh-brief-sidebar` (the
  *   client-modules compose keys on the package name; keep it in sync with
  *   package.json `name`).
  *
@@ -81,7 +81,7 @@ const clientConfig: UserConfig = {
   },
   outputOptions: {
     entryFileNames: 'client.js',
-    banner: `window.__ModuleLoader__.load({ id: ${JSON.stringify('dsh-todo-sidebar')}, factory: (require) => {`,
+    banner: `window.__ModuleLoader__.load({ id: ${JSON.stringify('dsh-brief-sidebar')}, factory: (require) => {`,
     footer: `return module.exports; } });`,
     intro: 'var module = { exports: {} }; var exports = module.exports;',
     codeSplitting: false,

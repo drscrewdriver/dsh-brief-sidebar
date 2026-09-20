@@ -24,7 +24,7 @@ import { SummaryTab } from '../src/client/SummaryTab'
 import { TodoSection } from '../src/client/TodoBoardTab'
 import { DeliverablesSection } from '../src/client/summary/DeliverablesSection'
 import { zh } from '../src/client/locales'
-import type { TodoItem } from '../src/client/todo/board'
+import type { TodoItem } from '../src/client/brief/board'
 
 /** A translate stub backed by the REAL shipped dictionary. */
 const t = (key: string): string => (zh as Record<string, string>)[key] ?? key
@@ -96,7 +96,7 @@ describe('SummaryTab visibility', () => {
   })
 
   it('tags the root so the tab can be identified in the DOM', () => {
-    expect(render({ ctx: ctxWithTodos([]) })).toContain('data-dsh-todo-sidebar="board"')
+    expect(render({ ctx: ctxWithTodos([]) })).toContain('data-dsh-brief-sidebar="board"')
   })
 
   it('marks the scroll container separately from the full-height root', () => {
@@ -232,7 +232,7 @@ describe('deliverables section three-state', () => {
     const markup = renderToStaticMarkup(
       createElement(DeliverablesSection, { t, ctx, scope: { sessionId: SESSION } }),
     )
-    expect(markup).toContain('data-dsh-todo-sidebar="deliverables-section"')
+    expect(markup).toContain('data-dsh-brief-sidebar="deliverables-section"')
   })
 
   it('renders each path as a button routed to the sidebar preview when available', () => {

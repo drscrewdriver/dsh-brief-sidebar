@@ -19,7 +19,7 @@ import {
   TODO_CELL_ID,
   TODO_SHADOW_PRIORITY,
   registerTodoDockShadow,
-} from '../src/client/todo/dock-shadow'
+} from '../src/client/brief/dock-shadow'
 
 /** Options bag accepted by the slot service's `register`. */
 type RegisterOptions = Record<string, unknown>
@@ -69,7 +69,7 @@ describe('registerTodoDockShadow', () => {
       id: 'todo',
       order: 0,
       priority: -1,
-      registrant: 'dsh-todo-sidebar',
+      registrant: 'dsh-brief-sidebar',
     })
     expect(options.priority).toBeLessThan(0)
     expect(component(undefined)).toBeNull()

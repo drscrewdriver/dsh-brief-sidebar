@@ -153,7 +153,7 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
   if (latestPaths.length === 0 && view.sessionTotal === 0) {
     return createElement(
       'div',
-      { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'deliverables-section' },
+      { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'deliverables-section' },
       createElement('div', { style: HEADER_STYLE }, t('section.deliverables')),
       createElement(
         'div',
@@ -176,7 +176,7 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
 
   return createElement(
     'div',
-    { style: SECTION_STYLE, 'data-dsh-todo-sidebar': 'deliverables-section' },
+    { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'deliverables-section' },
     createElement('div', { style: HEADER_STYLE }, t('section.deliverables')),
     createElement(
       'ul',

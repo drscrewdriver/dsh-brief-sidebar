@@ -1,4 +1,4 @@
-# dsh-todo-sidebar bundle patch
+# dsh-brief-sidebar bundle patch
 #
 # Assembly layer for the DSH profiles whose bundle list includes this package.
 # A pure ADDITION: one insert row carrying an id no shipped entry uses. No
@@ -9,10 +9,10 @@
 # behaviour of this plugin lives in the browser half (see src/index.ts).
 #
 # Install (recommended, official CLI):
-#   dsh plugin --profile <profile> add <dsh-todo-sidebar-0.1.0.tgz>
+#   dsh plugin --profile <profile> add <dsh-brief-sidebar-0.3.0.tgz>
 #
 # Both routes are mutually exclusive - do not end up with the row twice.
 
 - insert:
-    - id: dsh-todo-sidebar
-      name: dsh-todo-sidebar
+    - id: dsh-brief-sidebar
+      name: dsh-brief-sidebar

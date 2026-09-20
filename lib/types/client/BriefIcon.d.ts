@@ -10,4 +10,4 @@ import type { ReactNode } from 'react';
  * vocabulary the board paints.
  * @param size - square edge in px (the host passes its own tab-icon size).
  */
-export declare function TodoIcon(size: number): ReactNode;
+export declare function BriefIcon(size: number): ReactNode;

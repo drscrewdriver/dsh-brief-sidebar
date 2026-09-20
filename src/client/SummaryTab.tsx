@@ -60,7 +60,7 @@ export function SummaryTab(props: SummaryTabProps): ReactNode {
 
   return createElement(
     'div',
-    { style: ROOT_STYLE, 'data-dsh-todo-sidebar': 'board' },
+    { style: ROOT_STYLE, 'data-dsh-brief-sidebar': 'board' },
     createElement('div', { style: SCROLL_STYLE },
       createElement(TodoSection, { key: 'progress', t, ctx, scope }),
       createElement(DeliverablesSection, { key: 'deliverables', t, ctx, scope }),

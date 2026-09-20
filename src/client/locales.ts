@@ -3,7 +3,7 @@
  *
  * Consumer plugins must NOT reach into better-sidebar's internal `t()` or its
  * `betterSidebar` dictionary namespace, so this plugin registers its own
- * namespace through the DSH `locale` service. `dsh-todo-sidebar` is outside the
+ * namespace through the DSH `locale` service. `dsh-brief-sidebar` is outside the
  * `LocaleNamespaceMap` merge table, which is exactly what the untyped
  * `register(ns, dicts)` overload is for — but the dictionaries themselves stay
  * strictly paired: `zh` is the key-set source of truth and `en` is typed as
@@ -16,7 +16,7 @@
  */
 
 /** The namespace owned by this plugin (own vocabulary, own lifecycle). */
-export const NS = 'dsh-todo-sidebar'
+export const NS = 'dsh-brief-sidebar'
 
 /** Simplified Chinese dictionary — the key-set source of truth. */
 export const zh = {
@@ -38,10 +38,10 @@ export const zh = {
 }
 
 /** The key union: what a `t('…')` call may name inside this namespace. */
-export type TodoKey = keyof typeof zh
+export type BriefKey = keyof typeof zh
 
 /** English dictionary, checked complete against the zh key set. */
-export const en: Record<TodoKey, string> = {
+export const en: Record<BriefKey, string> = {
   'tab.title': 'Summary',
   'tab.desc': 'Tasks, produced files and plan artifacts of this session (read-only)',
   'section.progress': 'Progress',

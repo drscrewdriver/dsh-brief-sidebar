@@ -15,8 +15,8 @@ import {
   readTodos,
   statusKey,
   unfinishedCount,
-} from '../src/client/todo/board'
-import type { TodoItem } from '../src/client/todo/board'
+} from '../src/client/brief/board'
+import type { TodoItem } from '../src/client/brief/board'
 
 /** A translate stub standing in for the real locale binder. */
 const t = (key: string): string =>

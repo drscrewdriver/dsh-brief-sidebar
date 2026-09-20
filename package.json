@@ -1,7 +1,7 @@
 {
-  "name": "dsh-todo-sidebar",
-  "version": "0.2.0",
-  "description": "DSH web plugin (dsh-better-sidebar consumer): render the session's at-a-glance summary — the `todos` projection board plus a live produced-files feed (codeplan artifacts marked) — as a summary tab in the right sidebar, and shadow the official composer-band todo panel so the board is the single visible carrier. Read-only.",
+  "name": "dsh-brief-sidebar",
+  "version": "0.3.0",
+  "description": "DSH web plugin (dsh-better-sidebar consumer): render the session brief — the todo list (the `todos` projection board) plus the artifact list (a live produced-files feed, codeplan artifacts marked) — as a summary tab in the right sidebar, and shadow the official composer-band todo panel so the board is the single visible carrier. Read-only.",
   "type": "module",
   "main": "lib/index.mjs",
   "types": "lib/types/index.d.ts",
@@ -40,7 +40,9 @@
     "deepseek-harness",
     "plugin",
     "better-sidebar",
+    "brief",
     "todo",
+    "artifact-list",
     "task-board",
     "summary",
     "deliverables"

@@ -66,7 +66,7 @@ export function registerTodoDockShadow(ctx: Context): (() => void) | undefined {
         id: TODO_CELL_ID,
         order: 0,
         priority: TODO_SHADOW_PRIORITY,
-        registrant: 'dsh-todo-sidebar',
+        registrant: 'dsh-brief-sidebar',
       },
       TodoDockShadow,
     ),
