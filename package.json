@@ -50,6 +50,10 @@
     "deliverables"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drscrewdriver/dsh-brief-sidebar.git"
+  },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public"

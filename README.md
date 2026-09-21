@@ -40,8 +40,12 @@ dock cell、`dsh-tool-todo` 属于 DSH 上游领域，沿用 `todo` 原词，不
 ## 安装
 
 ```powershell
+# 推荐：从 npm 安装（跨版本按宿主 DSH 线选 dist-tag；本机 0.1.5-rc.2 用 dsh-0.1.5）
+dsh plugin --profile web add dsh-brief-sidebar@dsh-0.1.5
+# 备选一：本地 tarball
 dsh plugin --profile web add <dsh-brief-sidebar-0.3.0.tgz>
-# 或从仓库：dsh plugin --profile web add github:<owner>/dsh-brief-sidebar#<ref>
+# 备选二：GitHub 直装（需自行构建）
+dsh plugin --profile web add github:drscrewdriver/dsh-brief-sidebar#main
 ```
 
 `--profile` 必须紧跟 `plugin` 之后。安装后刷新 `http://127.0.0.1:3080`。
