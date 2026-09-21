@@ -1,6 +1,6 @@
 {
   "name": "dsh-brief-sidebar",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "DSH web plugin (dsh-better-sidebar consumer): render the session brief — the todo list (the `todos` projection board) plus the artifact list (a live produced-files feed, codeplan artifacts marked) — as a summary tab in the right sidebar, and shadow the official composer-band todo panel so the board is the single visible carrier. Read-only.",
   "type": "module",
   "main": "lib/index.mjs",
@@ -56,7 +56,8 @@
   },
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
-    "access": "public"
+    "access": "public",
+    "tag": "dsh-0.1.5"
   },
   "engines": {
     "node": ">=20",
@@ -64,10 +65,14 @@
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
+    "@deepseek-ai/dsh-client-locale": ">=0.1.5-rc.1 <0.2.0-0",
     "dsh-better-sidebar": ">=0.18.1",
     "react": "^18.2.0"
   },
   "peerDependenciesMeta": {
+    "@deepseek-ai/dsh-client-locale": {
+      "optional": true
+    },
     "dsh-better-sidebar": {
       "optional": true
     },
@@ -80,7 +85,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.client.json",
     "test": "vitest run",
     "clean": "node -e \"require('node:fs').rmSync('lib',{recursive:true,force:true})\"",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "release:015": "npm publish --tag dsh-0.1.5"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",

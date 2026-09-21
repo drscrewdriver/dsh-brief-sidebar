@@ -11,6 +11,9 @@ DSH web 插件（`dsh-better-sidebar` 消费方），仓库/包名 **`dsh-brief-
 
 只读展示：不做编辑、不做写回、不做多会话聚合、不复制任何第三方渲染层。
 
+**兼容性范围（当前）**：只支持 **DSH 0.1.5+** —— `engines.dsh` 为 `>=0.1.5-rc.1 <0.2.0-0`，实测基线是 DSH 0.1.5-rc.2。
+0.1.2 及更早的宿主线**不在支持范围内**，npm 上也没有对应 dist-tag（本包只有 `latest` 与 `dsh-0.1.5`）。
+
 ![brief-sidebar](assets/brief.png)
 
 **命名边界**：本插件的身份标识（包名 / plugin id / cordis bundle id / locale 命名空间 / DOM 钩子
@@ -40,10 +43,10 @@ dock cell、`dsh-tool-todo` 属于 DSH 上游领域，沿用 `todo` 原词，不
 ## 安装
 
 ```powershell
-# 推荐：从 npm 安装（跨版本按宿主 DSH 线选 dist-tag；本机 0.1.5-rc.2 用 dsh-0.1.5）
+# 只支持 DSH 0.1.5+：npm 上只有 latest 与 dsh-0.1.5 两个 dist-tag（没有 0.1.2 线）
 dsh plugin --profile web add dsh-brief-sidebar@dsh-0.1.5
 # 备选一：本地 tarball
-dsh plugin --profile web add <dsh-brief-sidebar-0.3.0.tgz>
+dsh plugin --profile web add <dsh-brief-sidebar-0.3.1.tgz>
 # 备选二：GitHub 直装（需自行构建）
 dsh plugin --profile web add github:drscrewdriver/dsh-brief-sidebar#main
 ```
@@ -181,4 +184,5 @@ npm pack            # 出 tarball（本目录有 pnpm-workspace.yaml 但无 pack
 
 在 **DSH 0.1.5-rc.2 + dsh-better-sidebar 0.19.1** 上逐条实测（SlotCore 实现、官方 todo dock 注册点、
 投影面类型、`sessionProjections.register` 契约、`registerTab` 契约均已读源码取证）。
-`engines.dsh` 为 `>=0.1.5-rc.1 <0.2.0-0`。
+`engines.dsh` 为 `>=0.1.5-rc.1 <0.2.0-0`，且 `package.json` 的 `engines.dsh`、`peerDependencies` 里的 DSH client 包范围、`dsh.plugin.json` 的 `engines.dsh` 三处**必须一致**（当前一致）。
+**0.1.2 及更早的宿主线不在支持范围内**：本插件遮蔽的官方 todo dock、依赖的 SlotCore 与投影面契约都按 0.1.5 线取证，旧线未做适配也未发布对应的 npm dist-tag。

@@ -9,7 +9,7 @@
 # behaviour of this plugin lives in the browser half (see src/index.ts).
 #
 # Install (recommended, official CLI):
-#   dsh plugin --profile <profile> add <dsh-brief-sidebar-0.3.0.tgz>
+#   dsh plugin --profile <profile> add dsh-brief-sidebar@dsh-0.1.5   (DSH 0.1.5+ only)
 #
 # Both routes are mutually exclusive - do not end up with the row twice.
 
