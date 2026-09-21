@@ -11,6 +11,8 @@ DSH web 插件（`dsh-better-sidebar` 消费方），仓库/包名 **`dsh-brief-
 
 只读展示：不做编辑、不做写回、不做多会话聚合、不复制任何第三方渲染层。
 
+![brief-sidebar](assets/brief.png)
+
 **命名边界**：本插件的身份标识（包名 / plugin id / cordis bundle id / locale 命名空间 / DOM 钩子
 `data-dsh-brief-sidebar`）一律用 `brief`；而 `todos` 投影、`todo_write` 工具、官方 `{ id: 'todo' }`
 dock cell、`dsh-tool-todo` 属于 DSH 上游领域，沿用 `todo` 原词，不随本插件改名。
