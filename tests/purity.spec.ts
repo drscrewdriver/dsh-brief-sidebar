@@ -137,7 +137,8 @@ describe('manifest', () => {
       dsh?: string
     }
     expect(engines.dsh).toBeTruthy()
-    expect(engines.dsh).toContain('<0.2.0-0')
+    expect(engines.dsh).toContain('>=0.2.0-rc.1')
+    expect(engines.dsh).toContain('<0.2.1-0')
   })
 })
 

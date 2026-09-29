@@ -4,3 +4,5 @@
 allowBuilds:
   esbuild: true
   node-pty: false
+minimumReleaseAgeExclude:
+  - '@deepseek-ai/dsh-client-locale@0.2.0-rc.1'

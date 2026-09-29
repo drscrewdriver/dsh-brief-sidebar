@@ -11,8 +11,8 @@ DSH web 插件（`dsh-better-sidebar` 消费方），仓库/包名 **`dsh-brief-
 
 只读展示：不做编辑、不做写回、不做多会话聚合、不复制任何第三方渲染层。
 
-**兼容性范围（当前）**：只支持 **DSH 0.1.5+** —— `engines.dsh` 为 `>=0.1.5-rc.1 <0.2.0-0`，实测基线是 DSH 0.1.5-rc.2。
-0.1.2 及更早的宿主线**不在支持范围内**，npm 上也没有对应 dist-tag（本包只有 `latest` 与 `dsh-0.1.5`）。
+**兼容性范围（当前）**：只支持 **DSH 0.2.0 线** —— `engines.dsh` 为 `>=0.2.0-rc.1 <0.2.1-0`，实测基线是 DSH 0.2.0-rc.1（本分支 `compat/0.2.0`）；0.1.5 线由冻结的 `main`（≤0.3.1）继续服务。
+0.1.2 及更早的宿主线**不在支持范围内**，npm 上也没有对应 dist-tag（本包 0.2.0 线发布走 `dsh-0.2.0`）。
 
 ![brief-sidebar](assets/brief.png)
 
@@ -43,10 +43,10 @@ dock cell、`dsh-tool-todo` 属于 DSH 上游领域，沿用 `todo` 原词，不
 ## 安装
 
 ```powershell
-# 只支持 DSH 0.1.5+：npm 上只有 latest 与 dsh-0.1.5 两个 dist-tag（没有 0.1.2 线）
-dsh plugin --profile web add dsh-brief-sidebar@dsh-0.1.5
+# 0.2.0 线发布走 dsh-0.2.0 dist-tag（0.1.5 线由 main 上的旧版本继续服务）
+dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0
 # 备选一：本地 tarball
-dsh plugin --profile web add <dsh-brief-sidebar-0.3.1.tgz>
+dsh plugin --profile web add <dsh-brief-sidebar-0.4.0.tgz>
 # 备选二：GitHub 直装（需自行构建）
 dsh plugin --profile web add github:drscrewdriver/dsh-brief-sidebar#main
 ```
@@ -182,7 +182,7 @@ npm pack            # 出 tarball（本目录有 pnpm-workspace.yaml 但无 pack
 
 ## 兼容性
 
-在 **DSH 0.1.5-rc.2 + dsh-better-sidebar 0.19.1** 上逐条实测（SlotCore 实现、官方 todo dock 注册点、
-投影面类型、`sessionProjections.register` 契约、`registerTab` 契约均已读源码取证）。
-`engines.dsh` 为 `>=0.1.5-rc.1 <0.2.0-0`，且 `package.json` 的 `engines.dsh`、`peerDependencies` 里的 DSH client 包范围、`dsh.plugin.json` 的 `engines.dsh` 三处**必须一致**（当前一致）。
-**0.1.2 及更早的宿主线不在支持范围内**：本插件遮蔽的官方 todo dock、依赖的 SlotCore 与投影面契约都按 0.1.5 线取证，旧线未做适配也未发布对应的 npm dist-tag。
+0.1.5 线的逐条实测记录见 `main` 分支 README（≤0.3.1）；本分支面向 **DSH 0.2.0 线**，实测基线为 **DSH 0.2.0-rc.1 + dsh-better-sidebar 0.19.1**。
+0.2.0-rc.1 对 0.1.7 的插件 API 完全兼容（manifest/settings/HMR/slot/会话 V4 未动），本插件消费面全部是 `ctx.get(...)` 的纯 caller（`slots` / `locale` / `betterSidebar` / `sidebarRight` / `sessions`，自带本地接口定义），对宿主契约无 override，故本线为零代码修改的纯元数据适配。
+`engines.dsh` 为 `>=0.2.0-rc.1 <0.2.1-0`，且 `package.json` 的 `engines.dsh`、`peerDependencies` 里的 DSH client 包范围、`dsh.plugin.json` 的 `engines.dsh` 三处**必须一致**（当前一致）。
+**0.2.1 起的宿主线不在本线覆盖范围内**：rc 窗口锁线纪律，0.2.1 起需重新评估适配（届时新开版本线）。
