@@ -11,7 +11,7 @@ DSH web 插件（`dsh-better-sidebar` 消费方），仓库/包名 **`dsh-brief-
 
 只读展示：不做编辑、不做写回、不做多会话聚合、不复制任何第三方渲染层。
 
-**兼容性范围（当前）**：只支持 **DSH 0.2.0 线** —— `engines.dsh` 为 `>=0.2.0-rc.1 <0.2.1-0`，实测基线是 DSH 0.2.0-rc.1（本分支 `compat/0.2.0`）；0.1.5 线由冻结的 `main`（≤0.3.1）继续服务。
+**兼容性范围（当前）**：只支持 **DSH 0.2.0 线** —— `engines.dsh` 为 `>=0.2.0-rc.1 <0.2.1-0`，实测基线是 DSH 0.2.0-rc.1（本线，分支 `main`，自 `compat/0.2.0` 升格）；0.1.x 线（0.1.5/0.1.7）由冻结保留分支 `compat/0.1.7` / `compat/0.1.5`（≤0.3.1）继续服务。
 0.1.2 及更早的宿主线**不在支持范围内**，npm 上也没有对应 dist-tag（本包 0.2.0 线发布走 `dsh-0.2.0`）。
 
 ![brief-sidebar](assets/brief.png)
@@ -43,7 +43,7 @@ dock cell、`dsh-tool-todo` 属于 DSH 上游领域，沿用 `todo` 原词，不
 ## 安装
 
 ```powershell
-# 0.2.0 线发布走 dsh-0.2.0 dist-tag（0.1.5 线由 main 上的旧版本继续服务）
+# 0.2.0 线发布走 dsh-0.2.0 dist-tag（0.1.x 线由 compat/0.1.7 / compat/0.1.5 上的旧版本继续服务）
 dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0
 # 备选一：本地 tarball
 dsh plugin --profile web add <dsh-brief-sidebar-0.4.0.tgz>
@@ -182,7 +182,17 @@ npm pack            # 出 tarball（本目录有 pnpm-workspace.yaml 但无 pack
 
 ## 兼容性
 
-0.1.5 线的逐条实测记录见 `main` 分支 README（≤0.3.1）；本分支面向 **DSH 0.2.0 线**，实测基线为 **DSH 0.2.0-rc.1 + dsh-better-sidebar 0.19.1**。
+0.1.x 线的逐条实测记录见 `compat/0.1.7` / `compat/0.1.5` 分支 README（≤0.3.1）；本线（`main`）面向 **DSH 0.2.0 线**，实测基线为 **DSH 0.2.0-rc.1 + dsh-better-sidebar 0.19.1**。
 0.2.0-rc.1 对 0.1.7 的插件 API 完全兼容（manifest/settings/HMR/slot/会话 V4 未动），本插件消费面全部是 `ctx.get(...)` 的纯 caller（`slots` / `locale` / `betterSidebar` / `sidebarRight` / `sessions`，自带本地接口定义），对宿主契约无 override，故本线为零代码修改的纯元数据适配。
 `engines.dsh` 为 `>=0.2.0-rc.1 <0.2.1-0`，且 `package.json` 的 `engines.dsh`、`peerDependencies` 里的 DSH client 包范围、`dsh.plugin.json` 的 `engines.dsh` 三处**必须一致**（当前一致）。
 **0.2.1 起的宿主线不在本线覆盖范围内**：rc 窗口锁线纪律，0.2.1 起需重新评估适配（届时新开版本线）。
+
+## 多语言说明 / Sprachen / Langues / Языки / Idiomas / Lingue
+
+本 README 以中文撰写。安装与兼容性速览（本线要求 DSH 0.2.0：`>=0.2.0-rc.1 <0.2.1-0`；安装：`dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`）：
+
+- **Deutsch** — benötigt DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), getestet gegen DSH 0.2.0-rc.1. Installation: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. Die 0.1.x-Wirtslinie wird von den eingefrorenen Zweigen `compat/0.1.7` / `compat/0.1.5` (npm-Tags `dsh-0.1.7` / `dsh-0.1.5`) versorgt.
+- **Français** — nécessite DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), testé avec DSH 0.2.0-rc.1. Installation : `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. La lignée d'hôtes 0.1.x est assurée par les branches figées `compat/0.1.7` / `compat/0.1.5` (tags npm `dsh-0.1.7` / `dsh-0.1.5`).
+- **Русский** — требуется DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), протестировано на DSH 0.2.0-rc.1. Установка: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. Линия хостов 0.1.x обслуживается замороженными ветками `compat/0.1.7` / `compat/0.1.5` (npm-теги `dsh-0.1.7` / `dsh-0.1.5`).
+- **Español** — requiere DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), probado con DSH 0.2.0-rc.1. Instalación: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. La línea de anfitriones 0.1.x la atienden las ramas congeladas `compat/0.1.7` / `compat/0.1.5` (etiquetas npm `dsh-0.1.7` / `dsh-0.1.5`).
+- **Italiano** — richiede DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), testato su DSH 0.2.0-rc.1. Installazione: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. La linea di host 0.1.x è servita dai rami congelati `compat/0.1.7` / `compat/0.1.5` (tag npm `dsh-0.1.7` / `dsh-0.1.5`).
