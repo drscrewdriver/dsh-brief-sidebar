@@ -1,5 +1,7 @@
 # dsh-brief-sidebar
 
+[简体中文](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Italiano](README.it.md) | [Русский](README.ru.md) | [Español](README.es.md)
+
 DSH web 插件（`dsh-better-sidebar` 消费方），仓库/包名 **`dsh-brief-sidebar`**（会话简报侧栏）。
 把会话的**简报（brief）**渲染成右侧栏里的一个「概要」tab，简报由两张列表构成：
 
