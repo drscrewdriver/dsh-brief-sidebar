@@ -13,8 +13,16 @@
 
 Только чтение: без редактирования, без записи обратно, без агрегации нескольких сессий, без копирования какого-либо стороннего слоя рендеринга.
 
-**Диапазон совместимости (текущий)**: поддерживается только **линия DSH 0.2.0** — `engines.dsh` равен `>=0.2.0-rc.1 <0.2.1-0`, проверенная база — DSH 0.2.0-rc.1 (эта линия, ветка `main`, повышена из `compat/0.2.0`); линия 0.1.x (0.1.5/0.1.7) продолжает обслуживаться замороженными ветками `compat/0.1.7` / `compat/0.1.5` (≤0.3.1).
-Хостовые линии 0.1.2 и старше **не входят в диапазон поддержки**, и на npm нет соответствующего dist-тега (публикации линии 0.2.0 этого пакета идут через `dsh-0.2.0`).
+**Диапазон совместимости**: эта линия (ветка `main`, повышена из `compat/0.2.0`) нацелена на **линию DSH 0.2.0** — `engines.dsh` равен `>=0.2.0-rc.1 <0.2.1-0`, проверенная база — DSH 0.2.0-rc.1, публикации через npm dist-тег **`dsh-0.2.0`**. 0.2.0 чисто аддитивен для всех API хоста, которые использует этот плагин (потребляемая поверхность — только чистые вызовы `ctx.get(...)`, ноль удалений экспортов), поэтому линия поддержки целиком сдвигается вперёд — ветка совместимости на уровне рантайма не нужна. **Версию плагина выбирайте строго по версии DSH** (не используйте `latest` вслепую на старых хостах: `engines` старого хоста перестают выполняться, и плагин молча отключается стартовой предпроверкой; caret-диапазоны также не переходят через minor хоста):
+
+| Хост DSH | Последняя версия плагина | dist-тег для установки |
+|---|---|---|
+| 0.2.0 | **0.4.0** (latest) | `dsh-0.2.0` |
+| 0.1.7 | 0.3.1 | `dsh-0.1.7` |
+| 0.1.5 | 0.3.1 | `dsh-0.1.5` |
+| 0.1.2 и старше | не поддерживается (у линии 0.1.x нижняя граница — 0.1.5-rc.1; на npm нет соответствующего dist-тега) | — |
+
+(по состоянию на 2026-09-30; линия 0.1.x продолжает обслуживаться замороженными ветками `compat/0.1.7` / `compat/0.1.5` (≤0.3.1).)
 
 ![brief-sidebar](assets/brief.png)
 
@@ -44,9 +52,11 @@
 ## Установка
 
 ```powershell
-# Публикации линии 0.2.0 идут через dist-тег dsh-0.2.0 (линия 0.1.x продолжает обслуживаться старыми версиями на compat/0.1.7 / compat/0.1.5)
-dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0
-# Вариант 1: локальный tarball
+# выбирайте dist-тег по версии хоста DSH (рекомендуется, не используйте latest вслепую)
+dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0   # линия DSH 0.2.0 (0.4.0)
+dsh plugin --profile web add dsh-brief-sidebar@dsh-0.1.7   # линия DSH 0.1.7 (0.3.1)
+dsh plugin --profile web add dsh-brief-sidebar@dsh-0.1.5   # линия DSH 0.1.5 (0.3.1)
+# Вариант 1: локальный tarball (эта линия: dsh-brief-sidebar-0.4.0.tgz)
 dsh plugin --profile web add <dsh-brief-sidebar-0.4.0.tgz>
 # Вариант 2: прямая установка с GitHub (сборка своими силами)
 dsh plugin --profile web add github:drscrewdriver/dsh-brief-sidebar#main
@@ -174,14 +184,15 @@ npm pack            # создаёт tarball (в этом каталоге ес�
 Поштучные записи натурных проверок линии 0.1.x смотрите в README веток `compat/0.1.7` / `compat/0.1.5` (≤0.3.1); эта линия (`main`) нацелена на **линию DSH 0.2.0**, проверенная база — **DSH 0.2.0-rc.1 + dsh-better-sidebar 0.19.1**.
 0.2.0-rc.1 полностью совместим с plugin API 0.1.7 (manifest/settings/HMR/slot/сессии V4 не тронуты); вся потребляемая поверхность плагина — чистые вызовы `ctx.get(...)` (`slots` / `locale` / `betterSidebar` / `sidebarRight` / `sessions`, с собственными локальными определениями интерфейсов), без override хостовых контрактов, поэтому эта линия — чисто метаданная адаптация без изменения кода.
 `engines.dsh` равен `>=0.2.0-rc.1 <0.2.1-0`, и три места — `engines.dsh` в `package.json`, диапазон клиентского пакета DSH в `peerDependencies` и `engines.dsh` в `dsh.plugin.json` — **должны совпадать** (сейчас совпадают).
+Последняя версия плагина по каждой линии хоста и dist-тег для установки — в таблице раздела «Диапазон совместимости» в начале файла (0.2.0 → 0.4.0 / 0.1.7 → 0.3.1 / 0.1.5 → 0.3.1; 0.1.2 и старше не поддерживаются).
 **Хостовые линии начиная с 0.2.1 не входят в покрытие этой линии**: дисциплина фиксации на rc-окне; с 0.2.1 адаптацию придётся переоценивать (тогда будет открыта новая линия версий).
 
 ## Примечание о языках / Sprachen / Langues / Языки / Idiomas / Lingue
 
-Оригинальный README написан на китайском; этот документ — его перевод на русский. Кратко об установке и совместимости (эта линия требует DSH 0.2.0: `>=0.2.0-rc.1 <0.2.1-0`; установка: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`):
+Оригинальный README написан на китайском; этот документ — его перевод на русский. Кратко об установке и совместимости (эта линия требует DSH 0.2.0: `>=0.2.0-rc.1 <0.2.1-0`; dist-тег по линии хоста: 0.2.0 → `dsh-0.2.0` (0.4.0) / 0.1.7 → `dsh-0.1.7` (0.3.1) / 0.1.5 → `dsh-0.1.5` (0.3.1); DSH 0.1.2 и старше не поддерживаются, не используйте `latest` вслепую на старых хостах):
 
-- **Deutsch** — benötigt DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), getestet gegen DSH 0.2.0-rc.1. Installation: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. Die 0.1.x-Wirtslinie wird von den eingefrorenen Zweigen `compat/0.1.7` / `compat/0.1.5` (npm-Tags `dsh-0.1.7` / `dsh-0.1.5`) versorgt.
-- **Français** — nécessite DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), testé avec DSH 0.2.0-rc.1. Installation : `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. La lignée d'hôtes 0.1.x est assurée par les branches figées `compat/0.1.7` / `compat/0.1.5` (tags npm `dsh-0.1.7` / `dsh-0.1.5`).
-- **Русский** — требуется DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), протестировано на DSH 0.2.0-rc.1. Установка: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. Линия хостов 0.1.x обслуживается замороженными ветками `compat/0.1.7` / `compat/0.1.5` (npm-теги `dsh-0.1.7` / `dsh-0.1.5`).
-- **Español** — requiere DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), probado con DSH 0.2.0-rc.1. Instalación: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. La línea de anfitriones 0.1.x la atienden las ramas congeladas `compat/0.1.7` / `compat/0.1.5` (etiquetas npm `dsh-0.1.7` / `dsh-0.1.5`).
-- **Italiano** — richiede DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), testato su DSH 0.2.0-rc.1. Installazione: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0`. La linea di host 0.1.x è servita dai rami congelati `compat/0.1.7` / `compat/0.1.5` (tag npm `dsh-0.1.7` / `dsh-0.1.5`).
+- **Deutsch** — benötigt DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), getestet gegen DSH 0.2.0-rc.1. dist-tag je nach Host-Linie: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 und früher werden nicht unterstützt. Kein blindes `latest` auf alten Hosts (die Start-Vorprüfung deaktiviert das Plugin still). Tabelle: Abschnitt „Kompatibilitätsbereich".
+- **Français** — nécessite DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), testé avec DSH 0.2.0-rc.1. dist-tag selon la ligne d'hôte : `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1) ; DSH 0.1.2 et antérieurs ne sont pas pris en charge. Pas de `latest` aveugle sur un hôte ancien (la prévérification de démarrage le désactive en silence). Tableau : section « Périmètre de compatibilité ».
+- **Русский** — требуется DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), протестировано на DSH 0.2.0-rc.1. dist-tag по линии хоста: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 и ранее не поддерживаются. Не используйте `latest` вслепую на старых хостах (плагин молча отключается стартовой предпроверкой). Таблица: раздел «Диапазон совместимости».
+- **Español** — requiere DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), probado con DSH 0.2.0-rc.1. dist-tag según la línea del host: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 y anteriores no están soportados. No use `latest` a ciegas en hosts antiguos (la preverificación de arranque lo desactiva en silencio). Tabla: sección «Alcance de compatibilidad».
+- **Italiano** — richiede DSH 0.2.0 (`>=0.2.0-rc.1 <0.2.1-0`), testato su DSH 0.2.0-rc.1. dist-tag in base alla linea dell'host: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 e precedenti non sono supportati. Niente `latest` alla cieca su host vecchi (la preverifica di avvio lo disattiva in silenzio). Tabella: sezione «Perimetro di compatibilità».
