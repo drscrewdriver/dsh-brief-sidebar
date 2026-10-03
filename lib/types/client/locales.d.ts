@@ -39,6 +39,10 @@ export declare const zh: {
 export type BriefKey = keyof typeof zh;
 /** English dictionary, checked complete against the zh key set. */
 export declare const en: Record<BriefKey, string>;
+/** Japanese dictionary, checked complete against the zh key set. */
+export declare const ja: Record<BriefKey, string>;
+/** Korean dictionary, checked complete against the zh key set. */
+export declare const ko: Record<BriefKey, string>;
 /** French dictionary, checked complete against the zh key set. */
 export declare const fr: Record<BriefKey, string>;
 /** German dictionary, checked complete against the zh key set. */

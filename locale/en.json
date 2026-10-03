@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Session Brief",
+    "description": "Renders the session brief — the todo board plus a live produced-files list with plan artifacts marked — as a read-only summary tab in the right sidebar."
+  }
+}
