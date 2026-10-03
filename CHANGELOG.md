@@ -1,6 +1,8 @@
 # Changelog — dsh-brief-sidebar
 
-## 0.5.0 — 2026-10-03（分支 `feat/0.2.0-memory-slots`）
+## 0.5.0-beta.1 — 2026-10-03（分支 `feat/0.2.0-memory-slots`，npm dist-tag `beta`）
+
+> 预发布：`dsh plugin --profile web add dsh-brief-sidebar@beta`。`latest` 与 `dsh-0.2.0` 不动（仍在 0.4.0），稳定后正式发 0.5.0。
 
 ### Added
 
