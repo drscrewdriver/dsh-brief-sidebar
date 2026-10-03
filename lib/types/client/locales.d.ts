@@ -34,6 +34,20 @@ export declare const zh: {
     'deliverables.emptyHint': string;
     'deliverables.sessionTotal': string;
     'deliverable.codeplanTag': string;
+    'section.memorySlots': string;
+    'slots.empty': string;
+    'slots.emptyHint': string;
+    'slots.openCount': string;
+    'slots.status.open': string;
+    'slots.status.done': string;
+    'slots.status.dropped': string;
+    'slots.status.expired': string;
+    'settings.title': string;
+    'settings.desc': string;
+    'settings.memorySlots': string;
+    'settings.memorySlotsHint': string;
+    'settings.unavailable': string;
+    'settings.readonly': string;
 };
 /** The key union: what a `t('…')` call may name inside this namespace. */
 export type BriefKey = keyof typeof zh;
