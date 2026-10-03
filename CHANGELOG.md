@@ -1,5 +1,21 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.5.0 — 2026-10-03（分支 `feat/0.2.0-memory-slots`）
+
+### Added
+
+- **概要 tab 第三分区：记忆槽位（只读）**。订阅 `dsh-prime-memory` 注册的 `memorySlots` 投影（wire view `{rev, count, openCount, slots[]}`），渲染激活槽位的标题 / kind pill / 状态 / 优先级，底部显示开启数。两道门控都满足才渲染，缺一整段隐藏：①开关打开（见下）；②投影存在（prime-memory 不在 composition 时 `faceOf` 恒 `undefined`）。对 prime-memory 未来在 wire view 上追加 `body`/`refs` 做了前向兼容窄化（存在且合法才展示，正文截断 + 全文进 tooltip）。
+- **记忆分区开关 `showMemorySlots`**，按 dsh-thinking-levels 的双入口模式挂两个面、同一个组件同一个 inject 工厂（一份真相）：
+  - **插件家族设置节**（「起子插件设置」）：贡献卡片到 `dsh-family.tab` 子席位（id `brief-sidebar`，order 30）；
+  - **插件管理页配置卡**：`plugins.bundle.config` keyed 席位（key = 包名 `dsh-brief-sidebar`）。
+  - 服务端 `Config` schema（`z.boolean().default(true).volatile()`，schemastery 进入 `dependencies`，tsdown 外置不打包）；客户端经 `configForms.get('dsh-brief-sidebar')` 读写，改动即时提交、开着的 tab 下一次渲染即生效。`configForms` 经延迟 inject 解析（服务可能晚于 apply 启动）；宿主没有该服务时卡片不注册，开关回落默认「开」。
+- i18n：新增 `section.memorySlots` / `slots.*` / `settings.*` 共 14 个 key，九语（zh/en/ja/ko/fr/de/it/ru/es）同步。
+
+### Changed
+
+- `SummaryTab` 预留的记忆召回插槽位（原样 `null`）换成 `MemorySlotsSection`（固定最底：进展 → 产物 → 记忆）。
+- `pnpm-workspace.yaml` 补 `packages: ['.']`（pnpm 10+ 拒绝无该字段的 workspace 文件执行 add/install）。
+
 ## 0.4.0 — 2026-09-29
 
 ### Changed

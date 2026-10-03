@@ -1,3 +1,7 @@
+# Single-package workspace root: `pnpm add/install` refuses to run without a
+# `packages` field once this file exists (same shape as dsh-thinking-levels).
+packages:
+  - .
 # pnpm 10+ blocks dependency install scripts by default; state them explicitly.
 # esbuild — tsdown's underlying bundler; without its binary the build fails
 # outright, so it must be allowed.

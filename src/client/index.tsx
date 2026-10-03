@@ -15,10 +15,21 @@
  *    the panel is the only other carrier of the list, so the replacement has to
  *    exist in the same activation.
  * 4. **Register the tab.**
+ * 5. **Register the settings cards.** The memory-section switch gets TWO
+ *    faces from ONE component + ONE inject factory: a card in the plugin-family
+ *    settings section (「起子插件设置」, hosted by dsh-thinking-levels) and the
+ *    Plugins-page configuration card. `configForms` resolves through a
+ *    deferred inject (the service may start after apply — the same lateness
+ *    the composer model panel in dsh-thinking-levels guards against); on a
+ *    host without it the cards never register and the section gate falls back
+ *    to its default (on).
  *
  * Every registration rides `ctx.effect(fn, label)` so its disposer is revoked on
  * fiber teardown (HMR / disable), which is also what makes the shadow
- * reversible: unload the plugin and the official dock renders again.
+ * reversible: unload the plugin and the official dock renders again. The
+ * settings cards are the family-proven exception: they ride the deferred
+ * `configForms` inject whose disposers are not held (same as
+ * dsh-thinking-levels' composer panel registration).
  *
  * Contract notes for the two surfaces touched here:
  * - better-sidebar tabs are hosted by DSH's native right Sidebar, so the tab
@@ -28,6 +39,7 @@
  *   see `brief/dock-shadow.tsx` for why a lower priority wins the cell.
  */
 import { createElement } from 'react'
+import type { ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { BetterSidebarService, TabComponentProps } from 'dsh-better-sidebar/client/service'
 import { SummaryTab } from './SummaryTab'
@@ -35,8 +47,12 @@ import { BriefIcon } from './BriefIcon'
 import { NS, dictionaries } from './locales'
 import { readTodos, unfinishedCount } from './brief/board'
 import { registerTodoDockShadow } from './brief/dock-shadow'
+import type { SlotsLike } from './brief/dock-shadow'
 import { TODOS_KEY } from './brief/use-todos'
 import { projectionSnapshot } from './use-projection'
+import { BriefSettingsCard } from './settings-card'
+import type { BriefSettingsCardProps } from './settings-card'
+import type { BriefClientConfig, ConfigFormsLike } from './scope-face'
 
 /**
  * Tab type id. Package-prefixed so it cannot collide with a built-in type.
@@ -141,4 +157,50 @@ export function apply(ctx: Context): void {
       }),
     'dsh-brief-sidebar: tab',
   )
+
+  // 5. The settings cards (see the module doc): ONE component + ONE inject
+  //    factory at TWO seats. The entry ids follow the family convention —
+  //    `dsh-family.tab` contributors key by short id (session-guard →
+  //    'session-guard'), `plugins.bundle.config` keys by package name.
+  //    `configForms` rides a deferred inject: the service lives in the
+  //    settings module, which may start after this apply; the callback simply
+  //    never fires on a host without it (the gate then reads its default).
+  const slots = ctx.get('slots') as SlotsLike | undefined
+  ;(ctx as unknown as {
+    inject: (deps: string[], cb: (scope: { configForms?: ConfigFormsLike }) => void) => void
+  }).inject(['configForms'], (scope) => {
+    const configForms = scope.configForms
+    if (slots === undefined || configForms === undefined || typeof configForms.get !== 'function') return
+
+    /** Same face for both seats: the entry scope plus the applied-time binder. */
+    const injectFactory = (): BriefSettingsCardProps => ({
+      t,
+      scope: configForms.get<BriefClientConfig>('dsh-brief-sidebar'),
+    })
+    /** The slot core hands the component `unknown` props (registry typing). */
+    const component = BriefSettingsCard as unknown as (props: unknown) => ReactNode
+
+    slots.inject('dsh-family.tab', () =>
+      slots.register(
+        {
+          name: 'dsh-family.tab',
+          id: 'brief-sidebar',
+          order: 30,
+          label: () => t('settings.title'),
+          inject: injectFactory,
+        },
+        component,
+      ),
+    )
+    slots.inject('plugins.bundle.config', () =>
+      slots.register(
+        {
+          name: 'plugins.bundle.config',
+          key: 'dsh-brief-sidebar',
+          inject: injectFactory,
+        },
+        component,
+      ),
+    )
+  })
 }

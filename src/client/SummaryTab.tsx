@@ -2,8 +2,9 @@
  * The summary tab body: the session's at-a-glance state, composed of sections.
  *
  * Section order: 进展 (the todos board) → 产物 (produced files, codeplan
- * artifacts marked inline) → the reserved memory-recall slot (see below).
- * Each section owns its own data chain and its own three-state contract; this
+ * artifacts marked inline) → 记忆 (the active memory slots of the session,
+ * served by the `memorySlots` projection dsh-prime-memory registers).
+ * Each section owns its own data chain and its own gating contract; this
  * component owns only the shell.
  *
  * Two better-sidebar contracts are honoured:
@@ -22,6 +23,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { TodoSection } from './TodoBoardTab'
 import type { TodoScope } from './TodoBoardTab'
 import { DeliverablesSection } from './summary/DeliverablesSection'
+import { MemorySlotsSection } from './summary/MemorySlotsSection'
 
 export interface SummaryTabProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -64,10 +66,10 @@ export function SummaryTab(props: SummaryTabProps): ReactNode {
     createElement('div', { style: SCROLL_STYLE },
       createElement(TodoSection, { key: 'progress', t, ctx, scope }),
       createElement(DeliverablesSection, { key: 'deliverables', t, ctx, scope }),
-      // 记忆召回插槽（远期，固定最底）：概要从两区扩为三区时，记忆召回分区
-      // 排在这里。系统中没有默认记忆，数据链等记忆类插件注册自己的投影 key
-      // 后经同一个 `faceOf` 通道接入（`useProjectionValue`），本期不渲染。
-      null,
+      // 记忆分区（固定最底）：入口开关（configForms `showMemorySlots`，默认开）
+      // 与能力存在（dsh-prime-memory 的 `memorySlots` 投影）二者都满足才渲染，
+      // 缺一即整段隐藏 —— 门控逻辑收敛在 MemorySlotsSection 内。
+      createElement(MemorySlotsSection, { key: 'memory-slots', t, ctx, scope }),
     ),
   )
 }

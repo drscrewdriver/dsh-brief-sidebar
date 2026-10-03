@@ -1,6 +1,6 @@
 {
   "name": "dsh-brief-sidebar",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "DSH web plugin (dsh-better-sidebar consumer): render the session brief — the todo list (the `todos` projection board) plus the artifact list (a live produced-files feed, codeplan artifacts marked) — as a summary tab in the right sidebar, and shadow the official composer-band todo panel so the board is the single visible carrier. Read-only.",
   "type": "module",
   "main": "lib/index.mjs",
@@ -81,6 +81,9 @@
     "react": {
       "optional": true
     }
+  },
+  "dependencies": {
+    "@deepseek-ai/schemastery": "^3.18.2"
   },
   "scripts": {
     "build": "node -e \"require('node:fs').rmSync('lib',{recursive:true,force:true})\" && tsc -p tsconfig.build.json && tsdown --config-loader tsx",

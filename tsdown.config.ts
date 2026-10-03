@@ -50,7 +50,11 @@ const hostConfig: UserConfig = {
   sourcemap: true,
   clean: false,
   deps: {
-    neverBundle: [...NODE_BUILTINS, /^node:/, '@deepseek-ai/cordis'],
+    // cordis is injected by the host; schemastery is a declared `dependencies`
+    // entry resolved from the plugin's own node_modules at load time (the
+    // dsh-thinking-levels arrangement — bundling it would drag zod into the
+    // artifact for no isolation gain).
+    neverBundle: [...NODE_BUILTINS, /^node:/, '@deepseek-ai/cordis', '@deepseek-ai/schemastery'],
   },
 }
 
