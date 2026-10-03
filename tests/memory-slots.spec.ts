@@ -118,6 +118,48 @@ describe('readSlots', () => {
       priority: 0,
     })
   })
+
+  it('keeps well-formed refViews, drops malformed entries (v0.5.0 contract)', () => {
+    const view = readSlots({
+      rev: 2,
+      count: 1,
+      openCount: 1,
+      slots: [
+        {
+          id: 's1',
+          title: 'Rich',
+          kind: 'rule',
+          status: 'open',
+          priority: 50,
+          refViews: [
+            { ref: 'mem_abc', title: '[work_fact] 回复永远是中文' },
+            { ref: 'mem_bad' },
+            'nonsense',
+            null,
+            { title: 'no ref' },
+          ],
+        },
+      ],
+    })
+    expect(view?.slots[0]?.refViews).toEqual([{ ref: 'mem_abc', title: '[work_fact] 回复永远是中文' }])
+  })
+
+  it('drops an all-invalid refViews list and tolerates its absence', () => {
+    const dropped = readSlots({
+      rev: 1,
+      count: 1,
+      openCount: 1,
+      slots: [{ id: 's1', title: 'T', kind: 'rule', status: 'open', priority: 1, refViews: [7, { ref: 1, title: 2 }] }],
+    })
+    expect(dropped?.slots[0]?.refViews).toBeUndefined()
+    const absent = readSlots({
+      rev: 1,
+      count: 1,
+      openCount: 1,
+      slots: [{ id: 's1', title: 'T', kind: 'rule', status: 'open', priority: 1 }],
+    })
+    expect(absent?.slots[0]?.refViews).toBeUndefined()
+  })
 })
 
 describe('truncateBody', () => {

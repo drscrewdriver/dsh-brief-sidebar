@@ -169,6 +169,27 @@ describe('MemorySlotsSection rendering', () => {
     expect(renderSection(ctx)).toContain('notes/a.md · notes/b.md')
   })
 
+  it('prefers resolved refViews for the refs line and keeps raw refs on the tooltip', () => {
+    const ctx = ctxWith({
+      [MEMORY_SLOTS_KEY]: {
+        rev: 2,
+        count: 1,
+        openCount: 1,
+        slots: [
+          {
+            ...OPEN_SLOT,
+            refs: ['mem_abc', 'notes/a.md'],
+            refViews: [{ ref: 'mem_abc', title: '[work_fact] 回复永远是中文' }],
+          },
+        ],
+      },
+    })
+    const markup = renderSection(ctx)
+    expect(markup).toContain('[work_fact] 回复永远是中文')
+    expect(markup).not.toContain('mem_abc · notes/a.md')
+    expect(markup).toContain('title="mem_abc\nnotes/a.md"')
+  })
+
   it('appears as the third section of the summary tab', () => {
     const ctx = ctxWith({
       // The deliverables section hides when its projection is absent, so the

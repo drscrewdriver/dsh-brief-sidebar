@@ -151,12 +151,19 @@ const STATUS_KEY: Record<string, string> = {
 
 /**
  * One slot row: kind pill, title (full body rides the tooltip), status pill,
- * priority; body and refs lines underneath when the wire view carries them.
+ * priority; body line underneath when the wire view carries it; refs as
+ * resolved 名称简述 (record_id → title) with the raw refs on the tooltip, or
+ * raw refs when the host has not resolved them.
  */
 function SlotRow(props: { slot: MemorySlotView; t: (key: string) => string }): ReactNode {
   const { slot, t } = props
   const statusLabel = STATUS_KEY[slot.status] === undefined ? slot.status : t(STATUS_KEY[slot.status])
   const title = slot.body === undefined ? slot.title : `${slot.title} — ${slot.body}`
+  const refsLine = slot.refViews !== undefined
+    ? slot.refViews.map((view) => view.title).join(' · ')
+    : slot.refs !== undefined
+      ? slot.refs.join(' · ')
+      : undefined
   return createElement(
     'li',
     { style: ROW_STYLE },
@@ -166,7 +173,15 @@ function SlotRow(props: { slot: MemorySlotView; t: (key: string) => string }): R
       { style: { minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 } },
       createElement('span', { style: TITLE_STYLE, title }, slot.title),
       slot.body !== undefined && createElement('p', { style: BODY_STYLE }, truncateBody(slot.body)),
-      slot.refs !== undefined && createElement('p', { style: REFS_STYLE }, slot.refs.join(' · ')),
+      refsLine !== undefined
+        && createElement(
+          'p',
+          {
+            style: REFS_STYLE,
+            title: slot.refs !== undefined ? slot.refs.join('\n') : undefined,
+          },
+          refsLine,
+        ),
     ),
     createElement('span', { style: META_STYLE }, `P${slot.priority}`),
     createElement(

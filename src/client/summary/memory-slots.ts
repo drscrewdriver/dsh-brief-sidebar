@@ -33,6 +33,17 @@ export interface MemorySlotView {
   readonly body?: string
   /** Reference targets, once prime-memory exposes them on the wire. */
   readonly refs?: readonly string[]
+  /**
+   * record_id 引用的展示解析(v0.5.0 契约:ref → `[type] 名称简述`),由
+   * prime-memory 在投影帧构建时解析;路径/URL 类引用不产生条目。存在才收。
+   */
+  readonly refViews?: readonly SlotRefView[]
+}
+
+/** 一条 record_id 引用的展示解析(与 prime-memory 的 SlotRefView 同形)。 */
+export interface SlotRefView {
+  readonly ref: string
+  readonly title: string
 }
 
 /** The whole wire view of one frame. */
@@ -97,6 +108,17 @@ function readSlot(value: unknown): MemorySlotView | undefined {
   if (Array.isArray(raw['refs'])) {
     const refs = raw['refs'].filter((ref): ref is string => typeof ref === 'string' && ref.length > 0)
     if (refs.length > 0) slot.refs = refs
+  }
+  if (Array.isArray(raw['refViews'])) {
+    const views: SlotRefView[] = []
+    for (const entry of raw['refViews']) {
+      if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) continue
+      const view = entry as Record<string, unknown>
+      if (typeof view['ref'] !== 'string' || view['ref'].length === 0) continue
+      if (typeof view['title'] !== 'string' || view['title'].length === 0) continue
+      views.push({ ref: view['ref'], title: view['title'] })
+    }
+    if (views.length > 0) slot.refViews = views
   }
   return slot
 }

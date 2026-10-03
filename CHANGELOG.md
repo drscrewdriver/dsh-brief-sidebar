@@ -1,5 +1,11 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.5.0-beta.2 — 2026-10-03
+
+### Added
+
+- **记忆槽位引用解析（配 dsh-prime-memory 0.20.1 修复版）**：wire view 新增 `refViews`（record_id → `[type] 名称简述`，由 prime-memory 在投影帧构建时经 L1 `getByIds` 解析）。记忆分区渲染优先用解析后的名称简述（原始 refs 进 tooltip），host 未解析时回落原始 refs。窄化保持"存在才收、畸形条目丢弃"。
+
 ## 0.5.0-beta.1 — 2026-10-03（分支 `feat/0.2.0-memory-slots`，npm dist-tag `beta`）
 
 > 预发布：`dsh plugin --profile web add dsh-brief-sidebar@beta`。`latest` 与 `dsh-0.2.0` 不动（仍在 0.4.0），稳定后正式发 0.5.0。
