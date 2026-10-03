@@ -13,6 +13,9 @@ export interface DeliverablesSectionProps {
 /**
  * The deliverables section. The subscription is unconditional (a plain
  * listener, not IO).
+ *
+ * 分层:活跃文件(本回合 latest)直接列表;全会话更早改动折叠在开关行后面
+ * (与活跃文件按归一化路径去重),展开后是与活跃区相同的可点击文件行。
  * @param props - translation, client context, session scope.
  */
 export declare function DeliverablesSection(props: DeliverablesSectionProps): ReactNode;

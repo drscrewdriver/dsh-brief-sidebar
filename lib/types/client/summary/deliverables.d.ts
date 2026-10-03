@@ -38,3 +38,11 @@ export declare function splitCodeplanPath(path: string): {
 } | null;
 /** The final path segment, under either separator. */
 export declare function basename(path: string): string;
+/**
+ * 历史文件 = 全会话去重路径 − 本回合活跃路径。
+ *
+ * 分隔符归一化后比较(`a\b` 与 `a/b` 视为同一路径),保持 sessionPaths 自带的
+ * "最近在前"顺序;活跃路径一个都不出现——分层契约:活跃的已在上方列表里,
+ * 折叠区只收"更早改过的文件"。
+ */
+export declare function historyPaths(sessionPaths: readonly string[], latestPaths: readonly string[]): string[];

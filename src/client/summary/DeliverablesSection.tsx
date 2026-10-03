@@ -18,12 +18,13 @@
  * Colours come from `--dsw-alias-*` tokens only (skin contract).
  */
 import { createElement } from 'react'
+import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import { DELIVERABLES_KEY } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
 import { sidebarFileOpener } from '../file-open'
-import { basename, readDeliverables, splitCodeplanPath } from './deliverables'
+import { basename, historyPaths, readDeliverables, splitCodeplanPath } from './deliverables'
 import { expandCount } from '../locales'
 
 export interface DeliverablesSectionProps {
@@ -62,11 +63,27 @@ const ROW_STYLE: CSSProperties = {
   padding: '6px 12px',
 }
 
-const TOTAL_STYLE: CSSProperties = {
-  padding: '6px 12px 10px',
-  color: 'var(--dsw-alias-label-tertiary)',
+/** 折叠区开关行:与文件行同宽,tertiary 强调,整行可点。 */
+const HISTORY_TOGGLE_STYLE: CSSProperties = {
+  background: 'none',
+  border: 'none',
+  font: 'inherit',
   fontSize: 12,
+  color: 'var(--dsw-alias-label-tertiary)',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  gap: 4,
+  padding: '6px 12px',
+  textAlign: 'left',
+  width: 'calc(100% - 24px)',
 }
+
+const CHEVRON_STYLE = (open: boolean): CSSProperties => ({
+  flexShrink: 0,
+  transition: 'transform 0.16s',
+  transform: open ? 'rotate(180deg)' : 'none',
+})
 
 const PATH_STYLE: CSSProperties = {
   minWidth: 0,
@@ -134,10 +151,14 @@ function PathRow(props: {
 /**
  * The deliverables section. The subscription is unconditional (a plain
  * listener, not IO).
+ *
+ * 分层:活跃文件(本回合 latest)直接列表;全会话更早改动折叠在开关行后面
+ * (与活跃文件按归一化路径去重),展开后是与活跃区相同的可点击文件行。
  * @param props - translation, client context, session scope.
  */
 export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode {
   const { t, ctx, scope } = props
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const view = readDeliverables(useProjectionValue(ctx, scope?.sessionId, DELIVERABLES_KEY))
 
@@ -145,10 +166,11 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
   if (view === undefined) return null
 
   // Optional click-to-preview: rows degrade to plain text where the sidebar
-  // service is absent (the opener resolves the session cwd per click).
+  // opener is absent (the opener resolves the session cwd per click).
   const open = sidebarFileOpener(ctx, scope?.sessionId)
 
   const latestPaths = view.latest?.paths ?? []
+  const history = historyPaths(view.sessionPaths, latestPaths)
 
   if (latestPaths.length === 0 && view.sessionTotal === 0) {
     return createElement(
@@ -183,10 +205,32 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
       { style: LIST_STYLE },
       latestPaths.map(path => createElement(PathRow, { key: path, path, t, open })),
     ),
-    createElement(
-      'div',
-      { style: TOTAL_STYLE },
-      expandCount(t('deliverables.sessionTotal'), view.sessionTotal),
+    history.length > 0 && createElement(
+      'button',
+      {
+        type: 'button',
+        'aria-expanded': historyOpen,
+        style: HISTORY_TOGGLE_STYLE,
+        onClick: () => { setHistoryOpen(current => !current) },
+      },
+      expandCount(t('deliverables.history'), history.length),
+      createElement(
+        'svg',
+        { width: 10, height: 10, viewBox: '0 0 16 16', 'aria-hidden': true, style: CHEVRON_STYLE(historyOpen) },
+        createElement('path', {
+          d: 'M4 6l4 4 4-4',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.5,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+        }),
+      ),
+    ),
+    historyOpen && createElement(
+      'ul',
+      { style: LIST_STYLE },
+      history.map(path => createElement(PathRow, { key: path, path, t, open })),
     ),
   )
 }

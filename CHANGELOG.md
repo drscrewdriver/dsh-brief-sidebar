@@ -1,5 +1,11 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.5.0-beta.3 — 2026-10-03
+
+### Added
+
+- **产物分区分层**:活跃文件(本回合 latest)保持直接列表;"全会话更早改动"折叠进开关行(计数 = 与活跃文件按归一化路径去重后的条数),展开后是与活跃区相同的可点击文件行(点击走侧栏预览)。新增 `deliverables.history` 九语 key,`deliverables.sessionTotal` 退役(`sessionTotal` 仍是 wire 字段,仅不再单独渲染)。
+
 ## 0.5.0-beta.2 — 2026-10-03
 
 ### Added

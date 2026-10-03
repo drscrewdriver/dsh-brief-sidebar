@@ -9,7 +9,7 @@
  * the exact spelling the tool received.
  */
 import { describe, expect, it } from 'vitest'
-import { basename, isCodeplanPath, readDeliverables, splitCodeplanPath } from '../src/client/summary/deliverables'
+import { basename, historyPaths, isCodeplanPath, readDeliverables, splitCodeplanPath } from '../src/client/summary/deliverables'
 
 describe('readDeliverables', () => {
   it('treats an absent value as capability-absent', () => {
@@ -80,3 +80,18 @@ describe('codeplan classification', () => {
     expect(basename('plain')).toBe('plain')
   })
 })
+
+describe('historyPaths 分层去重', () => {
+  it('活跃路径(分隔符不敏感)不进折叠区,保持最近在前顺序', () => {
+    expect(
+      historyPaths(
+        ['E:\\w\\new.md', 'E:/w/old.md', 'E:\\w\\sub\\x.ts'],
+        ['E:/w/new.md'],
+      ),
+    ).toEqual(['E:/w/old.md', 'E:\\w\\sub\\x.ts'])
+  })
+
+  it('空活跃集 = 全部为历史', () => {
+    expect(historyPaths(['a.md', 'b.md'], [])).toEqual(['a.md', 'b.md'])
+  })
+});

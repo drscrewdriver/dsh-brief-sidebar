@@ -32,7 +32,7 @@ export declare const zh: {
     'status.completed': string;
     'deliverables.empty': string;
     'deliverables.emptyHint': string;
-    'deliverables.sessionTotal': string;
+    'deliverables.history': string;
     'deliverable.codeplanTag': string;
     'section.memorySlots': string;
     'slots.empty': string;

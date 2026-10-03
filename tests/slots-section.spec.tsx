@@ -25,6 +25,7 @@ import { MemorySlotsSection } from '../src/client/summary/MemorySlotsSection'
 import { MEMORY_SLOTS_KEY } from '../src/client/summary/memory-slots'
 import { SummaryTab } from '../src/client/SummaryTab'
 import { DELIVERABLES_KEY } from '../src/projection/keys'
+import { zh as zhDict } from '../src/client/locales'
 import { zh } from '../src/client/locales'
 import type { BriefClientConfig } from '../src/client/scope-face'
 
@@ -204,3 +205,24 @@ describe('MemorySlotsSection rendering', () => {
     expect(memory).toBeGreaterThan(deliverables)
   })
 })
+
+describe('产物分层(0.5.0-beta.3)', () => {
+  const manyPaths = Array.from({ length: 6 }, (_, i) => 'E:/w/file' + i + '.md')
+
+  it('默认只显示活跃文件,历史收在开关行后(计数=去重后的更早改动)', () => {
+    const ctx = ctxWith({
+      [DELIVERABLES_KEY]: { latest: { turn: 3, paths: ['E:/w/new.md'] }, sessionPaths: ['E:/w/new.md', ...manyPaths], sessionTotal: 7 },
+    })
+    const markup = renderTab(ctx)
+    expect(markup).toContain(zhDict['deliverables.history'].replace('{count}', '6'))
+    expect(markup).toContain('new.md')
+    expect(markup).not.toContain('file1.md') // 折叠区默认不渲染历史路径
+  })
+
+  it('无更早改动时不出现开关行', () => {
+    const ctx = ctxWith({
+      [DELIVERABLES_KEY]: { latest: { turn: 3, paths: ['E:/w/new.md'] }, sessionPaths: ['E:/w/new.md'], sessionTotal: 1 },
+    })
+    expect(renderTab(ctx)).not.toContain(zhDict['deliverables.history'].replace('{count}', '0'))
+  })
+});

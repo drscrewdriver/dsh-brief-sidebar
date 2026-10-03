@@ -202,13 +202,13 @@ describe('deliverables section three-state', () => {
     expect(markup).toContain(zh['section.deliverables'])
   })
 
-  it('renders one row per produced path with the session total', () => {
+  it('renders one row per produced path; no history expander when everything is active', () => {
     const ctx = ctxWithProjections({ dshSummaryDeliverables: VIEW })
     const markup = renderToStaticMarkup(
       createElement(DeliverablesSection, { t, ctx, scope: { sessionId: SESSION } }),
     )
     expect(markup).toContain('report.html')
-    expect(markup).toContain('本会话共 1 个文件')
+    expect(markup).not.toContain(zh['deliverables.history'])
   })
 
   it('marks a codeplan artifact with the pill and the task name in its title', () => {
