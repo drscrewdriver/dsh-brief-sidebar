@@ -1,5 +1,9 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.5.0 — 2026-10-04（转正）
+
+> beta.1~3 全部能力定版,挂 `latest` 与 `dsh-0.2.0`。内容见下。
+
 ## 0.5.0-beta.3 — 2026-10-03
 
 ### Added
