@@ -74,7 +74,9 @@ export const TAB_ORDER = 15
 // Generation-neutral list only: betterSidebar/locale ride ctx.get soft-reads in
 // apply (both absent on 0.1.0/0.1.1 — declaring them pends the whole client
 // entry, web boot refuses to render; playbook §1).
-export const inject = ['slots']
+// betterSidebar 经 ctx.get 软读（缺席 inert）；locale 全线 rc 皆在（0.1.0-rc.2 起）。
+// 第三方插件服务不入顶层 inject——缺席格 entry 永久 pending，web boot 拒渲染整树。
+export const inject = ['slots', 'locale']
 
 /**
  * Structural view of the DSH locale service — only the two members this plugin
