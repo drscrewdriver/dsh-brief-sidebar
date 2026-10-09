@@ -71,7 +71,10 @@ export const TAB_ID = 'dsh-brief-sidebar:board'
 export const TAB_ORDER = 15
 
 /** Services required before `apply` runs. */
-export const inject = ['betterSidebar', 'locale', 'slots']
+// Generation-neutral list only: betterSidebar/locale ride ctx.get soft-reads in
+// apply (both absent on 0.1.0/0.1.1 — declaring them pends the whole client
+// entry, web boot refuses to render; playbook §1).
+export const inject = ['slots']
 
 /**
  * Structural view of the DSH locale service — only the two members this plugin

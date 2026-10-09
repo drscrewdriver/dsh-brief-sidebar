@@ -1,6 +1,6 @@
 {
   "name": "dsh-brief-sidebar",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "DSH web plugin (dsh-better-sidebar consumer): render the session brief — the todo list (the `todos` projection board) plus the artifact list (a live produced-files feed, codeplan artifacts marked) — as a summary tab in the right sidebar, and shadow the official composer-band todo panel so the board is the single visible carrier. Read-only.",
   "type": "module",
   "main": "lib/index.mjs",
@@ -59,15 +59,15 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org",
     "access": "public",
-    "tag": "dsh-0.1.5"
+    "tag": "latest"
   },
   "engines": {
     "node": ">=20",
-    "dsh": ">=0.2.0-rc.1 <0.2.1-0"
+    "dsh": "0.1.0-rc.2 || 0.1.0-rc.3 || 0.1.0-rc.6 || 0.1.0-rc.7 || 0.1.0-rc.8 || 0.1.1-rc.1 || 0.1.1-rc.2 || 0.1.2-rc.1 || 0.1.5-rc.1 || 0.1.5-rc.2 || 0.1.5-rc.3 || 0.1.7-rc.1 || 0.1.7-rc.2 || 0.2.0-rc.1 || 0.2.0-rc.2"
   },
   "peerDependencies": {
-    "@deepseek-ai/cordis": "^4.0.2",
-    "@deepseek-ai/dsh-client-locale": ">=0.2.0-rc.1 <0.2.1-0",
+    "@deepseek-ai/cordis": "^4.0.2 || ^4.0.4",
+    "@deepseek-ai/dsh-client-locale": ">=0.1.0-rc.2 <0.2.1-0",
     "dsh-better-sidebar": ">=0.18.1",
     "react": "^18.2.0"
   },
@@ -91,7 +91,8 @@
     "test": "vitest run",
     "clean": "node -e \"require('node:fs').rmSync('lib',{recursive:true,force:true})\"",
     "prepublishOnly": "npm run build",
-    "release:015": "npm publish --tag dsh-0.1.5"
+    "release:015": "npm publish --tag dsh-0.1.5",
+    "prepack": "npm run build"
   },
   "devDependencies": {
     "@deepseek-ai/cordis": "^4.0.2",
