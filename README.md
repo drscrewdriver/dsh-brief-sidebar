@@ -21,7 +21,6 @@ DSH web 插件（`dsh-better-sidebar` 消费方），仓库/包名 **`dsh-brief-
 
 （2026-10-09 起单版本跨线：`compat/0.1.7` / `compat/0.1.5` 冻结退役。0.1.x 老格上 better-sidebar 未激活服务时本插件按设计 inert——console 干净、不拖死其它插件；「概要」tab 在 better-sidebar 正常激活的宿主（0.2.0 等）呈现。）
 
-（截至 2026-09-30；0.1.x 线由冻结保留分支 `compat/0.1.7` / `compat/0.1.5`（≤0.3.1）继续服务。）
 
 ![brief-sidebar](assets/brief.png)
 
