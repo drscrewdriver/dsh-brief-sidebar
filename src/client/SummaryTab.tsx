@@ -2,10 +2,10 @@
  * The summary tab body: the session's at-a-glance state, composed of sections.
  *
  * Section order: 进展 (the todos board) → 产物 (produced files, codeplan
- * artifacts marked inline) → 记忆 (the active memory slots of the session,
- * served by the `memorySlots` projection dsh-prime-memory registers).
- * Each section owns its own data chain and its own gating contract; this
- * component owns only the shell.
+ * artifacts marked inline) → 本会话召回 (what prime-memory injected into this
+ * session and compaction has not overwritten) → 记忆槽位 (hand-pinned resident
+ * conventions, off by default). Each section owns its own data chain and its
+ * own gating contract; this component owns only the shell.
  *
  * Two better-sidebar contracts are honoured:
  *
@@ -24,6 +24,7 @@ import { TodoSection } from './TodoBoardTab'
 import type { TodoScope } from './TodoBoardTab'
 import { DeliverablesSection } from './summary/DeliverablesSection'
 import { MemorySlotsSection } from './summary/MemorySlotsSection'
+import { MemoryRecallSection } from './summary/MemoryRecallSection'
 
 export interface SummaryTabProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -66,9 +67,11 @@ export function SummaryTab(props: SummaryTabProps): ReactNode {
     createElement('div', { style: SCROLL_STYLE },
       createElement(TodoSection, { key: 'progress', t, ctx, scope }),
       createElement(DeliverablesSection, { key: 'deliverables', t, ctx, scope }),
-      // 记忆分区（固定最底）：入口开关（configForms `showMemorySlots`，默认开）
-      // 与能力存在（dsh-prime-memory 的 `memorySlots` 投影）二者都满足才渲染，
-      // 缺一即整段隐藏 —— 门控逻辑收敛在 MemorySlotsSection 内。
+      // 本会话召回（固定最底）：入口开关（configForms `showMemoryRecall`，默认开）
+      // 与能力存在（dsh-prime-memory 的 `memoryRecall` 投影）缺一即整段隐藏。
+      // 这是"模型此刻看到哪些记忆"的诚实视图：非常驻，压缩后即清空。
+      createElement(MemoryRecallSection, { key: 'memory-recall', t, ctx, scope }),
+      // 记忆槽位分区：手动 pin 的常驻约定（`memorySlots` 投影），默认关。
       createElement(MemorySlotsSection, { key: 'memory-slots', t, ctx, scope }),
     ),
   )

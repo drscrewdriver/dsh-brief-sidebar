@@ -8,8 +8,8 @@
  * - the switch OFF must will the section away even while the projection is
  *   live (an empty state would claim prime-memory answered when the user
  *   closed the section);
- * - the switch DEFAULT (configForms absent or unavailable) is ON — a host
- *   without the config seam must not lose the section;
+ * - the switch DEFAULT is OFF — the pinned resident list no longer occupies the
+ *   summary pane by default (the session-recall section took that place);
  * - the projection ABSENT must hide the section entirely, like the optional
  *   deliverables section.
  *
@@ -58,6 +58,10 @@ function ctxWith(
   values: Record<string, unknown>,
   config?: { value?: BriefClientConfig; status?: 'ready' | 'unavailable'; present?: boolean },
 ): Context {
+  // An omitted `config` means "this test is not about the switch": serve the
+  // slots section as ON so the rendering assertions keep their subject. Tests
+  // that DO pin the default pass `present: false` / `status` explicitly.
+  const effective = config ?? { value: { showMemorySlots: true } }
   const sessions = {
     binding: (id: string) =>
       id === SESSION
@@ -73,7 +77,7 @@ function ctxWith(
         }
         : undefined,
   }
-  const configForms = config?.present === false ? undefined : { get: () => scopeFixture(config?.value, config?.status) }
+  const configForms = effective.present === false ? undefined : { get: () => scopeFixture(effective.value, effective.status) }
   return {
     get: (name: string) => (name === 'sessions' ? sessions : name === 'configForms' ? configForms : undefined),
   } as unknown as Context
@@ -107,12 +111,18 @@ describe('MemorySlotsSection gating', () => {
     expect(renderSection(ctxWith({ [MEMORY_SLOTS_KEY]: 'nonsense' }))).toBe('')
   })
 
-  it('defaults to on when configForms is absent or unavailable', () => {
+  it('defaults to OFF when configForms is absent or unavailable', () => {
+    // 常驻槽位不再是概要位的默认住户（改为「本会话召回」分区）；开关缺席即不渲染。
     const view = { rev: 1, count: 1, openCount: 1, slots: [OPEN_SLOT] }
     const absent = ctxWith({ [MEMORY_SLOTS_KEY]: view }, { present: false })
-    expect(renderSection(absent)).toContain(OPEN_SLOT.title)
+    expect(renderSection(absent)).toBe('')
     const unavailable = ctxWith({ [MEMORY_SLOTS_KEY]: view }, { status: 'unavailable' })
-    expect(renderSection(unavailable)).toContain(OPEN_SLOT.title)
+    expect(renderSection(unavailable)).toBe('')
+  })
+
+  it('renders when the switch is explicitly on with a live view', () => {
+    const view = { rev: 1, count: 1, openCount: 1, slots: [OPEN_SLOT] }
+    expect(renderSection(ctxWith({ [MEMORY_SLOTS_KEY]: view }, { value: { showMemorySlots: true } }))).toContain(OPEN_SLOT.title)
   })
 
   it('shows the empty state (not the list) when no slot is active', () => {
@@ -191,7 +201,7 @@ describe('MemorySlotsSection rendering', () => {
     expect(markup).toContain('title="mem_abc\nnotes/a.md"')
   })
 
-  it('appears as the third section of the summary tab', () => {
+  it('appears as the last section of the summary tab', () => {
     const ctx = ctxWith({
       // The deliverables section hides when its projection is absent, so the
       // ordering fixture must carry a live (all-empty) deliverables view too.

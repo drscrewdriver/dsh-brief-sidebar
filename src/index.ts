@@ -13,9 +13,11 @@
  *    service via `ctx.inject`, so a composition without the registry still
  *    loads this profile row and simply hides the deliverables section
  *    client-side.
- * 2. declaring the entry's `Config` schema — one `.volatile()` boolean,
- *    `showMemorySlots`, that gates the summary tab's memory-slots section
- *    (slots come from the `dsh-prime-memory` projection `memorySlots`). The
+ * 2. declaring the entry's `Config` schema — two `.volatile()` booleans,
+ *    `showMemorySlots` and `showMemoryRecall`, that gate the summary tab's two
+ *    memory sections (both come from `dsh-prime-memory` projections:
+ *    `memorySlots` = hand-pinned resident conventions, default OFF; and
+ *    `memoryRecall` = what this session actually injected, default ON). The
  *    value is read CLIENT-side through the `configForms` service; this half
  *    never reads it, the export exists so the host has a settings surface to
  *    validate and persist against (the DSH 0.1.7+ declarative-settings
@@ -34,13 +36,19 @@ import { registerDeliverablesProjection } from './projection/register'
 export const name = 'dsh-brief-sidebar'
 
 /**
- * Composition-entry schema: the runtime switch the settings faces write
+ * Composition-entry schema: the runtime switches the settings faces write
  * (family settings card + Plugins-page config card) and the summary tab's
- * memory section reads. `.volatile()` = editable at runtime without a plugin
- * remount; the default mirrors {@link DEFAULT_SHOW_MEMORY_SLOTS} in the client.
+ * memory sections read. `.volatile()` = editable at runtime without a plugin
+ * remount; the defaults mirror {@link DEFAULT_SHOW_MEMORY_SLOTS} and
+ * {@link DEFAULT_SHOW_MEMORY_RECALL} in the client.
+ *
+ * Why slots default off: a permanent "resident slots" card taught users to read
+ * memory as resident, which is the opposite of relevance recall. The switch
+ * stays there for anyone who wants the pinned list back.
  */
 export const Config = z.object({
-  showMemorySlots: z.boolean().default(true).volatile(),
+  showMemorySlots: z.boolean().default(false).volatile(),
+  showMemoryRecall: z.boolean().default(true).volatile(),
 })
 
 /**

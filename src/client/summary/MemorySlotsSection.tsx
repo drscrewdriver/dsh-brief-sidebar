@@ -6,9 +6,10 @@
  * paints nothing here:
  *
  * 1. **The switch.** This plugin's entry config (`configForms` → entry
- *    `dsh-brief-sidebar`, field `showMemorySlots`, default on). When the
- *    config face cannot answer (service absent, scope not ready, field
- *    unset) the default applies — see `scope-face.ts`.
+ *    `dsh-brief-sidebar`, field `showMemorySlots`, default OFF — the pinned
+ *    list moved out of the summary pane's way in favour of the session-recall
+ *    section). When the config face cannot answer (service absent, scope not
+ *    ready, field unset) the default applies — see `scope-face.ts`.
  * 2. **The capability.** The `memorySlots` projection must exist for the
  *    session; `undefined` hides the section entirely, exactly like the
  *    optional deliverables section.
@@ -16,7 +17,6 @@
  * Colours come from `--dsw-alias-*` tokens only (skin contract, enforced by
  * `tests/purity.spec.ts`).
  */
-import { useCallback, useMemo, useSyncExternalStore } from 'react'
 import { createElement } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
@@ -27,7 +27,7 @@ import {
 } from './memory-slots'
 import type { MemorySlotView, MemorySlotsView } from './memory-slots'
 import { resolveShowMemorySlots } from '../scope-face'
-import type { BriefClientConfig, ConfigFormsLike, SettingsScope, SettingsScopeSnapshot } from '../scope-face'
+import { useConfigFlag } from './use-config-flag'
 import { useProjectionValue } from '../use-projection'
 import { expandCount } from '../locales'
 
@@ -193,52 +193,14 @@ function SlotRow(props: { slot: MemorySlotView; t: (key: string) => string }): R
 }
 
 /**
- * A no-op unsubscribe source, kept as one identity so the absent-scope
- * subscription never thrashes (returns a no-op disposer, as the store
- * contract requires).
- */
-const NO_SUBSCRIBE = (): (() => void) => () => {}
-
-/**
- * The snapshot served while no config scope is reachable — resolves to the
- * switch default (on) in `resolveShowMemorySlots`.
- */
-const ABSENT_SNAPSHOT: SettingsScopeSnapshot<BriefClientConfig> = {
-  status: 'unavailable',
-  value: undefined,
-  revision: undefined,
-  writable: false,
-}
-
-/**
- * Subscribe to this plugin's entry config and resolve the section switch.
- *
- * The scope is resolved defensively (a host without `configForms` degrades to
- * the default instead of throwing inside a render) and subscribed with
- * `useSyncExternalStore`, so flipping the switch in settings updates the open
- * tab without a reload.
+ * Subscribe to this plugin's entry config and resolve the slots switch.
+ * Plumbing lives in `use-config-flag`; the default (off) lives in the resolver.
  *
  * @param ctx - the client root context handed to the tab body.
  * @returns whether the memory-slots section may render at all.
  */
 export function useShowMemorySlots(ctx: Context | undefined): boolean {
-  const scope = useMemo(() => {
-    if (ctx === undefined) return undefined
-    const configForms = ctx.get('configForms') as ConfigFormsLike | undefined
-    if (configForms === undefined || typeof configForms.get !== 'function') return undefined
-    return configForms.get<BriefClientConfig>('dsh-brief-sidebar')
-  }, [ctx])
-
-  const subscribe = useCallback(
-    (listener: () => void) => scope?.subscribe(listener) ?? NO_SUBSCRIBE(),
-    [scope],
-  )
-  const getSnapshot = useCallback(
-    () => scope?.getSnapshot() ?? ABSENT_SNAPSHOT,
-    [scope],
-  )
-
-  return resolveShowMemorySlots(useSyncExternalStore(subscribe, getSnapshot, getSnapshot))
+  return useConfigFlag(ctx, resolveShowMemorySlots)
 }
 
 /**

@@ -11,7 +11,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { readSlots, truncateBody } from '../src/client/summary/memory-slots'
-import { resolveShowMemorySlots } from '../src/client/scope-face'
+import { resolveShowMemoryRecall, resolveShowMemorySlots } from '../src/client/scope-face'
 import type { SettingsScopeSnapshot } from '../src/client/scope-face'
 
 describe('readSlots', () => {
@@ -183,16 +183,36 @@ describe('resolveShowMemorySlots', () => {
   const snapshot = (value: unknown, status: SettingsScopeSnapshot<unknown>['status'] = 'ready'): SettingsScopeSnapshot<never> =>
     ({ status, value, revision: 1, writable: true }) as SettingsScopeSnapshot<never>
 
-  it('defaults to on wherever the config face cannot answer', () => {
-    expect(resolveShowMemorySlots(undefined)).toBe(true)
-    expect(resolveShowMemorySlots(snapshot(undefined, 'loading'))).toBe(true)
-    expect(resolveShowMemorySlots(snapshot(undefined, 'unavailable'))).toBe(true)
-    expect(resolveShowMemorySlots(snapshot(undefined))).toBe(true)
+  it('defaults to OFF wherever the config face cannot answer', () => {
+    // 常驻槽位不再是概要位的默认住户（「本会话召回」分区取代了它）。
+    expect(resolveShowMemorySlots(undefined)).toBe(false)
+    expect(resolveShowMemorySlots(snapshot(undefined, 'loading'))).toBe(false)
+    expect(resolveShowMemorySlots(snapshot(undefined, 'unavailable'))).toBe(false)
+    expect(resolveShowMemorySlots(snapshot(undefined))).toBe(false)
+  })
+
+  it('is on only on an explicit true', () => {
+    expect(resolveShowMemorySlots(snapshot({ showMemorySlots: true }))).toBe(true)
+    expect(resolveShowMemorySlots(snapshot({ showMemorySlots: false }))).toBe(false)
+    expect(resolveShowMemorySlots(snapshot({}))).toBe(false)
+  })
+})
+
+describe('resolveShowMemoryRecall', () => {
+  const snapshot = (value: unknown, status: SettingsScopeSnapshot<unknown>['status'] = 'ready'): SettingsScopeSnapshot<never> =>
+    ({ status, value, revision: 1, writable: true }) as SettingsScopeSnapshot<never>
+
+  it('defaults to ON wherever the config face cannot answer', () => {
+    // 缺席不能让人失去唯一的诚实记忆视图（与 slots 相反）。
+    expect(resolveShowMemoryRecall(undefined)).toBe(true)
+    expect(resolveShowMemoryRecall(snapshot(undefined, 'loading'))).toBe(true)
+    expect(resolveShowMemoryRecall(snapshot(undefined, 'unavailable'))).toBe(true)
+    expect(resolveShowMemoryRecall(snapshot(undefined))).toBe(true)
   })
 
   it('is off only on an explicit false', () => {
-    expect(resolveShowMemorySlots(snapshot({ showMemorySlots: false }))).toBe(false)
-    expect(resolveShowMemorySlots(snapshot({ showMemorySlots: true }))).toBe(true)
-    expect(resolveShowMemorySlots(snapshot({}))).toBe(true)
+    expect(resolveShowMemoryRecall(snapshot({ showMemoryRecall: false }))).toBe(false)
+    expect(resolveShowMemoryRecall(snapshot({ showMemoryRecall: true }))).toBe(true)
+    expect(resolveShowMemoryRecall(snapshot({}))).toBe(true)
   })
 })

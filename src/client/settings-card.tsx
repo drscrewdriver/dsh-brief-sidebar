@@ -26,6 +26,7 @@ import { useCallback, useState, useSyncExternalStore } from 'react'
 import { createElement } from 'react'
 import type { CSSProperties, ChangeEvent, ReactNode } from 'react'
 import type { BriefClientConfig, SettingsScope, SettingsScopeSnapshot } from './scope-face'
+import { resolveShowMemoryRecall, resolveShowMemorySlots } from './scope-face'
 
 /** A no-op unsubscribe source, kept as one identity so effects never thrash. */
 const NO_SUBSCRIBE = (): (() => void) => () => {}
@@ -125,6 +126,38 @@ const HINT_STYLE: CSSProperties = {
 const SWITCH_STYLE: CSSProperties = { flexShrink: 0, margin: 0, cursor: 'pointer' }
 
 /**
+ * One switch row: label + hint on the left, checkbox on the right. Extracted
+ * because the card now binds two sections (session recall / pinned slots).
+ */
+function FlagRow(props: {
+  id: string
+  label: string
+  hint: string
+  checked: boolean
+  disabled: boolean
+  onToggle(next: boolean): void
+}): ReactNode {
+  return createElement(
+    'div',
+    { style: ROW_STYLE },
+    createElement(
+      'div',
+      { style: ROW_TEXT_STYLE },
+      createElement('label', { htmlFor: props.id, style: LABEL_STYLE }, props.label),
+      createElement('p', { style: HINT_STYLE }, props.hint),
+    ),
+    createElement('input', {
+      id: props.id,
+      type: 'checkbox',
+      checked: props.checked,
+      disabled: props.disabled,
+      style: SWITCH_STYLE,
+      onChange: (event: ChangeEvent<HTMLInputElement>) => { props.onToggle(event.currentTarget.checked) },
+    }),
+  )
+}
+
+/**
  * The settings card body. `scope` is optional on purpose: the inject factory
  * always provides it, but a host whose `configForms` face degrades must not
  * crash the settings page — the card renders the unavailable note and keeps
@@ -141,7 +174,9 @@ export function BriefSettingsCard(props: BriefSettingsCardProps): ReactNode {
   )
   const unavailable = scope === undefined || snapshot.status === 'unavailable'
   const readonly = unavailable || !snapshot.writable
-  const checked = snapshot.value?.showMemorySlots !== false
+  // Defaults come from the same resolvers the sections use — one source of truth.
+  const slotsChecked = resolveShowMemorySlots(snapshot)
+  const recallChecked = resolveShowMemoryRecall(snapshot)
 
   return createElement(
     'div',
@@ -175,22 +210,24 @@ export function BriefSettingsCard(props: BriefSettingsCardProps): ReactNode {
         ? createElement('p', { style: HINT_STYLE }, t('settings.unavailable'))
         : createElement(
           'div',
-          { style: ROW_STYLE },
-          createElement(
-            'div',
-            { style: ROW_TEXT_STYLE },
-            createElement('label', { htmlFor: 'dsh-brief-sidebar-show-memory-slots', style: LABEL_STYLE }, t('settings.memorySlots')),
-            createElement('p', { style: HINT_STYLE }, t('settings.memorySlotsHint')),
-          ),
-          createElement('input', {
-            id: 'dsh-brief-sidebar-show-memory-slots',
-            type: 'checkbox',
-            checked,
+          { style: { display: 'flex', flexDirection: 'column', gap: 12 } },
+          createElement(FlagRow, {
+            key: 'recall',
+            id: 'dsh-brief-sidebar-show-memory-recall',
+            label: t('settings.memoryRecall'),
+            hint: t('settings.memoryRecallHint'),
+            checked: recallChecked,
             disabled: readonly,
-            style: SWITCH_STYLE,
-            onChange: (event: ChangeEvent<HTMLInputElement>) => {
-              void scope?.set('showMemorySlots', event.currentTarget.checked)
-            },
+            onToggle: (next: boolean) => { void scope?.set('showMemoryRecall', next) },
+          }),
+          createElement(FlagRow, {
+            key: 'slots',
+            id: 'dsh-brief-sidebar-show-memory-slots',
+            label: t('settings.memorySlots'),
+            hint: t('settings.memorySlotsHint'),
+            checked: slotsChecked,
+            disabled: readonly,
+            onToggle: (next: boolean) => { void scope?.set('showMemorySlots', next) },
           }),
         ),
       !unavailable && !snapshot.writable && createElement('p', { style: HINT_STYLE }, t('settings.readonly')),

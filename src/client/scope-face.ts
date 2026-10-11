@@ -40,17 +40,24 @@ export interface ConfigFormsLike {
  * the full surface.
  */
 export interface BriefClientConfig {
-  /** Whether the summary tab renders the memory-slots section (default: on). */
+  /** Whether the summary tab renders the memory-slots section (default: off). */
   showMemorySlots?: boolean
+  /** Whether the summary tab renders the session-recall section (default: on). */
+  showMemoryRecall?: boolean
 }
 
 /**
- * The switch's default. Applies wherever the config face cannot answer:
- * `configForms` absent, the scope not `ready`, or the field unset. The
- * section still only appears when the `memorySlots` projection exists, so
- * "default on" cannot paint anything on a host without prime-memory.
+ * The slots switch's default. Flipped to OFF alongside prime-memory's
+ * `memoryRecall` projection: a hand-pinned resident convention is a real
+ * feature, but listing it as a permanent card in the summary pane taught
+ * users to read "memory" as "resident", which is the opposite of how recall
+ * works. The section still only appears when the `memorySlots` projection
+ * exists, and stays one click away for anyone who wants it back.
  */
-export const DEFAULT_SHOW_MEMORY_SLOTS = true
+export const DEFAULT_SHOW_MEMORY_SLOTS = false
+
+/** The session-recall switch's default (on: it is the honest memory view). */
+export const DEFAULT_SHOW_MEMORY_RECALL = true
 
 /**
  * Resolve the switch from one snapshot (pure; testable). Any
@@ -61,5 +68,17 @@ export function resolveShowMemorySlots(
   snapshot: SettingsScopeSnapshot<BriefClientConfig> | undefined,
 ): boolean {
   if (snapshot === undefined || snapshot.status !== 'ready') return DEFAULT_SHOW_MEMORY_SLOTS
-  return snapshot.value?.showMemorySlots !== false
+  return snapshot.value?.showMemorySlots === true
+}
+
+/**
+ * Resolve the session-recall switch from one snapshot (pure; testable).
+ * Any cannot-answer shape falls back to {@link DEFAULT_SHOW_MEMORY_RECALL};
+ * an explicit `false` is the only off.
+ */
+export function resolveShowMemoryRecall(
+  snapshot: SettingsScopeSnapshot<BriefClientConfig> | undefined,
+): boolean {
+  if (snapshot === undefined || snapshot.status !== 'ready') return DEFAULT_SHOW_MEMORY_RECALL
+  return snapshot.value?.showMemoryRecall !== false
 }
