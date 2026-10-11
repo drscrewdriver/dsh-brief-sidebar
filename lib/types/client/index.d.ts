@@ -6,6 +6,12 @@ import type { Context } from '@deepseek-ai/cordis';
  */
 export declare const TAB_ID = "dsh-brief-sidebar:board";
 /**
+ * Tab kind on the native host-sidebar path (`openTab`/guide dispatch key).
+ * Only the native registration uses it; better-sidebar keeps addressing the
+ * tab by {@link TAB_ID}.
+ */
+export declare const TAB_KIND = "brief-board";
+/**
  * Position in the host's new-tab guide.
  *
  * Built-ins on this host generation sit at editor 10 / git 20 / subagent 30 /

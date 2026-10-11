@@ -11,12 +11,8 @@ export interface MemorySlotsSectionProps {
     };
 }
 /**
- * Subscribe to this plugin's entry config and resolve the section switch.
- *
- * The scope is resolved defensively (a host without `configForms` degrades to
- * the default instead of throwing inside a render) and subscribed with
- * `useSyncExternalStore`, so flipping the switch in settings updates the open
- * tab without a reload.
+ * Subscribe to this plugin's entry config and resolve the slots switch.
+ * Plumbing lives in `use-config-flag`; the default (off) lives in the resolver.
  *
  * @param ctx - the client root context handed to the tab body.
  * @returns whether the memory-slots section may render at all.

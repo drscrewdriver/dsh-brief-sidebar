@@ -42,10 +42,15 @@ export declare const zh: {
     'slots.status.done': string;
     'slots.status.dropped': string;
     'slots.status.expired': string;
+    'section.memoryRecall': string;
+    'recall.empty': string;
+    'recall.count': string;
     'settings.title': string;
     'settings.desc': string;
     'settings.memorySlots': string;
     'settings.memorySlotsHint': string;
+    'settings.memoryRecall': string;
+    'settings.memoryRecallHint': string;
     'settings.unavailable': string;
     'settings.readonly': string;
 };
