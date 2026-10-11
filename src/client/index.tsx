@@ -7,10 +7,14 @@
  * 1. **Dictionaries first.** Every later registration can render translated
  *    copy, and a dictionary that lands after the first paint would show raw
  *    keys for a frame.
- * 2. **Soft-dependency check.** `inject` already waits for `betterSidebar`, so
- *    the guard only fires in a composition that relaxes the inject list. It is
- *    kept because it is what stops the plugin from hiding the official panel
- *    when it has no board to replace it with.
+ * 2. **Sidebar surface, deferred.** The board needs a sidebar to live in:
+ *    better-sidebar when it is installed (richer: badge + rail icon), else the
+ *    host's own right-sidebar tab system (0.1.5+ `sidebarRightTabs` +
+ *    `sidebar.right.pane.tab`). Both are acquired through the deferred
+ *    `ctx.inject` because neither service is ordered against this apply —
+ *    an immediate `ctx.get` was the 0.1.2 inert bug. With neither — ≤0.1.2
+ *    hosts without better-sidebar — the plugin stays sidebar-inert: the
+ *    official panel keeps rendering and the shadow never installs.
  * 3. **Shadow the official dock.** Deliberately BEFORE the tab registration:
  *    the panel is the only other carrier of the list, so the replacement has to
  *    exist in the same activation.
@@ -42,6 +46,8 @@ import { createElement } from 'react'
 import type { ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import type { BetterSidebarService, TabComponentProps } from 'dsh-better-sidebar/client/service'
+import { registerNativeBoardTab } from './native-sidebar'
+import type { NativeTabRegistryLike } from './native-sidebar'
 import { SummaryTab } from './SummaryTab'
 import { BriefIcon } from './BriefIcon'
 import { NS, dictionaries } from './locales'
@@ -60,6 +66,13 @@ import type { BriefClientConfig, ConfigFormsLike } from './scope-face'
  * in place, so an opened or pinned tab survives the upgrade.
  */
 export const TAB_ID = 'dsh-brief-sidebar:board'
+
+/**
+ * Tab kind on the native host-sidebar path (`openTab`/guide dispatch key).
+ * Only the native registration uses it; better-sidebar keeps addressing the
+ * tab by {@link TAB_ID}.
+ */
+export const TAB_KIND = 'brief-board'
 
 /**
  * Position in the host's new-tab guide.
@@ -95,6 +108,24 @@ interface LocaleLike {
  */
 const NOOP = (): void => {}
 
+/** Console prefix for the environment probe and registration attribution. */
+const LOG = '[dsh-brief-sidebar]'
+
+/**
+ * Run a registration thunk, attributing a thrown failure to the console
+ * instead of the cordis effect void (a bare throw inside `ctx.effect` leaves
+ * the field reader with an empty sidebar and no clue which arm died).
+ */
+function guarded(label: string, run: () => (() => void) | undefined | void): () => void {
+  try {
+    const dispose = run()
+    return typeof dispose === 'function' ? (dispose as () => void) : NOOP
+  } catch (error) {
+    console.error(`${LOG} ${label} failed`, error)
+    return NOOP
+  }
+}
+
 /**
  * Browser-face apply.
  *
@@ -122,18 +153,49 @@ export function apply(ctx: Context): void {
     }
   }
 
-  // 2. Soft dependency: without better-sidebar there is no place to show the
-  //    list, so the plugin stays inert and the official panel keeps rendering.
-  const bar: BetterSidebarService | undefined = ctx.get('betterSidebar')
-  if (bar === undefined) return
+  // 2. Sidebar surface, acquired DEFERRED. better-sidebar is a third-party
+  //    plugin with no ordering guarantee against us, and the native tab
+  //    registry is a host service that can publish after this apply too — an
+  //    immediate `ctx.get` misses either one and stays inert forever (the
+  //    0.1.2 field failure). Both arms ride the deferred optional
+  //    `ctx.inject` (the browser-cdp / configForms precedent). The host
+  //    registry usually wins the race on 0.1.5+ (it publishes before the
+  //    third-party sidebar), so the state is NOT a one-shot latch: when
+  //    better-sidebar arrives after a native seat, it HANDS OVER — the
+  //    native registration is released and the board re-seats on the bar,
+  //    which is the rail and manager the user actually sees (the 0.1.5
+  //    "invisible tab" failure was a native seat under a sidebar UI that
+  //    replaced the official rail). On a bare native host (0.1.7 farm cell)
+  //    no handover ever fires.
+  let surface: 'none' | 'bar' | 'native' = 'none'
+  let shadowDone = false
+  let nativeDisposer: (() => void) | undefined
 
-  // 3. Hide the official composer-band panel (reversible on unload).
-  ctx.effect(() => registerTodoDockShadow(ctx) ?? NOOP, 'dsh-brief-sidebar: dock shadow')
+  /** Hide the official composer-band panel (reversible on unload), once. */
+  const shadowDock = (): void => {
+    if (shadowDone) return
+    shadowDone = true
+    ctx.effect(() => registerTodoDockShadow(ctx) ?? NOOP, 'dsh-brief-sidebar: dock shadow')
+  }
 
-  // 4. The board.
-  ctx.effect(
-    () =>
-      bar.registerTab({
+  const registerOnBar = (bar: BetterSidebarService): void => {
+    if (surface === 'bar') return
+    if (surface === 'native') {
+      const release = nativeDisposer
+      nativeDisposer = undefined
+      try {
+        release?.()
+      } catch { /* a half-torn-down native seat must not block the handover */ }
+      console.info(`${LOG} surface=bar (handed over from native)`)
+    } else {
+      console.info(`${LOG} surface=bar`)
+    }
+    surface = 'bar'
+    shadowDock()
+    ctx.effect(
+      () =>
+        guarded('registerTab', () =>
+          bar.registerTab({
         id: TAB_ID,
         title: () => t('tab.title'),
         description: () => t('tab.desc'),
@@ -159,9 +221,54 @@ export function apply(ctx: Context): void {
             scope: props.scope,
             visible: props.visible,
           }),
-      }),
+          }),
+        ),
     'dsh-brief-sidebar: tab',
   )
+  }
+
+  const registerOnNative = (registry: NativeTabRegistryLike | undefined): void => {
+    if (surface !== 'none') return
+    surface = 'native'
+    console.info(`${LOG} surface=native`)
+    shadowDock()
+    ctx.effect(
+      () => {
+        nativeDisposer = guarded('native tab', () => registerNativeBoardTab(ctx, registry, { id: TAB_ID, kind: TAB_KIND, order: TAB_ORDER, t }))
+        return () => {
+          nativeDisposer = undefined
+        }
+      },
+      'dsh-brief-sidebar: native tab',
+    )
+  }
+
+  // Arm 1: better-sidebar, immediate read first (the common case where the
+  // sidebar started before us), deferred retry otherwise.
+  let bar: BetterSidebarService | undefined
+  try {
+    bar = ctx.get('betterSidebar')
+  } catch {
+    bar = undefined
+  }
+  if (bar !== undefined) {
+    registerOnBar(bar)
+  } else {
+    ;(ctx as unknown as {
+      inject: (deps: string[], cb: (scope: { betterSidebar?: BetterSidebarService }) => void) => void
+    }).inject(['betterSidebar'], (scope) => {
+      if (scope.betterSidebar !== undefined) registerOnBar(scope.betterSidebar)
+    })
+  }
+
+  // Arm 2: the host's own tab registry (0.1.5+). Never fires on ≤0.1.2. The
+  // registry is read from the INJECTED scope — a root ctx.get of this
+  // undeclared service is denied by the strict proxy (the 0.1.7 silent no-op).
+  ;(ctx as unknown as {
+    inject: (deps: string[], cb: (scope: { sidebarRightTabs?: NativeTabRegistryLike }) => void) => void
+  }).inject(['sidebarRightTabs'], (scope) => {
+    registerOnNative(scope.sidebarRightTabs)
+  })
 
   // 5. The settings cards (see the module doc): ONE component + ONE inject
   //    factory at TWO seats. The entry ids follow the family convention —
@@ -208,4 +315,21 @@ export function apply(ctx: Context): void {
       ),
     )
   })
+
+  // One-line environment snapshot: what this apply could see at mount time.
+  // Cross-reference with the `surface=` line to tell "arm never fired" from
+  // "arm fired and registration threw" (guarded logs that part).
+  try {
+    let nativeTabsAtApply = false
+    try {
+      nativeTabsAtApply = ctx.get('sidebarRightTabs') !== undefined
+    } catch {
+      nativeTabsAtApply = false /* strict proxy denies the undeclared read */
+    }
+    console.info(`${LOG} env ${JSON.stringify({
+      locale: locale !== undefined,
+      barAtApply: bar !== undefined,
+      nativeTabsAtApply,
+    })}`)
+  } catch { /* console may be absent in a stripped host */ }
 }
