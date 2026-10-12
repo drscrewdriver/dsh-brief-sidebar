@@ -375,7 +375,7 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
   // Rows the human just marked obsolete in THIS view. prime-memory's `retired`
   // covers the ones retired earlier; these two sets union into "draw a strike".
   const [staleIds, setStaleIds] = useState<readonly string[]>([])
-  const [hover, setHover] = useState<{ id: string; top: number; left: number } | undefined>(undefined)
+  const [hover, setHover] = useState<{ id: string; top: number; left: number; right: number } | undefined>(undefined)
   const pendingHover = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [pendingId, setPendingId] = useState<string | undefined>(undefined)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -438,7 +438,9 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
     const rect = el.getBoundingClientRect()
     pendingHover.current = setTimeout(() => {
       pendingHover.current = null
-      setHover({ id, top: rect.top, left: rect.left })
+      // The whole rect travels, not just its origin: `bubblePos` needs the row's
+      // RIGHT edge to place the box outside the sidebar instead of on top of it.
+      setHover({ id, top: rect.top, left: rect.left, right: rect.right })
     }, HOVER_DELAY_MS)
   }, [])
 

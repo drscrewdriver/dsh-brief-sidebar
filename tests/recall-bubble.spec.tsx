@@ -16,29 +16,44 @@ import { zh } from '../src/client/locales'
 const t = (key: string): string => (zh as Record<string, string>)[key] ?? key
 
 describe('bubblePos', () => {
-  it('pushes the box back inside a right edge it would overflow', () => {
-    // Row at the far right of a 1900px window: left + 8 + 360 would spill over.
-    const p = bubblePos({ top: 300, left: 1700 }, 1900, 1000)
-    expect(p.left).toBe(1900 - 360 - 8)
-    expect(p.left + 360).toBeLessThanOrEqual(1900 - 8)
+  const W = 360
+  const H = 220
+
+  it('opens to the LEFT of the row, leaving the list and its rating strip uncovered', () => {
+    // A right-docked sidebar: the row spans 1550..1880 in a 1900px window.
+    const row = { top: 300, left: 1550, right: 1880 }
+    const p = bubblePos(row, 1900, 1000)
+    expect(p.left).toBe(1550 - W - 8)
+    // The whole box must sit strictly left of the row — that is the fix: the
+    // old placement landed on the row and hid the -1..5 strip under it.
+    expect(p.left + W).toBeLessThanOrEqual(row.left)
+  })
+
+  it('falls back to the right when there is no room on the left', () => {
+    // Row glued to the window's left edge (a left-docked panel, or a wide sidebar).
+    const p = bubblePos({ top: 200, left: 100, right: 400 }, 1900, 1000)
+    expect(p.left).toBe(400 + 8)
+    expect(p.left + W).toBeLessThanOrEqual(1900 - 8)
+  })
+
+  it('a viewport too narrow on both sides still keeps the box inside, never negative', () => {
+    const p = bubblePos({ top: 100, left: 100, right: 200 }, 380, 300)
+    expect(p.left).toBe(8)
+    expect(p.top).toBeGreaterThanOrEqual(8)
+    expect(bubblePos({ top: -500, left: -500, right: -400 }, 1400, 900)).toEqual({ top: 8, left: 8 })
   })
 
   it('lifts the box when it would run past the bottom edge', () => {
-    const p = bubblePos({ top: 900, left: 40 }, 1000, 1000)
-    expect(p.top).toBe(1000 - 220 - 8)
-    expect(p.top + 220).toBeLessThanOrEqual(1000 - 8)
+    const p = bubblePos({ top: 900, left: 1500, right: 1800 }, 1900, 1000)
+    expect(p.top).toBe(1000 - H - 8)
+    expect(p.top + H).toBeLessThanOrEqual(1000 - 8)
   })
 
-  it('never goes negative, however far off-screen the anchor is', () => {
-    expect(bubblePos({ top: -500, left: -500 }, 1000, 1000)).toEqual({ top: 8, left: 8 })
-    // A viewport smaller than the box: the gutter still wins over a negative origin.
-    const tiny = bubblePos({ top: 100, left: 100 }, 200, 200)
-    expect(tiny.top).toBe(8)
-    expect(tiny.left).toBe(8)
-  })
-
-  it('leaves a comfortably placed box where the anchor put it', () => {
-    expect(bubblePos({ top: 200, left: 300 }, 1400, 900)).toEqual({ top: 200, left: 308 })
+  it('a rect without a right edge degrades to anchoring off its left', () => {
+    // Callers may hand over only the origin; nothing may come out NaN.
+    const p = bubblePos({ top: 200, left: 1550 }, 1900, 1000)
+    expect(p.left).toBe(1550 - W - 8)
+    expect(Number.isNaN(p.left)).toBe(false)
   })
 })
 
