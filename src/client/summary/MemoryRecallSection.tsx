@@ -233,6 +233,13 @@ const ERROR_STYLE: CSSProperties = {
  *
  * Exported for tests — the section itself only mounts it for the selected row,
  * and a static render never has one selected.
+ *
+ * **Every click here must stop propagating.** The strip lives INSIDE the row,
+ * and the row's own `onClick` toggles the selection — so an un-stopped click
+ * deselects the row, this strip unmounts mid-gesture, and the `-1` button's
+ * armed "确认退场？" state is rendered on a node that is already gone. That is
+ * the whole "按了没反应、也没有删除线" report: the request was never sent, the
+ * confirmation was never shown, the control simply vanished on the first press.
  * @param props - labels, current mark, and the click handlers.
  */
 export function RatingStrip(props: {
@@ -245,9 +252,16 @@ export function RatingStrip(props: {
   onScore(score: FeedbackScore): void
 }): ReactNode {
   const { current, pending, armed } = props
+  // Clicks landing on the strip's gaps/padding count too: anything inside here
+  // belongs to the strip, not to the row beneath it.
+  const swallow = (e: { stopPropagation(): void }): void => { e.stopPropagation() }
   return createElement(
     'div',
-    { style: STRIP_STYLE, 'data-dsh-brief-sidebar': 'recall-rating-strip' },
+    {
+      style: STRIP_STYLE,
+      onClick: swallow,
+      'data-dsh-brief-sidebar': 'recall-rating-strip',
+    },
     createElement(
       'button',
       {
@@ -256,7 +270,10 @@ export function RatingStrip(props: {
         disabled: pending,
         // Before arming the tooltip explains the consequence; after, it asks.
         title: armed ? props.confirmLabel : props.whyLabel,
-        onClick: () => { props.onScore(-1) },
+        onClick: (e: { stopPropagation(): void }) => {
+          e.stopPropagation()
+          props.onScore(-1)
+        },
       },
       armed ? props.confirmLabel : props.obsoleteLabel,
     ),
@@ -268,7 +285,10 @@ export function RatingStrip(props: {
         style: current === score ? SCORE_ACTIVE_STYLE : SCORE_BUTTON_STYLE,
         disabled: pending,
         'aria-pressed': current === score,
-        onClick: () => { props.onScore(score) },
+        onClick: (e: { stopPropagation(): void }) => {
+          e.stopPropagation()
+          props.onScore(score)
+        },
       },
       String(score),
     )),
