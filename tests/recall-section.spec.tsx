@@ -179,10 +179,13 @@ describe('MemoryRecallSection rendering', () => {
     expect(markup).toContain(zh['recall.count'].replace('{count}', '2'))
   })
 
-  it('paints the scenario line and keeps it on the tooltip too', () => {
+  it('场景行直接渲染，且行上不再挂原生 title（全文归泡泡）', () => {
     const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }))
     expect(markup).toContain('push 之前')
-    expect(markup).toContain('推送前 3 秒自检 — push 之前')
+    // 原生 `title` 会多出一个不受皮肤契约管的深色提示框，与泡泡内容重叠还盖住它。
+    // 只钉行标题这一处（打分条上的说明性 tooltip 仍合法）。
+    expect(markup).not.toContain(`title="${ITEM.title}`)
+    expect(markup).not.toContain('推送前 3 秒自检 — push 之前')
   })
 
   it('is read-only until asked: no button and no slot affordance in the plain render', () => {

@@ -347,7 +347,9 @@ function RecallRow(props: {
       { style: { minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 } },
       createElement(
         'span',
-        { style: titleStyle, title: scenario === undefined ? item.title : `${item.title} — ${scenario}` },
+        // 不给原生 `title`：那会在泡泡之外再多一个宿主自己的深色提示框，两者内容重叠、
+        // 样式不受皮肤契约管，反而把泡泡遮住。全文与使用场景现在都由 `RecallBubble` 承载。
+        { style: titleStyle },
         item.title,
       ),
       scenario !== undefined && createElement(

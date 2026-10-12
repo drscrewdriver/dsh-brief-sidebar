@@ -21,6 +21,13 @@ export interface MemoryRecallSectionProps {
  *
  * Exported for tests — the section itself only mounts it for the selected row,
  * and a static render never has one selected.
+ *
+ * **Every click here must stop propagating.** The strip lives INSIDE the row,
+ * and the row's own `onClick` toggles the selection — so an un-stopped click
+ * deselects the row, this strip unmounts mid-gesture, and the `-1` button's
+ * armed "确认退场？" state is rendered on a node that is already gone. That is
+ * the whole "按了没反应、也没有删除线" report: the request was never sent, the
+ * confirmation was never shown, the control simply vanished on the first press.
  * @param props - labels, current mark, and the click handlers.
  */
 export declare function RatingStrip(props: {
