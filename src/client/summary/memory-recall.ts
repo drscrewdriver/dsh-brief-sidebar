@@ -28,6 +28,13 @@ export interface MemoryRecallItem {
   readonly priority: number
   /** "When should this surface" phrases, once prime-memory exposes them. */
   readonly scenario?: readonly string[]
+  /**
+   * The last mark a HUMAN put on this record: `-1` (declared obsolete) or
+   * `0..5` (relevance). Absent means never rated — which is NOT the same as
+   * a zero. prime-memory publishes it on the `memoryRecall` view so the row
+   * can show the existing mark without a second round-trip.
+   */
+  readonly rating?: number
 }
 
 /** The whole wire view of one frame. */
@@ -62,6 +69,10 @@ function readItem(value: unknown): MemoryRecallItem | undefined {
     const phrases = raw['scenario'].filter((s): s is string => typeof s === 'string' && s.length > 0)
     if (phrases.length > 0) item.scenario = phrases
   }
+  // A drifted rating (non-number, or outside the -1..5 domain) is dropped
+  // rather than trusted: the row then simply looks unrated.
+  const rating = raw['rating']
+  if (typeof rating === 'number' && Number.isInteger(rating) && rating >= -1 && rating <= 5) item.rating = rating
   return item
 }
 

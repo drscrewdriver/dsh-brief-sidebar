@@ -12,11 +12,12 @@
  */
 import { describe, expect, it } from 'vitest'
 import { createElement } from 'react'
+import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { Context } from '@deepseek-ai/cordis'
 import { readRecall } from '../src/client/summary/memory-recall'
 import { MEMORY_RECALL_KEY } from '../src/client/summary/memory-recall'
-import { MemoryRecallSection } from '../src/client/summary/MemoryRecallSection'
+import { MemoryRecallSection, RatingStrip } from '../src/client/summary/MemoryRecallSection'
 import { SummaryTab } from '../src/client/SummaryTab'
 import { DELIVERABLES_KEY } from '../src/projection/keys'
 import { zh } from '../src/client/locales'
@@ -161,10 +162,56 @@ describe('MemoryRecallSection rendering', () => {
     expect(markup).toContain('推送前 3 秒自检 — push 之前')
   })
 
-  it('is read-only: no pin/activate affordance leaks into the section', () => {
+  it('is read-only until asked: no button and no slot affordance in the plain render', () => {
+    // The rating strip is mounted only for the selected row, so a static render
+    // (nothing selected) must look exactly like the read-only list it used to be.
     const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }))
     expect(markup).not.toContain('<button')
     expect(markup).not.toContain('checkbox')
+    // Pin/activate is the SLOTS vocabulary; recall must never borrow it.
+    expect(markup).not.toContain('钉住')
+    expect(markup).not.toContain('激活')
+  })
+
+  it('offers the rating hint when a session is bound, and hides it when not', () => {
+    expect(renderSection(ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }))).toContain(zh['recall.rateHint'])
+    const orphan = renderToStaticMarkup(createElement(MemoryRecallSection, { t, ctx: ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }), scope: {} }))
+    expect(orphan).not.toContain(zh['recall.rateHint'])
+  })
+
+  it('shows the mark a human already put, and never invents one', () => {
+    const rated = {
+      rev: 1,
+      sessionId: SESSION,
+      count: 2,
+      items: [
+        { ...ITEM, rating: 4 },
+        { id: 'm3', type: 'work_fact', title: '已判过时的条目', priority: 70, rating: -1 },
+      ],
+    }
+    const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: rated }))
+    expect(markup).toContain(zh['recall.rated'].replace('{count}', '4'))
+    expect(markup).toContain(zh['recall.obsoleted'])
+    // The unrated render must not show any mark text at all.
+    const plain = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }))
+    expect(plain).not.toContain(zh['recall.rated'].replace('{count}', '0'))
+    expect(plain).not.toContain(zh['recall.obsoleted'])
+  })
+
+  it('readRecall drops a rating outside the -1..5 domain instead of trusting it', () => {
+    const view = readRecall({
+      rev: 1,
+      sessionId: SESSION,
+      count: 3,
+      items: [
+        { ...ITEM, rating: 9 },
+        { ...ITEM, id: 'm2', rating: 'high' },
+        { ...ITEM, id: 'm3', rating: 3 },
+      ],
+    })
+    expect(view?.items[0]?.rating).toBeUndefined()
+    expect(view?.items[1]?.rating).toBeUndefined()
+    expect(view?.items[2]?.rating).toBe(3)
   })
 })
 
@@ -196,5 +243,40 @@ describe('summary tab composition', () => {
     const slots = markup.indexOf('data-dsh-brief-sidebar="memory-slots-section"')
     expect(recall).toBeGreaterThan(-1)
     expect(slots).toBeGreaterThan(recall)
+  })
+})
+
+describe('RatingStrip (the control a selected row gets)', () => {
+  const strip = (over: Partial<ComponentProps<typeof RatingStrip>> = {}): string =>
+    renderToStaticMarkup(createElement(RatingStrip, {
+      current: undefined,
+      pending: false,
+      armed: false,
+      obsoleteLabel: zh['recall.obsolete'],
+      confirmLabel: zh['recall.obsoleteConfirm'],
+      onScore: () => {},
+      ...over,
+    } as ComponentProps<typeof RatingStrip>))
+
+  it('offers -1 plus 0..5, seven controls, no more and no less', () => {
+    const markup = strip()
+    expect(markup.match(/<button/g)).toHaveLength(7)
+    for (const n of ['0', '1', '2', '3', '4', '5']) expect(markup).toContain(`>${n}</button>`)
+    expect(markup).toContain(zh['recall.obsolete'])
+  })
+
+  it('the destructive one is two-step: armed swaps the label to a confirm', () => {
+    expect(strip()).not.toContain(zh['recall.obsoleteConfirm'])
+    expect(strip({ armed: true })).toContain(zh['recall.obsoleteConfirm'])
+  })
+
+  it('the current mark comes back pressed; -1 never looks like a score of zero', () => {
+    expect(strip({ current: 3 })).toContain('aria-pressed="true"')
+    expect(strip({ current: 0 })).toContain('aria-pressed="true"')
+    expect(strip()).not.toContain('aria-pressed="true"')
+  })
+
+  it('a pending write disables every control (no double-submit on one row)', () => {
+    expect(strip({ pending: true }).match(/disabled=""/g)).toHaveLength(7)
   })
 })
