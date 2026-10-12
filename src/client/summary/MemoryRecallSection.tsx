@@ -28,17 +28,24 @@
  *   delete, restorable from its panel) and tells the model next turn. That is
  *   why it takes a second confirming click and says so on the button.
  *
+ * A retired row does NOT leave this list. Its text is still in the model's
+ * context until compaction, so hiding it would misreport what the model sees;
+ * the row stays, struck through and unselectable, until the context actually
+ * drops it. Hovering a row opens one bubble with the whole body (`RecallBubble`)
+ * — the row itself is clamped to two lines and the sidebar is narrow.
+ *
  * Colours come from `--dsw-alias-*` tokens only (skin contract, enforced by
  * `tests/purity.spec.ts`).
  */
 import { createElement } from 'react'
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import { MEMORY_RECALL_KEY, readRecall } from './memory-recall'
 import type { MemoryRecallItem, MemoryRecallView } from './memory-recall'
 import { FEEDBACK_SCORES, sendRecallFeedback } from './recall-feedback'
 import type { FeedbackFetch, FeedbackScore } from './recall-feedback'
+import { RecallBubble, bubblePos } from './RecallBubble'
 import { resolveShowMemoryRecall } from '../scope-face'
 import { useConfigFlag } from './use-config-flag'
 import { useProjectionValue } from '../use-projection'
@@ -112,8 +119,24 @@ const TYPE_STYLE: CSSProperties = {
 
 const TITLE_STYLE: CSSProperties = {
   minWidth: 0,
-  overflowWrap: 'anywhere',
   color: 'var(--dsw-alias-label-secondary)',
+  // Two lines, always the same height whatever the body says — the row keeps
+  // its shape and the whole text rides the hover bubble instead.
+  display: '-webkit-box',
+  WebkitLineClamp: 2,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+  fontSize: 12,
+  lineHeight: '17px',
+}
+
+/**
+ * Struck-through text for a retired row. Colour drops to tertiary because a
+ * dead entry must not compete with a live one for the eye.
+ */
+const STRIKE_STYLE: CSSProperties = {
+  textDecoration: 'line-through',
+  color: 'var(--dsw-alias-label-tertiary)',
 }
 
 const SCENARIO_STYLE: CSSProperties = {
@@ -218,6 +241,7 @@ export function RatingStrip(props: {
   armed: boolean
   obsoleteLabel: string
   confirmLabel: string
+  whyLabel: string
   onScore(score: FeedbackScore): void
 }): ReactNode {
   const { current, pending, armed } = props
@@ -230,9 +254,8 @@ export function RatingStrip(props: {
         type: 'button',
         style: armed ? OBSOLETE_ARMED_STYLE : OBSOLETE_BUTTON_STYLE,
         disabled: pending,
-        // The tooltip escalates with the button, so "confirm" is never visible
-        // before the first click actually armed it.
-        title: armed ? props.confirmLabel : props.obsoleteLabel,
+        // Before arming the tooltip explains the consequence; after, it asks.
+        title: armed ? props.confirmLabel : props.whyLabel,
         onClick: () => { props.onScore(-1) },
       },
       armed ? props.confirmLabel : props.obsoleteLabel,
@@ -253,13 +276,16 @@ export function RatingStrip(props: {
 }
 
 /**
- * One recalled memory: type pill, first line of the body (full text and the
- * "when should this surface" phrases ride the tooltip), its own priority, and —
- * once selected — the rating strip.
+ * One recalled memory: type pill, first two lines of the body, its own
+ * priority, and — once selected and still alive — the rating strip. Hovering
+ * opens the bubble with the whole text; a retired row is struck through and
+ * cannot be selected (there is nothing left to mark on a record prime-memory
+ * has already retired).
  */
 function RecallRow(props: {
   item: MemoryRecallItem
   selected: boolean
+  stale: boolean
   pending: boolean
   armed: boolean
   mark: number | undefined
@@ -268,19 +294,32 @@ function RecallRow(props: {
   t: (key: string) => string
   onSelect(): void
   onScore(score: FeedbackScore): void
+  onEnter(el: HTMLElement): void
+  onLeave(): void
 }): ReactNode {
-  const { item, selected, mark, error, t } = props
+  const { item, selected, stale, mark, error, t } = props
   const scenario = item.scenario === undefined ? undefined : item.scenario.join(' · ')
   const markText = mark === undefined
     ? undefined
     : mark === -1
       ? t('recall.obsoleted')
       : expandCount(t('recall.rated'), mark)
+  // A row prime-memory already retired but the human did not mark in this view
+  // still needs the caption; when `mark === -1` the line above says the same
+  // thing, so the two are mutually exclusive rather than doubled.
+  const staleText = stale && mark !== -1 ? t('recall.obsoleted') : undefined
+  const selectable = props.rating && !stale
+  const titleStyle = stale ? { ...TITLE_STYLE, ...STRIKE_STYLE } : TITLE_STYLE
   return createElement(
     'li',
     {
       style: selected && props.rating ? ROW_SELECTED_STYLE : ROW_STYLE,
-      onClick: props.rating ? props.onSelect : undefined,
+      onClick: selectable ? props.onSelect : undefined,
+      onMouseEnter: (e: { currentTarget: unknown }) => {
+        const el = e.currentTarget
+        if (el instanceof HTMLElement) props.onEnter(el)
+      },
+      onMouseLeave: () => { props.onLeave() },
     },
     createElement('span', { style: TYPE_STYLE }, item.type),
     createElement(
@@ -288,22 +327,28 @@ function RecallRow(props: {
       { style: { minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 } },
       createElement(
         'span',
-        { style: TITLE_STYLE, title: scenario === undefined ? item.title : `${item.title} — ${scenario}` },
+        { style: titleStyle, title: scenario === undefined ? item.title : `${item.title} — ${scenario}` },
         item.title,
       ),
-      scenario !== undefined && createElement('p', { style: SCENARIO_STYLE }, scenario),
+      scenario !== undefined && createElement(
+        'p',
+        { style: stale ? { ...SCENARIO_STYLE, ...STRIKE_STYLE } : SCENARIO_STYLE },
+        scenario,
+      ),
+      staleText !== undefined && createElement('span', { style: MARK_STYLE }, staleText),
       markText !== undefined && createElement('span', { style: MARK_STYLE }, markText),
       error !== undefined && createElement(
         'span',
         { style: ERROR_STYLE },
         `${t('recall.failed')}${error}`,
       ),
-      selected && props.rating && createElement(RatingStrip, {
+      selected && !stale && props.rating && createElement(RatingStrip, {
         current: mark,
         pending: props.pending,
         armed: props.armed,
         obsoleteLabel: t('recall.obsolete'),
         confirmLabel: t('recall.obsoleteConfirm'),
+        whyLabel: t('recall.obsoleteWhy'),
         onScore: props.onScore,
       }),
     ),
@@ -313,6 +358,9 @@ function RecallRow(props: {
 
 /** How long the `-1` button stays armed before reverting to its plain label. */
 const ARM_WINDOW_MS = 5_000
+
+/** Delay before a hover opens its bubble (ms) — swiping past rows must not paint. */
+const HOVER_DELAY_MS = 150
 
 /**
  * The session-recall section. All hooks run unconditionally (a conditional hook
@@ -324,7 +372,11 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
   const { t, ctx, scope } = props
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined)
   const [marks, setMarks] = useState<Record<string, number>>({})
-  const [hidden, setHidden] = useState<readonly string[]>([])
+  // Rows the human just marked obsolete in THIS view. prime-memory's `retired`
+  // covers the ones retired earlier; these two sets union into "draw a strike".
+  const [staleIds, setStaleIds] = useState<readonly string[]>([])
+  const [hover, setHover] = useState<{ id: string; top: number; left: number } | undefined>(undefined)
+  const pendingHover = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [pendingId, setPendingId] = useState<string | undefined>(undefined)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [armed, setArmed] = useState(false)
@@ -362,7 +414,8 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
           delete next[id]
           return next
         })
-        if (outcome.retired) setHidden(current => (current.includes(id) ? current : [...current, id]))
+        if (score === -1) setStaleIds(current => (current.includes(id) ? current : [...current, id]))
+        setHover(undefined)
         if (score !== -1) setSelectedId(undefined)
       } else if (outcome.status === 'absent') {
         setWriteAbsent(true)
@@ -378,15 +431,42 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
     setSelectedId(current => (current === id ? undefined : id))
   }, [])
 
+  // One bubble at a time, and it opens on a delay: sweeping the mouse down the
+  // list must not paint a bubble for every row it passes.
+  const onEnter = useCallback((id: string, el: HTMLElement): void => {
+    if (pendingHover.current !== null) clearTimeout(pendingHover.current)
+    const rect = el.getBoundingClientRect()
+    pendingHover.current = setTimeout(() => {
+      pendingHover.current = null
+      setHover({ id, top: rect.top, left: rect.left })
+    }, HOVER_DELAY_MS)
+  }, [])
+
+  const onLeave = useCallback((): void => {
+    if (pendingHover.current !== null) {
+      clearTimeout(pendingHover.current)
+      pendingHover.current = null
+    }
+    setHover(undefined)
+  }, [])
+
+  // Unmounting mid-sweep would otherwise leave a timer that sets state on a
+  // dead section.
+  useEffect(() => () => {
+    if (pendingHover.current !== null) clearTimeout(pendingHover.current)
+  }, [])
+
   // Switched off at the settings faces — willed away, not empty.
   if (show === false) return null
 
   // Capability absent (prime-memory not in the composition, no frame yet).
   if (view === undefined) return null
 
-  const items = view.items.filter(item => hidden.includes(item.id) === false)
+  // Nothing is filtered out any more: a retired row belongs to what the model
+  // can still see, so it stays listed until compaction drops it.
+  const isStale = (item: MemoryRecallItem): boolean => item.retired === true || staleIds.includes(item.id)
 
-  if (items.length === 0) {
+  if (view.items.length === 0) {
     return createElement(
       'div',
       { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'memory-recall-section' },
@@ -399,14 +479,15 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
     'div',
     { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'memory-recall-section' },
     createElement('div', { style: HEADER_STYLE }, t('section.memoryRecall')),
-    rating && createElement('div', { style: HINT_STYLE }, t('recall.rateHint')),
+    rating && createElement('div', { style: HINT_STYLE }, `${t('recall.rateHint')}${t('recall.strikeHint')}`),
     createElement(
       'ul',
       { style: LIST_STYLE },
-      items.map(item => createElement(RecallRow, {
+      view.items.map(item => createElement(RecallRow, {
         key: item.id,
         item,
         selected: selectedId === item.id,
+        stale: isStale(item),
         pending: pendingId === item.id,
         armed: armed && selectedId === item.id,
         mark: marks[item.id] ?? item.rating,
@@ -415,6 +496,8 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
         t,
         onSelect: () => { onSelect(item.id) },
         onScore: (score: FeedbackScore) => { rate(item.id, score) },
+        onEnter: (el: HTMLElement) => { onEnter(item.id, el) },
+        onLeave,
       })),
     ),
     createElement(
@@ -422,5 +505,17 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
       { style: FOOTER_STYLE },
       expandCount(t('recall.count'), view.count),
     ),
+    // The single bubble of this section. `typeof window` guard keeps a
+    // non-DOM render (tests, SSR) from ever reaching the viewport maths.
+    hover !== undefined && typeof window !== 'undefined'
+      && (() => {
+        const item = view.items.find(i => i.id === hover.id)
+        if (item === undefined) return null
+        return createElement(RecallBubble, {
+          item,
+          pos: bubblePos(hover, window.innerWidth, window.innerHeight),
+          t,
+        })
+      })(),
   )
 }

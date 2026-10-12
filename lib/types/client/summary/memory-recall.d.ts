@@ -26,6 +26,26 @@ export interface MemoryRecallItem {
     readonly priority: number;
     /** "When should this surface" phrases, once prime-memory exposes them. */
     readonly scenario?: readonly string[];
+    /**
+     * The last mark a HUMAN put on this record: `-1` (declared obsolete) or
+     * `0..5` (relevance). Absent means never rated — which is NOT the same as
+     * a zero. prime-memory publishes it on the `memoryRecall` view so the row
+     * can show the existing mark without a second round-trip.
+     */
+    readonly rating?: number;
+    /**
+     * The record body, whitespace-trimmed and capped by prime-memory. The hover
+     * bubble reads it straight off the frame — no second round-trip. Absent on
+     * frames published before that field existed, so the row falls back to
+     * `title` and the bubble says it has no body.
+     */
+    readonly body?: string;
+    /**
+     * prime-memory says this record has been retired (soft-deleted). It stays in
+     * the list because its text is still in the context until compaction — the
+     * row just draws a strike-through. Absent means alive.
+     */
+    readonly retired?: boolean;
 }
 /** The whole wire view of one frame. */
 export interface MemoryRecallView {

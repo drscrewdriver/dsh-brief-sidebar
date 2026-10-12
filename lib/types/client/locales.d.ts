@@ -45,6 +45,15 @@ export declare const zh: {
     'section.memoryRecall': string;
     'recall.empty': string;
     'recall.count': string;
+    'recall.rateHint': string;
+    'recall.obsolete': string;
+    'recall.obsoleteConfirm': string;
+    'recall.obsoleted': string;
+    'recall.rated': string;
+    'recall.failed': string;
+    'recall.obsoleteWhy': string;
+    'recall.strikeHint': string;
+    'recall.noBody': string;
     'settings.title': string;
     'settings.desc': string;
     'settings.memorySlots': string;

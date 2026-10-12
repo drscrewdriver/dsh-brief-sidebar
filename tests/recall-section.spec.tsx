@@ -74,6 +74,29 @@ describe('readRecall', () => {
     // An empty/garbage scenario list must not materialise the field at all.
     expect(withScenarios?.items[1]?.scenario).toBeUndefined()
   })
+
+  it('narrows body and retired: a drifted field is dropped, only true means retired', () => {
+    const view = readRecall({
+      rev: 1,
+      sessionId: SESSION,
+      count: 4,
+      items: [
+        { ...ITEM, body: '上行必须走官方地址\n因为镜像有同步延迟', retired: true },
+        { ...ITEM, id: 'm2', body: 42 },
+        { ...ITEM, id: 'm3', retired: 'yes' },
+        { ...ITEM, id: 'm4', retired: false },
+      ],
+    })
+    expect(view?.items[0]?.body).toBe('上行必须走官方地址\n因为镜像有同步延迟')
+    expect(view?.items[0]?.retired).toBe(true)
+    // A non-string body must not become "42" shown as the whole record.
+    expect(view?.items[1]?.body).toBeUndefined()
+    // Anything but the literal true reads back as absent (= alive).
+    expect(view?.items[2]?.retired).toBeUndefined()
+    expect(view?.items[3]?.retired).toBeUndefined()
+    // An old frame without either key still parses — the row just looks plain.
+    expect(readRecall({ rev: 1, sessionId: SESSION, count: 1, items: [ITEM] })?.items[0]).toEqual(ITEM)
+  })
 })
 
 /** A configForms scope snapshot fixture. */
@@ -171,10 +194,43 @@ describe('MemoryRecallSection rendering', () => {
     // Pin/activate is the SLOTS vocabulary; recall must never borrow it.
     expect(markup).not.toContain('钉住')
     expect(markup).not.toContain('激活')
+    // No hover in a static render, so no bubble either (viewport maths needs a window).
+    expect(markup).not.toContain('data-dsh-brief-sidebar="recall-bubble"')
+  })
+
+  it('clamps the title to two lines instead of letting a long body stretch the row', () => {
+    const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }))
+    // Two lines, whatever React decides about the unit suffix.
+    expect(markup).toMatch(/-webkit-line-clamp:\s*2/)
+  })
+
+  it('a retired row stays listed, struck through, and gets no controls at all', () => {
+    const withStale = {
+      rev: 1,
+      sessionId: SESSION,
+      count: 2,
+      items: [
+        ITEM,
+        { id: 'm9', type: 'work_fact', title: '已被判过时的结论', priority: 60, body: '已被判过时的结论\n细节', retired: true },
+      ],
+    }
+    const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: withStale }))
+    // Still in the list — its text is in the model's context until compaction.
+    expect(markup).toContain('已被判过时的结论')
+    expect(markup).toContain(zh['recall.count'].replace('{count}', '2'))
+    expect(markup).toContain('line-through')
+    expect(markup).toContain(zh['recall.obsoleted'])
+    // And nothing here can be clicked: no strip, no selection.
+    expect(markup).not.toContain('<button')
+    // Exactly one struck thing: the dead row's title. The live row above it
+    // must stay clean — the strike is per row, never a section-wide grey-out.
+    expect(markup.match(/line-through/g)).toHaveLength(1)
   })
 
   it('offers the rating hint when a session is bound, and hides it when not', () => {
     expect(renderSection(ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }))).toContain(zh['recall.rateHint'])
+    // The hint also has to say what a struck row MEANS, now that rows linger.
+    expect(renderSection(ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }))).toContain(zh['recall.strikeHint'])
     const orphan = renderToStaticMarkup(createElement(MemoryRecallSection, { t, ctx: ctxWith({ [MEMORY_RECALL_KEY]: LIVE_VIEW }), scope: {} }))
     expect(orphan).not.toContain(zh['recall.rateHint'])
   })
@@ -254,6 +310,7 @@ describe('RatingStrip (the control a selected row gets)', () => {
       armed: false,
       obsoleteLabel: zh['recall.obsolete'],
       confirmLabel: zh['recall.obsoleteConfirm'],
+      whyLabel: zh['recall.obsoleteWhy'],
       onScore: () => {},
       ...over,
     } as ComponentProps<typeof RatingStrip>))
@@ -265,7 +322,8 @@ describe('RatingStrip (the control a selected row gets)', () => {
     expect(markup).toContain(zh['recall.obsolete'])
   })
 
-  it('the destructive one is two-step: armed swaps the label to a confirm', () => {
+  it('the destructive one explains itself before it arms, and asks after', () => {
+    expect(strip()).toContain(zh['recall.obsoleteWhy'])
     expect(strip()).not.toContain(zh['recall.obsoleteConfirm'])
     expect(strip({ armed: true })).toContain(zh['recall.obsoleteConfirm'])
   })

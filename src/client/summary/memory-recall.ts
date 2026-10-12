@@ -35,6 +35,19 @@ export interface MemoryRecallItem {
    * can show the existing mark without a second round-trip.
    */
   readonly rating?: number
+  /**
+   * The record body, whitespace-trimmed and capped by prime-memory. The hover
+   * bubble reads it straight off the frame — no second round-trip. Absent on
+   * frames published before that field existed, so the row falls back to
+   * `title` and the bubble says it has no body.
+   */
+  readonly body?: string
+  /**
+   * prime-memory says this record has been retired (soft-deleted). It stays in
+   * the list because its text is still in the context until compaction — the
+   * row just draws a strike-through. Absent means alive.
+   */
+  readonly retired?: boolean
 }
 
 /** The whole wire view of one frame. */
@@ -73,6 +86,10 @@ function readItem(value: unknown): MemoryRecallItem | undefined {
   // rather than trusted: the row then simply looks unrated.
   const rating = raw['rating']
   if (typeof rating === 'number' && Number.isInteger(rating) && rating >= -1 && rating <= 5) item.rating = rating
+  // A non-string body is dropped rather than trusted: the bubble then says so.
+  if (typeof raw['body'] === 'string') item.body = raw['body']
+  // Only true is written; anything else reads back as absent (= alive).
+  if (raw['retired'] === true) item.retired = true
   return item
 }
 
