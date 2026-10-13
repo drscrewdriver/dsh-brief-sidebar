@@ -13,3 +13,9 @@ export declare function registerDeliverablesProjection(ctx: Context): void;
  * @param ctx - the host context the plugin's `apply` receives.
  */
 export declare function registerSkillUsageProjection(ctx: Context): void;
+/**
+ * Register the search-reference projection as an optional contribution.
+ *
+ * @param ctx - the host context the plugin's `apply` receives.
+ */
+export declare function registerSearchRefProjection(ctx: Context): void;

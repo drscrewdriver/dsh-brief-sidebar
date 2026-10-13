@@ -33,11 +33,13 @@ import type { Context } from '@deepseek-ai/cordis'
 import { SKILL_USAGE_KEY } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
 import { readSkillUsage } from './skill-usage'
+import { SEARCH_REFS_KEY, readSearchRefs } from './search-refs'
 import { MEMORY_RECALL_KEY, readRecall } from './memory-recall'
 import { MEMORY_SLOTS_KEY, readSlots } from './memory-slots'
 import { resolveShowMemoryRecall, resolveShowMemorySlots } from '../scope-face'
 import { useConfigFlag } from './use-config-flag'
 import { SkillUsageSection } from './SkillUsageSection'
+import { SearchRefSection } from './SearchRefSection'
 import { MemoryRecallSection } from './MemoryRecallSection'
 import { MemorySlotsSection } from './MemorySlotsSection'
 import type { FeedbackFetch } from './recall-feedback'
@@ -53,8 +55,8 @@ export interface ReferenceSectionProps {
   fetchImpl?: FeedbackFetch
 }
 
-/** Which pane is showing. Two values, no third tab by design. */
-export type ReferenceTab = 'skills' | 'memory'
+/** Which pane is showing. Three values, no fourth tab by design. */
+export type ReferenceTab = 'skills' | 'memory' | 'search'
 
 const SECTION_STYLE: CSSProperties = {
   flexShrink: 0,
@@ -94,7 +96,7 @@ const TAB_ACTIVE_STYLE: CSSProperties = {
   fontWeight: 600,
 }
 
-const ORDER: readonly ReferenceTab[] = ['skills', 'memory']
+const ORDER: readonly ReferenceTab[] = ['skills', 'memory', 'search']
 
 /**
  * The references section. All hooks run before any early return, so the tab
@@ -109,23 +111,29 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
   // The same three reads the children make, used only to decide whether the
   // strip has anything to point at.
   const skillsLive = readSkillUsage(useProjectionValue(ctx, scope?.sessionId, SKILL_USAGE_KEY)) !== undefined
+  const searchLive = readSearchRefs(useProjectionValue(ctx, scope?.sessionId, SEARCH_REFS_KEY)) !== undefined
   const recallFrame = readRecall(useProjectionValue(ctx, scope?.sessionId, MEMORY_RECALL_KEY))
   const slotsFrame = readSlots(useProjectionValue(ctx, scope?.sessionId, MEMORY_SLOTS_KEY))
   const recallOn = useConfigFlag(ctx, resolveShowMemoryRecall) !== false
   const slotsOn = useConfigFlag(ctx, resolveShowMemorySlots) === true
   const memoryLive = (recallFrame !== undefined && recallOn) || (slotsFrame !== undefined && slotsOn)
+  const live: Record<ReferenceTab, boolean> = { skills: skillsLive, memory: memoryLive, search: searchLive }
+  // 记住的选择可能因能力变化而消失（例如关掉记忆开关）：退到第一个可用页签。
+  const active: ReferenceTab = live[tab] ? tab : ORDER.find(id => live[id]) ?? 'skills'
 
   const onTabsKeyDown = useCallback((event: KeyboardEvent<HTMLDivElement>): void => {
-    // 左右方向键换页：页签条只有两个成员，环绕即可，不需要 Home/End。
+    // 左右方向键在“可用页签”里循环：能力缺席的页签不该被键盘走到。
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return
     event.preventDefault()
-    const at = ORDER.indexOf(tab)
-    const step = event.key === 'ArrowRight' ? 1 : ORDER.length - 1
-    setTab(ORDER[(at + step) % ORDER.length])
-  }, [tab])
+    const shown = ORDER.filter(id => live[id])
+    if (shown.length < 2) return
+    const at = shown.indexOf(active)
+    const step = event.key === 'ArrowRight' ? 1 : shown.length - 1
+    setTab(shown[(at + step) % shown.length])
+  }, [live, active])
 
   // Nothing to reference — no provider in the composition, or both switched off.
-  if (!skillsLive && !memoryLive) return null
+  if (!skillsLive && !memoryLive && !searchLive) return null
 
   const tabButton = (id: ReferenceTab, label: string): ReactNode => createElement(
     'button',
@@ -143,9 +151,6 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
     label,
   )
 
-  // 只剩记忆一侧时默认页得跟着换：否则开场就是一个隐藏的空技能页。
-  const active: ReferenceTab = tab === 'skills' && !skillsLive ? 'memory' : tab
-
   return createElement(
     'div',
     { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'references-section' },
@@ -160,8 +165,9 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
         'data-dsh-brief-sidebar': 'reference-tabs',
       },
       skillsLive && tabButton('skills', t('references.tabSkills')),
-      // 两个页签各自条件化：只有一侧能力时不该留个点了就空的页签。
+      // 每个页签各自条件化：只有一侧能力时不该留个点了就空的页签。
       memoryLive && tabButton('memory', t('references.tabMemory')),
+      searchLive && tabButton('search', t('references.tabSearch')),
     ),
     skillsLive && createElement(
       'div',
@@ -188,6 +194,18 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
       // 两条记忆链各有自己的标题：召回与常驻槽位是不同事实，合成一节会糊掉。
       createElement(MemoryRecallSection, { t, ctx, scope, fetchImpl }),
       createElement(MemorySlotsSection, { t, ctx, scope }),
+    ),
+    searchLive && createElement(
+      'div',
+      {
+        role: 'tabpanel',
+        id: 'dsh-brief-reference-pane-search',
+        'aria-labelledby': 'dsh-brief-reference-tab-search',
+        hidden: active !== 'search',
+        style: active === 'search' ? undefined : { display: 'none' },
+        'data-dsh-brief-sidebar': 'reference-pane-search',
+      },
+      createElement(SearchRefSection, { t, ctx, scope, hideHeader: true }),
     ),
   )
 }

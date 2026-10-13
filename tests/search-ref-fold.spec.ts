@@ -1,0 +1,152 @@
+/**
+ * 搜索引用折叠（只追 `advanced_search`）的单元用例。
+ *
+ * 钉住四件事：
+ * 1. 查询串来自 `tool/call.arguments.query`，**成功结果之前不算引用**（与产物/技能同口径）；
+ * 2. 来源来自 `tool/result.meta.sources[]`——meta 缺席（老版 dsh-free-search 没有
+ *    presentationMeta）时必须降级成"查询记到了、来源为 0"，而不是整条丢掉；
+ * 3. 同一 URL 被多次搜索命中只占一行，`count` 累加、`query` 取最近一次；
+ * 4. state 有界：条目、查询日志、latest 都有上限，且超出后 `*Total` 仍报真数。
+ */
+import { describe, expect, it } from 'vitest'
+import {
+  CAPS,
+  applySearchRefEvent,
+  initSearchRefState,
+  queryFromArgs,
+} from '../src/projection/search-ref-fold'
+
+const turnStart = (turn: number) => ({ type: 'turn/start', data: { turn } })
+
+const call = (callId: string, args: unknown) => ({
+  type: 'tool/call',
+  data: { turn: 1, step: 1, callId, name: 'advanced_search', arguments: typeof args === 'string' ? args : JSON.stringify(args) },
+})
+
+const result = (callId: string, meta?: unknown, isError = false) => ({
+  type: 'tool/result',
+  data: {
+    turn: 1,
+    step: 1,
+    message: {
+      content: isError ? [{ type: 'text', text: 'boom', isError: true }] : [{ type: 'text', text: 'Search (tavily): …' }],
+      source: { kind: 'tool', callId },
+    },
+    ...(meta === undefined ? {} : { meta }),
+  },
+})
+
+const OPEN = applySearchRefEvent(initSearchRefState(), turnStart(1))
+
+describe('queryFromArgs', () => {
+  it('reads the query only from an advanced_search call', () => {
+    expect(queryFromArgs('advanced_search', '{"query":"量子纠错"}')).toBe('量子纠错')
+    // 别的工具即使带 query 也不算。
+    expect(queryFromArgs('read', '{"query":"x"}')).toBeNull()
+    expect(queryFromArgs('advanced_search', '{"maxResults":5}')).toBeNull()
+    expect(queryFromArgs('advanced_search', 'not json')).toBeNull()
+    expect(queryFromArgs('advanced_search', '"a string"')).toBeNull()
+    expect(queryFromArgs('advanced_search', '{"query":"   "}')).toBeNull()
+  })
+})
+
+describe('search-ref fold', () => {
+  it('records nothing until the result settles', () => {
+    const s = applySearchRefEvent(OPEN, call('c1', { query: '量子纠错', maxResults: 5 }))
+    expect(s.queries).toHaveLength(0)
+    expect(s.queryTotal).toBe(0)
+  })
+
+  it('counts a settled call with no meta as a query with zero sources', () => {
+    let s = applySearchRefEvent(OPEN, call('c1', { query: '量子纠错' }))
+    s = applySearchRefEvent(s, result('c1'))
+    expect(s.queries).toEqual([{ query: '量子纠错', turn: 1, hits: 0 }])
+    expect(s.queryTotal).toBe(1)
+    expect(s.items).toHaveLength(0)
+    expect(s.sourceTotal).toBe(0)
+  })
+
+  it('folds meta.sources into url-keyed rows and tags the latest bucket', () => {
+    let s = applySearchRefEvent(OPEN, call('c1', { query: '3dgs' }))
+    s = applySearchRefEvent(s, result('c1', {
+      provider: 'tavily',
+      query: '3dgs',
+      sources: [
+        { url: 'https://a.org/x', title: 'A 标题', snippet: '摘要一' },
+        { url: 'https://b.org/', title: 'B 标题' },
+      ],
+    }))
+    expect(s.items.map(i => i.url)).toEqual(['https://b.org/', 'https://a.org/x'])
+    expect(s.items[0]).toMatchObject({ title: 'B 标题', host: 'b.org', query: '3dgs', count: 1 })
+    expect(s.sourceTotal).toBe(2)
+    // latest 存的是归一化键（与条目同一算法），客户端才能拿它对上行。
+    expect(s.latest?.urls).toEqual(['https://b.org', 'https://a.org/x'])
+    expect(s.queries[0]).toEqual({ query: '3dgs', turn: 1, hits: 2 })
+  })
+
+  it('merges a repeated URL into one row with a growing count', () => {
+    let s = applySearchRefEvent(OPEN, call('c1', { query: 'q1' }))
+    s = applySearchRefEvent(s, result('c1', { sources: [{ url: 'https://a.org/x', title: '旧标题' }] }))
+    s = applySearchRefEvent(s, call('c2', { query: 'q2' }))
+    // 归一化只动 host 大小写与末尾斜杠：路径大小写对真 URL 是有意义的，不能抹。
+    s = applySearchRefEvent(s, result('c2', { sources: [{ url: 'HTTPS://A.org/x/', title: '新标题' }] }))
+    expect(s.items).toHaveLength(1)
+    expect(s.items[0]).toMatchObject({ count: 2, query: 'q2', title: '新标题' })
+    expect(s.sourceTotal).toBe(1)
+  })
+
+  it('drops a failed result entirely', () => {
+    let s = applySearchRefEvent(OPEN, call('c1', { query: 'q1' }))
+    s = applySearchRefEvent(s, result('c1', { sources: [{ url: 'https://a.org' }] }, true))
+    expect(s.queries).toHaveLength(0)
+    expect(s.items).toHaveLength(0)
+    expect(s.queryTotal).toBe(0)
+  })
+
+  it('ignores malformed meta without losing the query', () => {
+    let s = applySearchRefEvent(OPEN, call('c1', { query: 'q1' }))
+    s = applySearchRefEvent(s, result('c1', { sources: 'nope' }))
+    expect(s.queries[0]).toEqual({ query: 'q1', turn: 1, hits: 0 })
+    expect(s.items).toHaveLength(0)
+    // 条目级畸形只丢那一条：无 url 的被过滤，有 url 的留下。
+    let s2 = applySearchRefEvent(OPEN, call('c2', { query: 'q2' }))
+    s2 = applySearchRefEvent(s2, result('c2', { sources: [{ title: '无 url' }, { url: 'https://ok.org' }, null, 7] }))
+    expect(s2.items.map(i => i.url)).toEqual(['https://ok.org'])
+  })
+
+  it('leaves unrelated events and other tools alone (same reference)', () => {
+    const other = { type: 'tool/call', data: { callId: 'x', name: 'web_search', arguments: '{"queries":["a"]}' } }
+    expect(applySearchRefEvent(OPEN, other)).toBe(OPEN)
+    expect(applySearchRefEvent(OPEN, { type: 'turn/end', data: { turn: 1 } })).toBe(OPEN)
+    expect(applySearchRefEvent(OPEN, { type: 'tool/result', data: { message: { content: [], source: {} } } })).toBe(OPEN)
+  })
+
+  it('opens a fresh latest bucket per turn', () => {
+    let s = applySearchRefEvent(OPEN, call('c1', { query: 'q1' }))
+    s = applySearchRefEvent(s, result('c1', { sources: [{ url: 'https://a.org' }] }))
+    s = applySearchRefEvent(s, turnStart(2))
+    expect(s.latest).toEqual({ turn: 2, urls: [] })
+    // 上一轮的成果仍在会话视图里。
+    expect(s.items).toHaveLength(1)
+  })
+
+  it('bounds every list but keeps the true totals', () => {
+    let s = OPEN
+    for (let i = 0; i < CAPS.queries + 12; i++) {
+      s = applySearchRefEvent(s, call(`c${i}`, { query: `q${i}` }))
+      s = applySearchRefEvent(s, result(`c${i}`, { sources: [{ url: `https://a.org/${i}` }] }))
+    }
+    expect(s.queries.length).toBeLessThanOrEqual(CAPS.queries)
+    expect(s.queryTotal).toBe(CAPS.queries + 12)
+    expect(s.items.length).toBeLessThanOrEqual(CAPS.items)
+    expect(s.sourceTotal).toBe(CAPS.queries + 12)
+  })
+
+  it('caps the latest bucket too', () => {
+    let s = OPEN
+    const many = Array.from({ length: CAPS.latest + 5 }, (_, i) => ({ url: `https://a.org/${i}` }))
+    s = applySearchRefEvent(s, call('c1', { query: 'q' }))
+    s = applySearchRefEvent(s, result('c1', { sources: many }))
+    expect(s.latest?.urls).toHaveLength(CAPS.latest)
+  })
+})

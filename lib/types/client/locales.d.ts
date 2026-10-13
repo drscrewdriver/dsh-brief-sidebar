@@ -72,6 +72,16 @@ export declare const zh: {
     'skillUsage.invokedGroup': string;
     'skillUsage.availableGroup': string;
     'skillUsage.availableCapped': string;
+    'section.searchRefs': string;
+    'references.tabSearch': string;
+    'searchRefs.empty': string;
+    'searchRefs.emptyHint': string;
+    'searchRefs.queryGroup': string;
+    'searchRefs.sourceGroup': string;
+    'searchRefs.hits': string;
+    'searchRefs.latestTag': string;
+    'searchRefs.noSourcesHint': string;
+    'searchRefs.capped': string;
     'settings.title': string;
     'settings.desc': string;
     'settings.memorySlots': string;

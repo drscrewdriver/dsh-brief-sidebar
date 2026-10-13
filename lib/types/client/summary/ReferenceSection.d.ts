@@ -13,8 +13,8 @@ export interface ReferenceSectionProps {
     /** The rating transport, handed straight to the recall pane. */
     fetchImpl?: FeedbackFetch;
 }
-/** Which pane is showing. Two values, no third tab by design. */
-export type ReferenceTab = 'skills' | 'memory';
+/** Which pane is showing. Three values, no fourth tab by design. */
+export type ReferenceTab = 'skills' | 'memory' | 'search';
 /**
  * The references section. All hooks run before any early return, so the tab
  * strip can disappear (no capability at all) without ever changing hook order.

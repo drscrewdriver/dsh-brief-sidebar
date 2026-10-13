@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.4 — 2026-10-14 (dritter Reiter „Suchen“ in den Referenzen)
+
+- Neue Projektion `dshSummarySearchRefs`: faltet ausschließlich `advanced_search` (nicht den hosteigenen
+  `web_search`) — für den Leser zwei verschiedene Tatsachen. Abfrage aus `tool/call.arguments.query`,
+  Quellen aus `tool/result.meta.sources[]`; unentschiedene oder fehlerhafte Ergebnisse zählen nicht.
+- Gruppen „Abfragen · N“ und „Quellen · N“; Provider-URLs sind nicht vertrauenswürdig, also werden nur
+  http/https zu Links (mit `rel="noreferrer noopener"`), andere Schemata bleiben Text.
+- Rückfall: ältere dsh-free-search-Builds senden kein `presentationMeta` — Abfragen zählen weiter,
+  Quellen sind 0, und ein Hinweis erklärt das, statt eine leere Liste zu zeigen.
+- Grenzen: 20 Einträge je Liste, Snippet bei 160 Zeichen; 10 neue Schlüssel in allen 9 Sprachen.
+
 ## 0.9.3 — 2026-10-13 (Skills und Memory nebeneinander in „Referenzen“)
 
 - Die drei unteren Abschnitte (Skill-Referenzen, Sitzungsrückrufe, Speicher-Slots) sind jetzt ein

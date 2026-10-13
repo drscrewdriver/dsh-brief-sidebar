@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.4 — 2026-10-14 (terza scheda «Ricerche» nei Riferimenti)
+
+- Nuova proiezione `dshSummarySearchRefs`: ripiega solo `advanced_search`, mai il
+  `web_search` dell’host — per chi legge sono fatti diversi. Query da
+  `tool/call.arguments.query`, fonti da `tool/result.meta.sources[]`; un risultato non
+  risolto o in errore non conta come riferimento.
+- Gruppi «Query · N» e «Fonti · N»; gli URL del provider sono dati non affidabili: solo http/https
+  diventano link (con `rel="noreferrer noopener"`), il resto resta testo.
+- Fallback: le vecchie build di dsh-free-search non emettono `presentationMeta` — le query si
+  contano comunque, le fonti restano 0, e una nota lo spiega invece di mostrare un elenco vuoto.
+- Limiti: 20 righe per elenco, riassunto tagliato a 160 caratteri; 10 chiavi nuove in tutte le 9 lingue.
+
 ## 0.9.3 — 2026-10-13 (skill e memoria affiancate in «Riferimenti»)
 
 - Le tre sezioni in basso (riferimenti alle skill, richiami di sessione, slot di memoria) diventano una

@@ -20,8 +20,10 @@ import { applyDeliverablesEvent, CAPS, initDeliverablesState } from './deliverab
 import type { DeliverablesState } from './deliverables-fold'
 import { applySkillUsageEvent, CAPS as SKILL_CAPS, initSkillUsageState } from './skill-usage-fold'
 import type { SkillUsageState } from './skill-usage-fold'
-import { DELIVERABLES_KEY, SKILL_USAGE_KEY } from './keys'
-import type { DeliverablesView, SkillUsageView } from './keys'
+import { applySearchRefEvent, CAPS as SEARCH_CAPS, initSearchRefState } from './search-ref-fold'
+import type { SearchRefState } from './search-ref-fold'
+import { DELIVERABLES_KEY, SEARCH_REFS_KEY, SKILL_USAGE_KEY } from './keys'
+import type { DeliverablesView, SearchRefView, SkillUsageView } from './keys'
 
 /**
  * Structural view of the registry this plugin needs. Declared locally on
@@ -167,6 +169,84 @@ export function registerSkillUsageProjection(ctx: Context): void {
       // 1 = the shape gained the catalog fields (`catalog`/`catalogCount`); the
       // state schema defaults them so a version-0 state still replays.
       stateVersion: 1,
+    })
+  })
+}
+
+/** Zod schema of the search-reference fold state. */
+const searchStateSchema = z.object({
+  turn: z.number(),
+  calls: z.record(z.string(), z.object({ turn: z.number(), query: z.string() })),
+  latest: z.object({ turn: z.number(), urls: z.array(z.string()) }).nullable(),
+  items: z.array(z.object({
+    url: z.string(),
+    host: z.string(),
+    title: z.string().optional(),
+    snippet: z.string().optional(),
+    query: z.string(),
+    count: z.number(),
+    lastTurn: z.number(),
+  })),
+  queries: z.array(z.object({ query: z.string(), turn: z.number(), hits: z.number() })),
+  sourceTotal: z.number(),
+  queryTotal: z.number(),
+})
+
+/** Zod schema of the search-reference wire view. */
+const searchViewSchema = z.object({
+  latest: z.object({ turn: z.number(), urls: z.array(z.string()) }).nullable(),
+  queries: z.array(z.object({ query: z.string(), turn: z.number(), hits: z.number() })),
+  sources: z.array(z.object({
+    url: z.string(),
+    host: z.string(),
+    title: z.string().optional(),
+    snippet: z.string().optional(),
+    query: z.string(),
+    count: z.number(),
+    lastTurn: z.number(),
+  })),
+  queryTotal: z.number(),
+  sourceTotal: z.number(),
+})
+
+/** Same reference-stability memo, for the search-reference unit. */
+const searchViewMemo = new WeakMap<SearchRefState, SearchRefView>()
+
+/** State → wire view, reference-stable across unchanged states. */
+function searchView(state: SearchRefState): SearchRefView {
+  const memoized = searchViewMemo.get(state)
+  if (memoized !== undefined) return memoized
+  const next: SearchRefView = {
+    latest: state.latest === null
+      ? null
+      : { turn: state.latest.turn, urls: state.latest.urls.slice(0, SEARCH_CAPS.latest) },
+    queries: state.queries.slice(0, SEARCH_CAPS.queries),
+    sources: state.items.slice(0, SEARCH_CAPS.items),
+    queryTotal: state.queryTotal,
+    sourceTotal: state.sourceTotal,
+  }
+  searchViewMemo.set(state, next)
+  return next
+}
+
+/**
+ * Register the search-reference projection as an optional contribution.
+ *
+ * @param ctx - the host context the plugin's `apply` receives.
+ */
+export function registerSearchRefProjection(ctx: Context): void {
+  ctx.inject(['sessionProjections'], (injected) => {
+    const registry = (injected as unknown as { sessionProjections?: ProjectionRegistryLike })
+      .sessionProjections
+    if (registry === undefined || typeof registry.register !== 'function') return
+    registry.register({
+      key: SEARCH_REFS_KEY,
+      stateSchema: searchStateSchema,
+      init: () => initSearchRefState(),
+      apply: applySearchRefEvent,
+      wire: { viewSchema: searchViewSchema, view: searchView },
+      // 0 = the first published shape of this key.
+      stateVersion: 0,
     })
   })
 }

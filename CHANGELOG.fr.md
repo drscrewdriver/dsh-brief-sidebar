@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.4 — 2026-10-14 (troisième onglet « Recherches » dans les Références)
+
+- Nouvelle projection `dshSummarySearchRefs` : ne replie que `advanced_search`, jamais le
+  `web_search` de l’hôte — deux faits distincts pour le lecteur. Requête depuis
+  `tool/call.arguments.query`, sources depuis `tool/result.meta.sources[]` ;
+  un résultat non réglé ou en erreur ne compte pas.
+- Groupes « Requêtes · N » et « Sources · N » ; les URL renvoyées par le fournisseur sont des données
+  non fiables : seules http/https deviennent des liens (avec `rel="noreferrer noopener"`).
+- Repli : les anciennes versions de dsh-free-search n’émettent pas de `presentationMeta` — les
+  requêtes restent comptées, les sources à 0, avec une explication au lieu d’une liste vide.
+- Bornes : 20 entrées par liste, résumé coupé à 160 caractères ; 10 clés nouvelles dans les 9 langues.
+
 ## 0.9.3 — 2026-10-13 (compétences et mémoire côte à côte sous « Références »)
 
 - Les trois sections du bas (références de compétences, rappels de session, emplacements mémoire)

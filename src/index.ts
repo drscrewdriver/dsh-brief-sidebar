@@ -37,7 +37,7 @@
  */
 import type { Context } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
-import { registerDeliverablesProjection, registerSkillUsageProjection } from './projection/register'
+import { registerDeliverablesProjection, registerSearchRefProjection, registerSkillUsageProjection } from './projection/register'
 
 /** Profile row identity. */
 export const name = 'dsh-brief-sidebar'
@@ -68,4 +68,7 @@ export const Config = z.object({
 export function apply(ctx: Context): void {
   registerDeliverablesProjection(ctx)
   registerSkillUsageProjection(ctx)
+  // 搜索引用：本会话用 `advanced_search` 查了什么、取回了哪些来源。与技能一样
+  // 是可选贡献：没有 sessionProjections 服务的组合不注册也不影响本行加载。
+  registerSearchRefProjection(ctx)
 }

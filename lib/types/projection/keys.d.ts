@@ -19,6 +19,12 @@ export declare const DELIVERABLES_KEY = "dshSummaryDeliverables";
  * to collide silently.
  */
 export declare const SKILL_USAGE_KEY = "dshSummarySkillUsage";
+/**
+ * The search-reference key (queries and returned sources of this session's
+ * `advanced_search` calls). Same rule as above: the name is ours, so no other
+ * host-side unit can answer for it by accident.
+ */
+export declare const SEARCH_REFS_KEY = "dshSummarySearchRefs";
 /** Client view of the produced-file fold (JSON-safe). */
 export interface DeliverablesView {
     /** Paths produced in the latest turn, first-seen order (capped). */
@@ -60,4 +66,40 @@ export interface SkillUsageView {
     readonly available: readonly string[];
     /** How many entries that frame published — may exceed `available.length`. */
     readonly availableCount: number;
+}
+/** One external source a search brought back (wire view). */
+export interface SearchRefItemView {
+    /** The URL as published (host case and trailing slash normalised). */
+    readonly url: string;
+    readonly host: string;
+    readonly title?: string;
+    /** Provider snippet, capped by the fold. */
+    readonly snippet?: string;
+    /** The query that most recently surfaced it. */
+    readonly query: string;
+    /** Settled searches that surfaced this source. */
+    readonly count: number;
+    readonly lastTurn: number;
+}
+/** One query the session ran, with how many sources it returned. */
+export interface SearchQueryView {
+    readonly query: string;
+    readonly turn: number;
+    readonly hits: number;
+}
+/** Client view of the search-reference fold (JSON-safe). */
+export interface SearchRefView {
+    /** Normalised URL keys surfaced in the latest turn; `null` before the first turn. */
+    readonly latest: {
+        readonly turn: number;
+        readonly urls: readonly string[];
+    } | null;
+    /** Distinct queries, most recent first (capped). */
+    readonly queries: readonly SearchQueryView[];
+    /** Distinct sources, most recent first (capped). */
+    readonly sources: readonly SearchRefItemView[];
+    /** Distinct queries session-wide — may exceed `queries.length`. */
+    readonly queryTotal: number;
+    /** Distinct sources session-wide — may exceed `sources.length`. */
+    readonly sourceTotal: number;
 }
