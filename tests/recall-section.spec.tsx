@@ -97,6 +97,23 @@ describe('readRecall', () => {
     // An old frame without either key still parses — the row just looks plain.
     expect(readRecall({ rev: 1, sessionId: SESSION, count: 1, items: [ITEM] })?.items[0]).toEqual(ITEM)
   })
+
+  it('narrows superseded the same way: only the literal true sets it', () => {
+    const view = readRecall({
+      rev: 1,
+      sessionId: SESSION,
+      count: 3,
+      items: [
+        { ...ITEM, superseded: true },
+        { ...ITEM, id: 'm2', superseded: 'yes' },
+        { ...ITEM, id: 'm3', superseded: false },
+      ],
+    })
+    expect(view?.items[0]?.superseded).toBe(true)
+    // Anything but true reads back as absent (= still in context).
+    expect(view?.items[1]?.superseded).toBeUndefined()
+    expect(view?.items[2]?.superseded).toBeUndefined()
+  })
 })
 
 /** A configForms scope snapshot fixture. */
@@ -218,7 +235,8 @@ describe('MemoryRecallSection rendering', () => {
       ],
     }
     const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: withStale }))
-    // Still in the list — its text is in the model's context until compaction.
+    // Still in the list — the retirement is the human's verdict, and hiding it
+    // would lose that record; only a compaction-replaced row is folded away.
     expect(markup).toContain('已被判过时的结论')
     expect(markup).toContain(zh['recall.count'].replace('{count}', '2'))
     expect(markup).toContain('line-through')
@@ -228,6 +246,37 @@ describe('MemoryRecallSection rendering', () => {
     // Exactly one struck thing: the dead row's title. The live row above it
     // must stay clean — the strike is per row, never a section-wide grey-out.
     expect(markup.match(/line-through/g)).toHaveLength(1)
+  })
+
+  it('hides the rows a summary replaced, and reports the count in the footer', () => {
+    const withSuperseded = {
+      rev: 2,
+      sessionId: SESSION,
+      count: 3,
+      items: [
+        ITEM,
+        { id: 'm2', type: 'work_method', title: '已被摘要取代的旧召回', priority: 70, body: '正文早已不在上下文', superseded: true },
+        // 两个标记可以同时在：退休是裁决，取代是“正文没了”。裁决凭证必须留下。
+        { id: 'm3', type: 'work_fact', title: '退休且已被取代', priority: 55, retired: true, superseded: true },
+      ],
+    }
+    const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: withSuperseded }))
+    expect(markup).not.toContain('已被摘要取代的旧召回')
+    expect(markup).toContain('退休且已被取代')
+    expect(markup).toContain('data-dsh-brief-sidebar="recall-superseded-note"')
+    expect(markup).toContain(zh['recall.supersededHidden'].replace('{count}', '1'))
+    // count 仍是注入总数（口径不变），隐藏数另起一行告知。
+    expect(markup).toContain(zh['recall.count'].replace('{count}', '3'))
+  })
+
+  it('falls back to the hidden count when every row was superseded', () => {
+    const allGone = { rev: 3, sessionId: SESSION, count: 1, items: [{ ...ITEM, superseded: true }] }
+    const markup = renderSection(ctxWith({ [MEMORY_RECALL_KEY]: allGone }))
+    expect(markup).not.toContain(ITEM.title)
+    expect(markup).toContain('data-dsh-brief-sidebar="recall-superseded-note"')
+    expect(markup).toContain(zh['recall.supersededHidden'].replace('{count}', '1'))
+    // 不是“还没召回到记忆”（那是错的描述：这轮确实召回过，只是正文已被替换）。
+    expect(markup).not.toContain(zh['recall.empty'])
   })
 
   it('offers the rating hint when a session is bound, and hides it when not', () => {

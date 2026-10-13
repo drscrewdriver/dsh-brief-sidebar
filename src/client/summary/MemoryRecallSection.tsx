@@ -503,7 +503,11 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
       createElement('div', { style: HEADER_STYLE }, t('section.memoryRecall')),
       createElement(
         'div',
-        { style: EMPTY_STYLE },
+        {
+          style: EMPTY_STYLE,
+          // 隐藏数为 0 时是真正的空态；否则这是“本轮确实召回过、但正文已被摘要替换”的告知。
+          ...(hidden > 0 ? { 'data-dsh-brief-sidebar': 'recall-superseded-note' } : {}),
+        },
         hidden > 0 ? expandCount(t('recall.supersededHidden'), hidden) : t('recall.empty'),
       ),
     )
