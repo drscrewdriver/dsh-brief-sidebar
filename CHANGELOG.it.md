@@ -2,7 +2,11 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
-## 0.9.0-local.8 — 2026-10-13
+## 0.9.0 — 2026-10-13（首次上 npm；合并 0.9.0-local.0…8 全部装机测试内容）
+
+Questa versione è la prima pubblicata su npm e contiene tutta la serie locale: la sezione «Riferimenti alle skill»
+(la voce 0.9.0-local.8 qui sotto), il ripiegamento e il conteggio delle righe sostituite dalla compattazione,
+e la sincronia dei due manifesti (`dsh.plugin.json` era a `local.4`).
 
 ### Aggiunto
 
