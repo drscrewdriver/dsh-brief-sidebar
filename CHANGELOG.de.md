@@ -2,6 +2,54 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.0-local.8 — 2026-10-13
+
+### Neu
+
+- Abschnitt „Skill-Referenzen": listet die Skills, die diese Sitzung über das Host-Werkzeug skill tatsächlich geladen hat (Name · Ladevorgänge · Marke „diese Runde"). Datenquelle ist die Projektion dshSummarySkillUsage (regestriert von der Host-Hälfte dieses Plugins; synchrone Faltung über turn/start, tool/call, tool/result). Der Name kommt aus tool/call.arguments: das skill-Werkzeug deklariert auf allen sechs Linien kein presentationMeta (zeilenweise per git-tag geprüft), also gibt es kein strukturiertes tool/result.meta; der Ergebnis-Text wird bewusst nicht gelesen (Presentationsform ist keine zweite Wahrheitsquelle). Fehlgeschlagene Ladevorgänge zählen nicht. Kein Schalter — fehlt die Projektion, verschwindet der Abschnitt. 6 neue Schlüssel × 9 Sprachen.
+- Versions-Synchronität der beiden Manifeste hergestellt: dsh.plugin.json stand auf 0.9.0-local.4, während package.json schon local.7 war (Tor V1 der Paketprüfung); beide jetzt 0.9.0-local.8.
+
+## 0.9.0-local.0 – local.7 — 2026-10-12 → 10-13 (Installations-Pointer, nie auf der registry)
+
+### Neu
+
+- Darstellung des Recall-Bereichs: Titel auf zwei Zeilen geklemmt, Hover-Blase mit dem Volltext, als veraltet gemeldete Zeilen (retired) bleiben in der Liste und werden durchgestrichen.
+- Falt- und Zähl-Verträge durch Tests festgeschrieben, einschließlich des Zweigs „alle Zeilen ersetzt ⇒ Zählhinweis" (er trägt ebenfalls die Markierung recall-superseded-note).
+
+### Geändert
+
+- Kompaction leert die Recall-Liste nicht mehr: ersetzte Zeilen (superseded) werden standardmäßig gefaltet und im Fuß gezählt; veraltete Zeilen bleiben durchgestrichen sichtbar — sie sind das menschliche Urteil über diese Erinnerung. Die 9 Sprachen wurden angepasst.
+
+### Behoben
+
+- Die Blase öffnet jetzt zur Zeilenseite nach links und überdeckt nicht mehr die Bewertungsleiste.
+- Klicks in der Bewertungsleiste stoppen die Bubble-Weitergabe — die Bestätigung für „als veraltet melden" lief vorher nie.
+- Kein natives title-Attribut mehr am Zeilentitel: es malte einen nicht skinbaren dunklen Kasten, der den Inhalt der Blase wiederholte.
+
+## 0.8.0 — 2026-10-12
+
+### Neu
+
+- Abschnitt „Diese Sitzung recalled": gespeist aus der memoryRecall-Projektion von dsh-prime-memory — welche Erinnerungen tatsächlich injiziert wurden; mit Relevanzwertung (0–5) und „als veraltet melden" (-1, wiederherstellbar).
+
+### Geändert
+
+- Slot-Bereich standardmäßig aus: eine Karte „dauerhaft aktiver Slots" brachte bei, Erinnerung sei etwas Dauerhaftes — das Gegenteil von Relevanzabruf. Der Schalter bleibt für alle, die die gepinnte Liste wollen.
+
+## 0.6.0 — 2026-10-09
+
+### Geändert
+
+- Einziges Max-Bereich-Version: keine Aufteilung mehr nach Host-Linie; engines.dsh und Peers enumerieren alle 15 rc-Linien in einem Schritt (erzeugt von sync-hosts).
+
+## 0.5.0 — 2026-10-03 → 10-04 (beta.1–3 hochgestuft)
+
+### Neu
+
+- Speicher-Slot-Abschnitt (dritter Abschnitt des Übersichts-Tabs), gespeist aus dsh-prime-memory; Schalter showMemorySlots an zwei Stelle-Sitzen (Familien-Karte und Plugins-Seite).
+- Aufgelöste refViews (record_id → Name-Zusammenfassung) gemäß dem Wire-Vertrag von prime-memory 0.20.1.
+- Schichten in den Deliverables: sessionweit frühere Änderungen hinter eine Umschaltzeile gefaltet und gegen die aktiven Dateien dedupliziert.
+
 ## 0.4.0 — 2026-09-29
 
 ### Changed

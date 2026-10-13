@@ -2,6 +2,54 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.0-local.8 — 2026-10-13
+
+### Aggiunto
+
+- Sezione «Riferimenti alle skill»: elenca le skill che questa sessione ha realmente caricato tramite il tool skill dell’host (nome · caricamenti · etichetta «questo giro»). Fonte: la proiezione dshSummarySkillUsage (registrata dalla metà host di questo plugin; fold sincrono di turn/start, tool/call, tool/result). Il nome viene da tool/call.arguments: il tool skill non dichiara alcun presentationMeta su nessuna delle sei linee (verificato tag per tag), quindi non esiste un tool/result.meta strutturato; il testo del risultato non viene letto di proposito (una presentazione non diventa una seconda fonte di verità). I caricamenti falliti non contano. Nessun interruttore — proiezione assente ⇒ sezione nascosta. 6 chiavi × 9 lingue.
+- Sincronia dei due manifesti: dsh.plugin.json era a 0.9.0-local.4 mentre package.json era già local.7 (cancello V1 del controllo pacchetto); ora entrambi 0.9.0-local.8.
+
+## 0.9.0-local.0 – local.7 — 2026-10-12 → 10-13 (puntatori di installazione, mai pubblicati su registry)
+
+### Aggiunto
+
+- Vetrina del recall: titoli a due righe con clamp, bubble al passaggio con il testo completo, le righe dichiarate obsolete (retired) restano nell’elenco barrate.
+- Contratto di fold e conteggio fissato da test, incluso il ramo «tutte le righe sostituite ⇒ avviso numerato» (porta anch’esso il marcatore recall-superseded-note).
+
+### Modificato
+
+- La compattazione non svuota più l’elenco di recall: le righe sostituite da un riassunto (superseded) sono ripiegate per impostazione predefinita e contate a piè di pagina; le obsolete restano barrate — è il verdetto umano su quel ricordo. Testi allineati nelle 9 lingue.
+
+### Corretto
+
+- La bubble ora si apre verso sinistra e non copre più la barra di valutazione.
+- I clic dentro la barra di valutazione non risalgono più: la conferma «dichiara obsoleta» non partiva mai.
+- Tolto l’attributo nativo title dal titolo della riga: disegnava un riquadro scuro fuori dal contratto skin che ripeteva il contenuto della bubble.
+
+## 0.8.0 — 2026-10-12
+
+### Aggiunto
+
+- Sezione «Questa sessione ha richiamato»: alimentata dalla proiezione memoryRecall di dsh-prime-memory — quali ricordi sono stati davvero iniettati; con punteggio di rilevanza (0–5) e «dichiara obsoleta» (-1, reversibile).
+
+### Modificato
+
+- Sezione degli slot di memoria spenta di default: una card «slot permanenti» insegnava a leggere la memoria come residente, l’opposto del recall per rilevanza. L’interruttore resta per chi vuole l’elenco fissato.
+
+## 0.6.0 — 2026-10-09
+
+### Modificato
+
+- Versione unica a raggio massimo: niente più taglio per linea host; engines.dsh e i peer enumerano in un colpo le 15 linee rc (generati da sync-hosts).
+
+## 0.5.0 — 2026-10-03 → 10-04 (beta.1–3 promosse)
+
+### Aggiunto
+
+- Sezione degli slot di memoria (terza sezione della scheda Riepilogo), alimentata da dsh-prime-memory; interruttore showMemorySlots su due sedi di impostazioni (card di famiglia e pagina Plugins).
+- refViews risolti (record_id → nome riassuntivo) secondo il contratto wire di prime-memory 0.20.1.
+- Livello storico dei deliverable: le modifiche precedenti della sessione sono ripiegate dietro una riga commutabile e deduplicate rispetto ai file attivi.
+
 ## 0.4.0 — 2026-09-29
 
 ### Changed
