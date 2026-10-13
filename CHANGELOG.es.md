@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.1 — 2026-10-13 (agrupación visible)
+
+- La sección «Archivos producidos» cuenta dos grupos aparte: «Este turno · N» en lista directa y
+  «Cambios anteriores · N» plegado tras un interruptor. Si la lista tiene tope, una nota da el número
+  real de la sesión.
+- La sección de recuerdos separa «Recuerdos activos · N» (texto aún en contexto) de «Recuerdos
+  anteriores · N» (reemplazados por un resumen): plegados y, al abrirlos, cada fila marcada
+  «reemplazado por el resumen». Antes solo quedaba un contador.
+- Componentes `FoldToggle`/`GroupHeader` compartidos; 5 claves de grupo en los 9 idiomas.
+
 ## 0.9.0 — 2026-10-13（首次上 npm；合并 0.9.0-local.0…8 全部装机测试内容）
 
 Esta versión es la primera publicada en npm e incluye toda la serie local: la sección «Referencias de skills»

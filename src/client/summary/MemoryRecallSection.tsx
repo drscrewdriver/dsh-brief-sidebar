@@ -53,6 +53,7 @@ import { resolveShowMemoryRecall } from '../scope-face'
 import { useConfigFlag } from './use-config-flag'
 import { useProjectionValue } from '../use-projection'
 import { expandCount } from '../locales'
+import { FoldToggle, GroupHeader } from './FoldToggle'
 
 export interface MemoryRecallSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -309,6 +310,7 @@ function RecallRow(props: {
   item: MemoryRecallItem
   selected: boolean
   stale: boolean
+  wasSuperseded: boolean
   pending: boolean
   armed: boolean
   mark: number | undefined
@@ -320,7 +322,7 @@ function RecallRow(props: {
   onEnter(el: HTMLElement): void
   onLeave(): void
 }): ReactNode {
-  const { item, selected, stale, mark, error, t } = props
+  const { item, selected, stale, wasSuperseded, mark, error, t } = props
   const scenario = item.scenario === undefined ? undefined : item.scenario.join(' · ')
   const markText = mark === undefined
     ? undefined
@@ -361,6 +363,13 @@ function RecallRow(props: {
         scenario,
       ),
       staleText !== undefined && createElement('span', { style: MARK_STYLE }, staleText),
+      // “正文已被摘要取代”是行自己的事实，得写在行上：否则展开历史组后，
+      // 读者只能靠位置猜哪一行不在上下文里。
+      wasSuperseded && createElement(
+        'span',
+        { style: TYPE_STYLE, 'data-dsh-brief-sidebar': 'recall-superseded-tag' },
+        t('recall.supersededTag'),
+      ),
       markText !== undefined && createElement('span', { style: MARK_STYLE }, markText),
       error !== undefined && createElement(
         'span',
@@ -408,6 +417,8 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
   // Flipped once by a 404: the composition's prime-memory cannot take marks,
   // so the section goes back to being the plain read-only list it was.
   const [writeAbsent, setWriteAbsent] = useState(false)
+  // 历史召回组默认折叠：它们已不在上下文里，但仍属于“本会话见过什么”的一部分。
+  const [historyOpen, setHistoryOpen] = useState(false)
 
   const show = useConfigFlag(ctx, resolveShowMemoryRecall)
   const view: MemoryRecallView | undefined = readRecall(
@@ -493,8 +504,11 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
   // A `superseded` row is different — its text is no longer in context — so it is
   // hidden, and the footer reports the count so nothing disappears silently.
   const isStale = (item: MemoryRecallItem): boolean => item.retired === true || staleIds.includes(item.id)
+  // 两组按“正文还在不在上下文”分：活跃 = 未取代（或被退场的例外，裁决凭证必须留下）；
+  // 其余历史 = 被摘要取代且未被裁决退场的，它们收进开关后面而不是只报个计数。
   const rows = view.items.filter(item => item.superseded !== true || item.retired === true)
-  const hidden = view.items.length - rows.length
+  const historyRows = view.items.filter(item => item.superseded === true && item.retired !== true)
+  const hidden = historyRows.length
 
   if (rows.length === 0) {
     return createElement(
@@ -510,6 +524,34 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
         },
         hidden > 0 ? expandCount(t('recall.supersededHidden'), hidden) : t('recall.empty'),
       ),
+      // 空态下历史组仍要能展开：否则“全都被取代”的会话永远读不到自己召回过什么。
+      historyRows.length > 0 && createElement(FoldToggle, {
+        label: expandCount(t('recall.historyGroup'), historyRows.length),
+        open: historyOpen,
+        marker: 'recall-history-toggle',
+        onToggle: () => { setHistoryOpen(current => !current) },
+      }),
+      historyOpen && createElement(
+        'ul',
+        { style: LIST_STYLE },
+        historyRows.map(item => createElement(RecallRow, {
+          key: item.id,
+          item,
+          selected: false,
+          stale: isStale(item),
+          wasSuperseded: true,
+          pending: false,
+          armed: false,
+          mark: undefined,
+          error: undefined,
+          rating: false,
+          t,
+          onSelect: () => {},
+          onScore: () => {},
+          onEnter: () => {},
+          onLeave: () => {},
+        })),
+      ),
     )
   }
 
@@ -518,6 +560,11 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
     { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'memory-recall-section' },
     createElement('div', { style: HEADER_STYLE }, t('section.memoryRecall')),
     rating && createElement('div', { style: HINT_STYLE }, `${t('recall.rateHint')}${t('recall.strikeHint')}`),
+    // 活跃组计数只说“仍在上下文”的那些，注入总数归页脚，两个数各说各的。
+    rows.length > 0 && createElement(GroupHeader, {
+      text: expandCount(t('recall.activeGroup'), rows.length),
+      marker: 'recall-active-group',
+    }),
     createElement(
       'ul',
       { style: LIST_STYLE },
@@ -526,6 +573,7 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
         item,
         selected: selectedId === item.id,
         stale: isStale(item),
+        wasSuperseded: item.superseded === true,
         pending: pendingId === item.id,
         armed: armed && selectedId === item.id,
         mark: marks[item.id] ?? item.rating,
@@ -536,6 +584,35 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
         onScore: (score: FeedbackScore) => { rate(item.id, score) },
         onEnter: (el: HTMLElement) => { onEnter(item.id, el) },
         onLeave,
+      })),
+    ),
+    historyRows.length > 0 && createElement(FoldToggle, {
+      label: expandCount(t('recall.historyGroup'), historyRows.length),
+      open: historyOpen,
+      marker: 'recall-history-toggle',
+      onToggle: () => { setHistoryOpen(current => !current) },
+    }),
+    historyOpen && createElement(
+      'ul',
+      { style: LIST_STYLE },
+      historyRows.map(item => createElement(RecallRow, {
+        key: item.id,
+        item,
+        // 历史行不开评分：退场与相关度都是对“还在上下文里的那条”的裁决，
+        // 正文已被取代的行再标一次也不会回到上下文，只会让人以为还能救。
+        selected: false,
+        stale: isStale(item),
+        wasSuperseded: true,
+        pending: false,
+        armed: false,
+        mark: undefined,
+        error: undefined,
+        rating: false,
+        t,
+        onSelect: () => {},
+        onScore: () => {},
+        onEnter: () => {},
+        onLeave: () => {},
       })),
     ),
     createElement(

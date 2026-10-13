@@ -33,6 +33,8 @@ export declare const zh: {
     'deliverables.empty': string;
     'deliverables.emptyHint': string;
     'deliverables.history': string;
+    'deliverables.currentTurn': string;
+    'deliverables.historyCapped': string;
     'deliverable.codeplanTag': string;
     'section.memorySlots': string;
     'slots.empty': string;
@@ -54,6 +56,9 @@ export declare const zh: {
     'recall.obsoleteWhy': string;
     'recall.strikeHint': string;
     'recall.supersededHidden': string;
+    'recall.activeGroup': string;
+    'recall.historyGroup': string;
+    'recall.supersededTag': string;
     'recall.noBody': string;
     'section.skillUsage': string;
     'skillUsage.empty': string;
@@ -103,3 +108,8 @@ export declare const dictionaries: Record<string, Record<string, string>>;
  * mirroring how `progressLine` composes its summary from parts.
  */
 export declare function expandCount(template: string, count: number): string;
+/**
+ * Fill a `{total}` placeholder — the counter that says how many there really
+ * are, as opposed to how many the (capped) list shows.
+ */
+export declare function expandTotal(template: string, total: number): string;

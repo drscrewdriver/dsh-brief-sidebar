@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.1 — 2026-10-13 (affichage groupé)
+
+- La section « Fichiers produits » compte désormais deux groupes séparés : « Ce tour-ci · N » en liste
+  directe, « Modifications antérieures · N » replié derrière un interrupteur. Quand la liste est bornée,
+  une ligne annexe donne le chiffre réel de la session.
+- La section des rappels sépare « Rappels actifs · N » (texte encore dans le contexte) de « Rappels
+  antérieurs · N » (remplacés par un résumé) : repliés, et marqués « remplacé par le résumé » une fois
+  ouverts. Auparavant il ne restait qu'un nombre.
+- Composants `FoldToggle`/`GroupHeader` partagés ; 5 clés de groupe dans les 9 langues.
+
 ## 0.9.0 — 2026-10-13（首次上 npm；合并 0.9.0-local.0…8 全部装机测试内容）
 
 Cette version est la première publiée sur npm et contient toute la série locale : la section « Références de

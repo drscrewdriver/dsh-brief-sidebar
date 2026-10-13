@@ -25,7 +25,8 @@ import { DELIVERABLES_KEY } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
 import { sidebarFileOpener } from '../file-open'
 import { basename, historyPaths, readDeliverables, splitCodeplanPath } from './deliverables'
-import { expandCount } from '../locales'
+import { GroupCaption, GroupHeader, FoldToggle } from './FoldToggle'
+import { expandCount, expandTotal } from '../locales'
 
 export interface DeliverablesSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -62,28 +63,6 @@ const ROW_STYLE: CSSProperties = {
   gap: 8,
   padding: '6px 12px',
 }
-
-/** 折叠区开关行:与文件行同宽,tertiary 强调,整行可点。 */
-const HISTORY_TOGGLE_STYLE: CSSProperties = {
-  background: 'none',
-  border: 'none',
-  font: 'inherit',
-  fontSize: 12,
-  color: 'var(--dsw-alias-label-tertiary)',
-  cursor: 'pointer',
-  display: 'flex',
-  alignItems: 'center',
-  gap: 4,
-  padding: '6px 12px',
-  textAlign: 'left',
-  width: 'calc(100% - 24px)',
-}
-
-const CHEVRON_STYLE = (open: boolean): CSSProperties => ({
-  flexShrink: 0,
-  transition: 'transform 0.16s',
-  transform: open ? 'rotate(180deg)' : 'none',
-})
 
 const PATH_STYLE: CSSProperties = {
   minWidth: 0,
@@ -152,8 +131,9 @@ function PathRow(props: {
  * The deliverables section. The subscription is unconditional (a plain
  * listener, not IO).
  *
- * 分层:活跃文件(本回合 latest)直接列表;全会话更早改动折叠在开关行后面
- * (与活跃文件按归一化路径去重),展开后是与活跃区相同的可点击文件行。
+ * 分层:本回合改动(latest)与全会话更早改动分成两组各自计数——前者直列,后者
+ * 折叠在开关行后面(与活跃文件按归一化路径去重),展开后是与活跃区相同的可点击
+ * 文件行。列表有上限时,开关行说折叠区条数、附注说会话真数,两个数不混为一谈。
  * @param props - translation, client context, session scope.
  */
 export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode {
@@ -200,33 +180,27 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
     'div',
     { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'deliverables-section' },
     createElement('div', { style: HEADER_STYLE }, t('section.deliverables')),
+    // 当前 turn 一组：只有真改过东西才起标题，否则“本回合改动 · 0”反而口舌。
+    latestPaths.length > 0 && createElement(GroupHeader, {
+      text: expandCount(t('deliverables.currentTurn'), latestPaths.length),
+      marker: 'deliverables-current-group',
+    }),
     createElement(
       'ul',
       { style: LIST_STYLE },
       latestPaths.map(path => createElement(PathRow, { key: path, path, t, open })),
     ),
-    history.length > 0 && createElement(
-      'button',
-      {
-        type: 'button',
-        'aria-expanded': historyOpen,
-        style: HISTORY_TOGGLE_STYLE,
-        onClick: () => { setHistoryOpen(current => !current) },
-      },
-      expandCount(t('deliverables.history'), history.length),
-      createElement(
-        'svg',
-        { width: 10, height: 10, viewBox: '0 0 16 16', 'aria-hidden': true, style: CHEVRON_STYLE(historyOpen) },
-        createElement('path', {
-          d: 'M4 6l4 4 4-4',
-          fill: 'none',
-          stroke: 'currentColor',
-          strokeWidth: 1.5,
-          strokeLinecap: 'round',
-          strokeLinejoin: 'round',
-        }),
-      ),
-    ),
+    history.length > 0 && createElement(FoldToggle, {
+      label: expandCount(t('deliverables.history'), history.length),
+      open: historyOpen,
+      marker: 'deliverables-history-toggle',
+      onToggle: () => { setHistoryOpen(current => !current) },
+    }),
+    // 列表有上限：开关行说的是折叠区收了多少条，附注说会话一共改过多少个。
+    history.length > 0 && view.sessionTotal > view.sessionPaths.length && createElement(GroupCaption, {
+      text: expandTotal(t('deliverables.historyCapped'), view.sessionTotal),
+      marker: 'deliverables-history-capped',
+    }),
     historyOpen && createElement(
       'ul',
       { style: LIST_STYLE },

@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.1 — 2026-10-13 (visualizzazione raggruppata)
+
+- La sezione «File prodotti» conta due gruppi separati: «Questo turno · N» in elenco diretto,
+  «Modifiche precedenti · N» ripiegato dietro un interruttore. Se l’elenco ha un limite, una nota
+  riporta il numero reale della sessione.
+- La sezione dei richiami separa «Richiami attivi · N» (testo ancora nel contesto) da «Richiami
+  precedenti · N» (sostituiti da un riassunto): ripiegati e, una volta aperti, ogni riga porta la
+  marcatura «sostituito dal riassunto». Prima restava solo un contatore.
+- Componenti `FoldToggle`/`GroupHeader` condivisi; 5 chiavi di gruppo in tutte le 9 lingue.
+
 ## 0.9.0 — 2026-10-13（首次上 npm；合并 0.9.0-local.0…8 全部装机测试内容）
 
 Questa versione è la prima pubblicata su npm e contiene tutta la serie locale: la sezione «Riferimenti alle skill»

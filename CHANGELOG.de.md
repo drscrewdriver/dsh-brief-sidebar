@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.1 — 2026-10-13 (Gruppierte Anzeige)
+
+- Der Abschnitt „Produzierte Dateien“ zählt jetzt zwei getrennte Gruppen: „Dieser Durchlauf · N“
+  direkt, „Frühere Änderungen · N“ gefaltet hinter einem Schalter. Wenn die Liste ein Limit hat, nennt
+  eine Zusatzzeile die wahre Zahl der Sitzung („die Sitzung erzeugte M Dateien; die Liste ist gekürzt“).
+- Die Sitzungsrückruf-Sektion trennt „Aktive Abrufe · N“ (Text noch im Kontext) von „Weitere Abrufe · N“
+  (durch eine Zusammenfassung ersetzt); diese liegen gefaltet und tragen beim Aufklappen jeweils die
+  Markierung „durch Zusammenfassung ersetzt“. Vorher blieb von ihnen nur eine Zahl übrig.
+- Gemeinsame `FoldToggle`/`GroupHeader`-Komponenten; 5 Gruppenschlüssel in allen 9 Sprachen.
+
 ## 0.9.0 — 2026-10-13（首次上 npm；合并 0.9.0-local.0…8 全部装机测试内容）
 
 Diese Version war erstmals auf npm veröffentlicht; sie enthält die gesamte local-Reihe: den Abschnitt
