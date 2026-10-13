@@ -53,6 +53,7 @@ export declare const zh: {
     'recall.failed': string;
     'recall.obsoleteWhy': string;
     'recall.strikeHint': string;
+    'recall.supersededHidden': string;
     'recall.noBody': string;
     'settings.title': string;
     'settings.desc': string;

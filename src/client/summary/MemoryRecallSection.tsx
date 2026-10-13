@@ -4,9 +4,11 @@
  *
  * Where `MemorySlotsSection` lists hand-pinned resident conventions (written
  * once, injected every turn), this one answers a different question: **which
- * memories is the model seeing right now**. The set is not resident — it is
- * relevance recall, and prime-memory empties it when the context is compacted
- * or cleared, so an entry disappearing here is honest, not a bug.
+ * memories did the model see this session, and which are still in context**.
+ * The set is not resident — it is relevance recall. Compaction does NOT drop
+ * entries: prime-memory marks the ones whose text a summary replaced as
+ * `superseded`, and this section hides those (the footer keeps the count).
+ * Retired rows are the exception and stay visible. Only `/clear` empties the list.
  *
  * TWO gates, both fail-open to "hidden", mirroring the slots section:
  *
@@ -28,10 +30,11 @@
  *   delete, restorable from its panel) and tells the model next turn. That is
  *   why it takes a second confirming click and says so on the button.
  *
- * A retired row does NOT leave this list. Its text is still in the model's
- * context until compaction, so hiding it would misreport what the model sees;
- * the row stays, struck through and unselectable, until the context actually
- * drops it. Hovering a row opens one bubble with the whole body (`RecallBubble`)
+ * A retired row does NOT leave this list: the retirement is the human's verdict
+ * on that memory, so the row stays, struck through and unselectable, until the
+ * session is cleared. A `superseded` row (its text was replaced by a summary, so
+ * it is no longer in context) IS hidden, with the count kept in the footer.
+ * Hovering a row opens one bubble with the whole body (`RecallBubble`)
  * — the row itself is clamped to two lines and the sidebar is narrow.
  *
  * Colours come from `--dsw-alias-*` tokens only (skin contract, enforced by
@@ -486,16 +489,23 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
   // Capability absent (prime-memory not in the composition, no frame yet).
   if (view === undefined) return null
 
-  // Nothing is filtered out any more: a retired row belongs to what the model
-  // can still see, so it stays listed until compaction drops it.
+  // Retired rows stay: that mark is the human's verdict, and the model did see them.
+  // A `superseded` row is different — its text is no longer in context — so it is
+  // hidden, and the footer reports the count so nothing disappears silently.
   const isStale = (item: MemoryRecallItem): boolean => item.retired === true || staleIds.includes(item.id)
+  const rows = view.items.filter(item => item.superseded !== true || item.retired === true)
+  const hidden = view.items.length - rows.length
 
-  if (view.items.length === 0) {
+  if (rows.length === 0) {
     return createElement(
       'div',
       { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'memory-recall-section' },
       createElement('div', { style: HEADER_STYLE }, t('section.memoryRecall')),
-      createElement('div', { style: EMPTY_STYLE }, t('recall.empty')),
+      createElement(
+        'div',
+        { style: EMPTY_STYLE },
+        hidden > 0 ? expandCount(t('recall.supersededHidden'), hidden) : t('recall.empty'),
+      ),
     )
   }
 
@@ -507,7 +517,7 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
     createElement(
       'ul',
       { style: LIST_STYLE },
-      view.items.map(item => createElement(RecallRow, {
+      rows.map(item => createElement(RecallRow, {
         key: item.id,
         item,
         selected: selectedId === item.id,
@@ -528,6 +538,11 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
       'div',
       { style: FOOTER_STYLE },
       expandCount(t('recall.count'), view.count),
+      hidden > 0 && createElement(
+        'div',
+        { 'data-dsh-brief-sidebar': 'recall-superseded-note' },
+        expandCount(t('recall.supersededHidden'), hidden),
+      ),
     ),
     // The single bubble of this section. `typeof window` guard keeps a
     // non-DOM render (tests, SSR) from ever reaching the viewport maths.

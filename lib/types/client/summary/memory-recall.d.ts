@@ -3,10 +3,12 @@
  *
  * The projection unit is registered by `dsh-prime-memory` (key `memoryRecall`,
  * wire view `{rev, sessionId, count, items[]}`): the memories this session has
- * actually injected and that compaction has not overwritten yet. Unlike
+ * actually injected. Unlike
  * `memorySlots` (pinned, resident conventions written by hand), this set is
- * NOT resident — it is the at-a-glance answer to "what is the model seeing
- * right now", and it empties itself when the context is compacted.
+ * NOT resident — it is the at-a-glance answer to "what did the model see".
+ * It survives compaction on purpose: `compact` only marks the entries whose
+ * text left the context as `superseded` (and `/clear` empties the set), so a
+ * retired row keeps its strike-through instead of vanishing.
  *
  * This plugin does NOT depend on prime-memory: with the unit unregistered the
  * client reads `undefined` from the face and the section hides. The module is
@@ -42,10 +44,18 @@ export interface MemoryRecallItem {
     readonly body?: string;
     /**
      * prime-memory says this record has been retired (soft-deleted). It stays in
-     * the list because its text is still in the context until compaction — the
-     * row just draws a strike-through. Absent means alive.
+     * the list because its text is still part of what the model saw — and because
+     * the retirement is the human's verdict; the row just draws a strike-through.
+     * Absent means alive.
      */
     readonly retired?: boolean;
+    /**
+     * The text of this recall has been replaced by a compaction summary, so it is
+     * no longer in the model's context. Orthogonal to `retired` (both can be set).
+     * The section hides these by default and reports the count in its footer;
+     * a retired row is the exception and stays visible. Absent means still in context.
+     */
+    readonly superseded?: boolean;
 }
 /** The whole wire view of one frame. */
 export interface MemoryRecallView {
