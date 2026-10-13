@@ -110,6 +110,11 @@ const skillStateSchema = z.object({
   items: z.array(z.object({ name: z.string(), count: z.number(), lastTurn: z.number() })),
   sessionTotal: z.number(),
   callTotal: z.number(),
+  // Defaults, not requirements: a state persisted by the pre-0.9.2 shape has no
+  // catalog fields, and replaying it must not fail (the session's references
+  // are still true; only the "available" knowledge starts empty).
+  catalog: z.array(z.string()).default([]),
+  catalogCount: z.number().default(0),
 })
 
 /** Zod schema of the skill-usage wire view. */
@@ -118,6 +123,8 @@ const skillViewSchema = z.object({
   session: z.array(z.object({ name: z.string(), count: z.number(), lastTurn: z.number() })),
   sessionTotal: z.number(),
   callTotal: z.number(),
+  available: z.array(z.string()),
+  availableCount: z.number(),
 })
 
 /** Same reference-stability memo as above, for the skill-usage unit. */
@@ -134,6 +141,8 @@ function skillView(state: SkillUsageState): SkillUsageView {
     session: state.items.slice(0, SKILL_CAPS.view),
     sessionTotal: state.sessionTotal,
     callTotal: state.callTotal,
+    available: state.catalog.slice(0, SKILL_CAPS.available),
+    availableCount: state.catalogCount,
   }
   skillViewMemo.set(state, next)
   return next
@@ -155,8 +164,9 @@ export function registerSkillUsageProjection(ctx: Context): void {
       init: () => initSkillUsageState(),
       apply: applySkillUsageEvent,
       wire: { viewSchema: skillViewSchema, view: skillView },
-      // 0 = the first published shape of this key.
-      stateVersion: 0,
+      // 1 = the shape gained the catalog fields (`catalog`/`catalogCount`); the
+      // state schema defaults them so a version-0 state still replays.
+      stateVersion: 1,
     })
   })
 }

@@ -50,6 +50,19 @@ function readLatest(value: unknown): SkillUsageView['latest'] {
 }
 
 /**
+ * The available-skill list of a frame, or `[]` when the frame carries none.
+ *
+ * Absent-by-age is the important case: a host half older than this reader
+ * publishes no `available` field at all, and that must NOT void the whole view
+ * — the session's references are still true. Only a drifted (non-array) value
+ * reads as "nothing known", never as "nothing available".
+ */
+function readAvailable(value: unknown): readonly string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((n): n is string => typeof n === 'string' && n.length > 0)
+}
+
+/**
  * Narrow a raw projection value into a skill-usage view.
  *
  * @param value - the raw `unknown` snapshot of the `dshSummarySkillUsage` face.
@@ -67,7 +80,33 @@ export function readSkillUsage(value: unknown): SkillUsageView | undefined {
     const narrowed = readEntry(entry)
     if (narrowed !== undefined) session.push(narrowed)
   }
-  return { latest: readLatest(raw['latest']), session, sessionTotal: raw['sessionTotal'], callTotal: raw['callTotal'] }
+  const available = readAvailable(raw['available'])
+  // The count rides with the list; without a list there is no count to trust.
+  const availableCount = available.length === 0 ? 0 : (isCounter(raw['availableCount']) ? raw['availableCount'] : available.length)
+  return {
+    latest: readLatest(raw['latest']),
+    session,
+    sessionTotal: raw['sessionTotal'],
+    callTotal: raw['callTotal'],
+    available,
+    availableCount,
+  }
+}
+
+/**
+ * The available list minus the names already shown as referenced.
+ *
+ * One skill must not occupy a row in both groups: the reference row is the
+ * stronger fact, and a duplicate under "available" would read as "the model
+ * had a choice it didn't make".
+ *
+ * @param available - the session's current catalog names, in catalog order.
+ * @param referenced - names the fold counted as loaded or invoked.
+ * @returns the remaining catalog names, order preserved.
+ */
+export function availableExcept(available: readonly string[], referenced: readonly string[]): string[] {
+  const seen = new Set(referenced)
+  return available.filter(name => !seen.has(name))
 }
 
 /**

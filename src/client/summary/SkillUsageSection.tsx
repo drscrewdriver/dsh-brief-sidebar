@@ -3,15 +3,23 @@
  * part of the summary tab.
  *
  * Where `MemoryRecallSection` answers "what memories did the model see", this
- * answers "which instruction packs did it pull" — the skills this session
- * loaded through the host's `skill` tool, with how often and when.
+ * answers "which instruction packs entered the context, and which ones were on
+ * the menu". Two groups, deliberately not merged:
+ *
+ * - **已引用** — the skill's instructions reached the conversation, either
+ *   because the model called the `skill` tool or because the user invoked it
+ *   directly (the host then injects `<skill_content>` and tells the model not
+ *   to call the tool — reading only the tool would miss over half of those
+ *   sessions, measured on 250 real ones).
+ * - **本会话可用** — the session's current catalog. Available is NOT used: the
+ *   model may never touch any of these, so it is collapsed behind a counted
+ *   toggle and never mixed into the reference rows.
  *
  * Like the deliverables section this is an OPTIONAL capability on both sides:
  * no projection registry (or a host half that never registered the unit) means
  * the client reads capability absence and the section hides. No settings switch
  * gates it either — the list is a read-only fact about the session, not a
- * preference, and a section that only ever shows what already happened costs
- * nothing to leave on.
+ * preference.
  *
  * Two contracts this row honours, both learned on the recall section:
  * - **no native `title` attribute** — it paints an unskinable tooltip that
@@ -19,11 +27,14 @@
  * - **colours from `--dsw-alias-*` tokens only** (skin contract).
  */
 import { createElement } from 'react'
+import { useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import { SKILL_USAGE_KEY } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
-import { expandPair, readSkillUsage } from './skill-usage'
+import { availableExcept, expandPair, readSkillUsage } from './skill-usage'
+import { GroupCaption, GroupHeader, FoldToggle } from './FoldToggle'
+import { expandCount } from '../locales'
 
 export interface SkillUsageSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -111,32 +122,32 @@ const EMPTY_STYLE: CSSProperties = {
  */
 export function SkillUsageSection(props: SkillUsageSectionProps): ReactNode {
   const { t, ctx, scope } = props
+  const [availableOpen, setAvailableOpen] = useState(false)
 
   const view = readSkillUsage(useProjectionValue(ctx, scope?.sessionId, SKILL_USAGE_KEY))
 
   // Capability absent — the optional unit never registered. Hide, don't nag.
   if (view === undefined) return null
 
-  if (view.session.length === 0) {
-    return createElement(
-      'div',
-      { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'skill-usage-section' },
-      createElement('div', { style: HEADER_STYLE }, t('section.skillUsage')),
-      createElement(
-        'div',
-        { style: EMPTY_STYLE },
-        createElement('div', { style: { marginBottom: 6, color: 'var(--dsw-alias-label-secondary)' } }, t('skillUsage.empty')),
-        createElement('div', null, t('skillUsage.emptyHint')),
-      ),
-    )
-  }
-
+  const referenced = view.session.map(entry => entry.name)
+  // 可用组只列未被引用的那些：同一个技能不该占两行。
+  const rest = availableExcept(view.available, referenced)
   const latestNames = view.latest?.names ?? []
 
   return createElement(
     'div',
     { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'skill-usage-section' },
     createElement('div', { style: HEADER_STYLE }, t('section.skillUsage')),
+    view.session.length === 0 && createElement(
+      'div',
+      { style: EMPTY_STYLE },
+      createElement('div', { style: { marginBottom: 6, color: 'var(--dsw-alias-label-secondary)' } }, t('skillUsage.empty')),
+      createElement('div', null, t('skillUsage.emptyHint')),
+    ),
+    view.session.length > 0 && createElement(GroupHeader, {
+      text: expandCount(t('skillUsage.invokedGroup'), view.session.length),
+      marker: 'skill-usage-invoked-group',
+    }),
     createElement(
       'ul',
       { style: LIST_STYLE },
@@ -148,7 +159,27 @@ export function SkillUsageSection(props: SkillUsageSectionProps): ReactNode {
         latestNames.includes(entry.name) && createElement('span', { style: TAG_STYLE }, t('skillUsage.latestTag')),
       )),
     ),
+    rest.length > 0 && createElement(FoldToggle, {
+      label: expandCount(t('skillUsage.availableGroup'), rest.length),
+      open: availableOpen,
+      marker: 'skill-usage-available-toggle',
+      onToggle: () => { setAvailableOpen(current => !current) },
+    }),
+    // 清单有上限：开关行说收了多少个名字，附注说这一帧真发了多少。
+    rest.length > 0 && view.availableCount > view.available.length && createElement(GroupCaption, {
+      text: expandCount(t('skillUsage.availableCapped'), view.availableCount),
+      marker: 'skill-usage-available-capped',
+    }),
+    availableOpen && createElement(
+      'ul',
+      { style: LIST_STYLE },
+      rest.map(name => createElement(
+        'li',
+        { key: name, style: ROW_STYLE, 'data-dsh-brief-sidebar': 'skill-usage-available-row' },
+        createElement('span', { style: NAME_STYLE }, name),
+      )),
+    ),
     // 列表有上限，页脚说真数：加载次数与去重后的技能数各归各。
-    createElement('div', { style: FOOTER_STYLE }, expandPair(t('skillUsage.count'), view.callTotal, view.sessionTotal)),
+    view.session.length > 0 && createElement('div', { style: FOOTER_STYLE }, expandPair(t('skillUsage.count'), view.callTotal, view.sessionTotal)),
   )
 }

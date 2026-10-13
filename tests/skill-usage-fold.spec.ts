@@ -69,6 +69,9 @@ describe('initSkillUsageState', () => {
       items: [],
       sessionTotal: 0,
       callTotal: 0,
+      // 0.9.2 起初始就知道“可用清单为空”：没收到 catalog 帧与会收到空帧是两回事。
+      catalog: [],
+      catalogCount: 0,
     })
   })
 })

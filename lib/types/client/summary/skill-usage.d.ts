@@ -30,6 +30,18 @@ export { SKILL_USAGE_KEY };
  */
 export declare function readSkillUsage(value: unknown): SkillUsageView | undefined;
 /**
+ * The available list minus the names already shown as referenced.
+ *
+ * One skill must not occupy a row in both groups: the reference row is the
+ * stronger fact, and a duplicate under "available" would read as "the model
+ * had a choice it didn't make".
+ *
+ * @param available - the session's current catalog names, in catalog order.
+ * @param referenced - names the fold counted as loaded or invoked.
+ * @returns the remaining catalog names, order preserved.
+ */
+export declare function availableExcept(available: readonly string[], referenced: readonly string[]): string[];
+/**
  * Fill both placeholders of a template. `expandCount` only speaks `{count}`, and
  * this section's footer carries a second number on purpose: the capped list
  * needs the truthful distinct total next to the load count.

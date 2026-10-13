@@ -2,6 +2,19 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.2 — 2026-10-13 (zweiter Kanal für Skill-Referenzen plus Katalog)
+
+- „Skill-Referenzen“ liest nicht mehr nur den `skill`-Toolaufruf: das vom Host selbst gesetzte
+  `user/message.source.kind === 'skill-invocation'` (direkter Aufruf durch den Nutzer, der Host sagt
+  dem Modell ausdrücklich, es solle das Tool nicht nochmal rufen) zählt in dieselbe Bilanz. Von 250 echten
+  Sessions hatten 10 nur eine Invocation und keinen Toolaufruf — bisher zeigte diese Sektion nichts.
+- Neue Gruppe „In dieser Sitzung verfügbar“ aus `entries[].name` der `skill-catalog`-Frames, standardmäßig
+  gefaltet und nur als Zahl. Jeder Frame ersetzt die Liste vollständig (Kommentar des Hosts: `update`
+  markiert eine Ersetzung), keine Vereinigung — sonst würden Skills nie wieder verschwinden. Referenzierte
+  Namen werden abgezogen, ein Skill belegt nie zwei Zeilen.
+- Der Leertext nennt beide Wege; 3 Gruppenschlüssel in allen 9 Sprachen. State bekam `catalog`/`catalogCount`,
+  `stateVersion` 0→1 (mit Defaults, alte States laufen weiter).
+
 ## 0.9.1 — 2026-10-13 (Gruppierte Anzeige)
 
 - Der Abschnitt „Produzierte Dateien“ zählt jetzt zwei getrennte Gruppen: „Dieser Durchlauf · N“

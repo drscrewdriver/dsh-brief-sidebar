@@ -1,25 +1,41 @@
 /**
  * Host-side fold of skill-usage facts — the projection unit state for
- * `dshSummarySkillUsage`: which skills this session actually loaded.
+ * `dshSummarySkillUsage`: which skills this session actually referenced, and
+ * which ones it was offered.
  *
- * The only authoritative source is the session event stream. The host's
- * skill loader tool is registered as `skill` with a single `name` argument,
- * and that registration is byte-identical on every supported line — verified
- * per tag (`name: 'skill'` + `The exact skill name` present from
- * `dsh-v0.1.0-rc.8` through `dsh-v0.2.0-rc.2`). So the skill name comes out of
- * `tool/call.arguments`.
+ * Two channels feed "referenced", and both are the host's own words:
+ *
+ * 1. `tool/call` on the skill loader plus a successful `tool/result`. The
+ *    loader is registered as `skill` with a single `name` argument, and that
+ *    registration is byte-identical on every supported line — verified per tag
+ *    (`name: 'skill'` + `The exact skill name` present from `dsh-v0.1.0-rc.8`
+ *    through `dsh-v0.2.0-rc.2`). The name comes out of `arguments`.
+ * 2. `user/message` with `source.kind === 'skill-invocation'` — the durable,
+ *    machine-readable marker the host files when a skill's `<skill_content>`
+ *    block is injected. This is the *user-invoked* path, and the host's own
+ *    catalog prompt tells the model not to call the `skill` tool for it
+ *    (`tool-skill/src/index.ts:267`), so a fold that reads only channel 1 misses
+ *    every direct invocation: measured on 250 real sessions, 10 of the 19
+ *    sessions carrying an invocation had no `skill` tool call at all.
+ *
+ * A third channel is recorded separately because it means something else:
+ * `source.kind === 'skill-catalog'` lists the skills *available* to this
+ * session. The host's contract says each frame carries "exactly the entries
+ * this message published" and `update?: true` marks a replacement rather than
+ * the first publication — so the fold REPLACES its list per frame; unioning
+ * would make the list only ever grow after a skill was withdrawn.
  *
  * What this fold deliberately does NOT read: `tool/result.meta`. The skill tool
  * declares no `presentationMeta` on any line (checked the same way), so there
  * is no structured payload to read — the argument is the whole fact. Nor does
- * it read the result text: the loaded SKILL.md body is model-facing prose, and
- * scraping it would make a second source of truth out of a presentation.
+ * it read the result or injected text: the SKILL.md body is model-facing prose,
+ * and scraping it would make a second source of truth out of a presentation.
  *
- * Success is required, matching `deliverables-fold`: a `tool/result` with
- * `isError: true` means the skill never loaded, so claiming a reference would
- * be a lie. Counts are per distinct skill, order is most-recent-first, and the
- * state is bounded like every other unit because the registry folds it per
- * committed event.
+ * Success is required on channel 1, matching `deliverables-fold`: a
+ * `tool/result` with `isError: true` means the skill never loaded, so claiming
+ * a reference would be a lie. Counts are per distinct skill, order is
+ * most-recent-first, and the state is bounded like every other unit because
+ * the registry folds it per committed event.
  *
  * This module is deliberately PURE — no cordis, no zod, no IO — so the fold
  * can be tested directly against hand-written event fixtures.
@@ -41,14 +57,18 @@ export interface SkillUsageState {
   readonly turn: number
   /** Open turns' `callId → skill name` map; only resolvable skill calls are recorded. */
   readonly calls: Readonly<Record<string, { readonly turn: number; readonly skill: string }>>
-  /** Skills loaded in the latest turn so far (`null` before the first turn). */
+  /** Skills referenced in the latest turn so far (`null` before the first turn). */
   readonly latest: { readonly turn: number; readonly names: readonly string[] } | null
-  /** Distinct skills, most-recent-first, capped (see CAPS). */
+  /** Distinct referenced skills, most-recent-first, capped (see CAPS). */
   readonly items: readonly SkillUsageEntry[]
-  /** Distinct skills over the whole session, uncapped. */
+  /** Distinct referenced skills over the whole session, uncapped. */
   readonly sessionTotal: number
-  /** Successful skill loads over the whole session. */
+  /** Successful references over the whole session, both channels included. */
   readonly callTotal: number
+  /** The session's current available-skill catalog, in catalog order (capped). */
+  readonly catalog: readonly string[]
+  /** How many entries the latest catalog frame really published (may exceed `catalog`). */
+  readonly catalogCount: number
 }
 
 /**
@@ -62,11 +82,17 @@ export const CAPS = {
   latest: 20,
   /** Distinct skills kept in the wire view. */
   view: 20,
+  /**
+   * Available-skill names kept in state. Real catalogs measured 71–88 entries
+   * on this machine, so the bound sits above them with room to spare — the
+   * wire only ever carries `CAPS.available` names plus the truthful count.
+   */
+  available: 120,
 } as const
 
-/** The fold's initial state: no skill has been loaded yet. */
+/** The fold's initial state: no skill has been referenced or offered yet. */
 export function initSkillUsageState(): SkillUsageState {
-  return { turn: 0, calls: {}, latest: null, items: [], sessionTotal: 0, callTotal: 0 }
+  return { turn: 0, calls: {}, latest: null, items: [], sessionTotal: 0, callTotal: 0, catalog: [], catalogCount: 0 }
 }
 
 /**
@@ -92,6 +118,36 @@ export function skillNameFromArgs(name: string, argsRaw: string): string | null 
   // Blank-but-present names are a model slip, not a reference; the exact
   // spelling is preserved for everything else.
   return typeof skill === 'string' && skill.trim().length > 0 ? skill : null
+}
+
+/**
+ * Advance one reference tally. Both channels of "this skill was referenced"
+ * land here, so a direct invocation and a tool load of the same skill share one
+ * row rather than appearing twice.
+ * @param state - the state before the reference.
+ * @param skill - the skill name, exactly as published.
+ * @param turn - the turn whose call/injection this reference belongs to.
+ */
+function tally(state: SkillUsageState, skill: string, turn: number): SkillUsageState {
+  const existing = state.items.find((item) => item.name === skill)
+  const withoutSkill = state.items.filter((item) => item.name !== skill)
+  const items = [{ name: skill, count: (existing?.count ?? 0) + 1, lastTurn: turn }, ...withoutSkill]
+    .slice(0, CAPS.session)
+
+  // A name that had been capped away can re-enter, and the deliverables fold
+  // counts that as new again rather than pretending it knows the true distinct
+  // set; the same trade-off applies here, so `sessionTotal` is a floor reached
+  // by monotone counting over the capped window.
+  const sessionTotal = existing === undefined ? state.sessionTotal + 1 : state.sessionTotal
+
+  // A stray result settling after a LATER turn opened never rewrites the newer
+  // bucket — its tally still counts above.
+  const latest = state.latest
+  const nextLatest = latest !== null && latest.turn === turn && !latest.names.includes(skill)
+    ? { turn: latest.turn, names: [...latest.names, skill] }
+    : latest
+
+  return { ...state, latest: nextLatest, items, sessionTotal, callTotal: state.callTotal + 1 }
 }
 
 /**
@@ -127,6 +183,37 @@ export function applySkillUsageEvent(state: SkillUsageState, event: FoldEvent): 
     return { ...state, calls: { ...state.calls, [call.callId]: { turn: state.turn, skill } } }
   }
 
+  if (event.type === 'user/message') {
+    const message = event.data as { source?: unknown }
+    if (message?.source === null || typeof message.source !== 'object') return state
+    const source = message.source as { kind?: unknown; name?: unknown; entries?: unknown }
+
+    if (source.kind === 'skill-invocation') {
+      // The host's own marker that a skill's instructions entered the context.
+      // Blank or drifted names are ignored rather than guessed at.
+      const skill = typeof source.name === 'string' && source.name.trim().length > 0 ? source.name : null
+      if (skill === null) return state
+      return tally(state, skill, state.turn)
+    }
+
+    if (source.kind === 'skill-catalog') {
+      // A catalog frame is a full snapshot of what is available NOW, so it
+      // replaces the list. A frame whose entries drifted into a non-array is
+      // unreadable rather than empty, and must not clear what we already know.
+      if (!Array.isArray(source.entries)) return state
+      const names: string[] = []
+      for (const entry of source.entries) {
+        if (entry === null || typeof entry !== 'object') continue
+        const published = (entry as Record<string, unknown>)['name']
+        if (typeof published !== 'string' || published.trim().length === 0) continue
+        if (!names.includes(published)) names.push(published)
+      }
+      return { ...state, catalog: names.slice(0, CAPS.available), catalogCount: names.length }
+    }
+
+    return state
+  }
+
   if (event.type !== 'tool/result') return state
 
   const result = event.data as {
@@ -140,25 +227,5 @@ export function applySkillUsageEvent(state: SkillUsageState, event: FoldEvent): 
 
   const recorded = state.calls[callId]
   if (recorded === undefined) return state
-  const skill = recorded.skill
-
-  const existing = state.items.find((item) => item.name === skill)
-  const withoutSkill = state.items.filter((item) => item.name !== skill)
-  const items = [{ name: skill, count: (existing?.count ?? 0) + 1, lastTurn: recorded.turn }, ...withoutSkill]
-    .slice(0, CAPS.session)
-
-  // A name that had been capped away can re-enter, and the deliverables fold
-  // counts that as new again rather than pretending it knows the true distinct
-  // set; the same trade-off applies here, so `sessionTotal` is a floor reached
-  // by monotone counting over the capped window.
-  const sessionTotal = existing === undefined ? state.sessionTotal + 1 : state.sessionTotal
-
-  // A stray result settling after a LATER turn opened never rewrites the newer
-  // bucket — its tally still counts above.
-  const latest = state.latest
-  const nextLatest = latest !== null && latest.turn === recorded.turn && !latest.names.includes(skill)
-    ? { turn: latest.turn, names: [...latest.names, skill] }
-    : latest
-
-  return { ...state, latest: nextLatest, items, sessionTotal, callTotal: state.callTotal + 1 }
+  return tally(state, recorded.skill, recorded.turn)
 }

@@ -2,6 +2,20 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.2 — 2026-10-13 (second canal pour les références + catalogue)
+
+- « Références de compétences » ne lit plus seulement l’appel à l’outil `skill` : le marqueur posé par
+  l’hôte lui-même, `user/message.source.kind === 'skill-invocation'` (invocation directe par
+  l’utilisateur ; l’hôte demande explicitement au modèle de ne pas rappeler l’outil) entre dans le même
+  comptage. Sur 250 sessions réelles, 10 n’avaient qu’une invocation et aucun appel d’outil — rien
+  n’apparaissait auparavant.
+- Nouveau groupe « Disponibles dans cette session » depuis `entries[].name` des trames
+  `skill-catalog`, replié par défaut. Chaque trame REMPLACE la liste (commentaire de l’hôte : `update`
+  marque un remplacement) — pas d’union, sinon les compétences ne disparaîtraient jamais. Les noms déjà
+  référencés sont retirés du groupe.
+- Le texte d’état vide nomme les deux chemins ; 3 clés de groupe dans les 9 langues. État enrichi de
+  `catalog`/`catalogCount`, `stateVersion` 0→1 (valeurs par défaut, les états anciens se rejouent).
+
 ## 0.9.1 — 2026-10-13 (affichage groupé)
 
 - La section « Fichiers produits » compte désormais deux groupes séparés : « Ce tour-ci · N » en liste

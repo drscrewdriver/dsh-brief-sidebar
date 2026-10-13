@@ -42,15 +42,22 @@ export interface SkillUsageEntryView {
 }
 /** Client view of the skill-usage fold (JSON-safe). */
 export interface SkillUsageView {
-    /** Skills loaded in the latest turn; `null` before the first `turn/start`. */
+    /** Skills referenced in the latest turn; `null` before the first `turn/start`. */
     readonly latest: {
         readonly turn: number;
         readonly names: readonly string[];
     } | null;
-    /** Distinct loaded skills, most recently used first (capped). */
+    /** Distinct referenced skills, most recently used first (capped). */
     readonly session: readonly SkillUsageEntryView[];
-    /** Distinct loaded skills session-wide — may exceed `session.length`. */
+    /** Distinct referenced skills session-wide — may exceed `session.length`. */
     readonly sessionTotal: number;
-    /** Successful skill loads session-wide. */
+    /** Successful references session-wide, both channels included. */
     readonly callTotal: number;
+    /**
+     * The skills this session was OFFERED, per its latest catalog frame (capped).
+     * Available is not referenced: the model may never use any of these.
+     */
+    readonly available: readonly string[];
+    /** How many entries that frame published — may exceed `available.length`. */
+    readonly availableCount: number;
 }

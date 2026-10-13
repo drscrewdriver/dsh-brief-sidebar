@@ -2,6 +2,19 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.2 — 2026-10-13 (secondo canale per i riferimenti + catalogo)
+
+- «Riferimenti alle skill» non legge più soltanto la chiamata al tool `skill`: il marcatore che l’host
+  stesso pubblica, `user/message.source.kind === 'skill-invocation'` (invocazione diretta dell’utente;
+  l’host chiede esplicitamente al modello di non richiamare il tool) entra nello stesso conteggio. Su 250
+  sessioni reali, 10 avevano solo l’invocazione e nessuna chiamata: prima non compariva nulla.
+- Nuovo gruppo «Disponibili in questa sessione» da `entries[].name` dei frame `skill-catalog`, ripiegato
+  per impostazione predefinita. Ogni frame SOSTITUISCE l’elenco (commento dell’host: `update` marca una
+  sostituzione), non un’unione — altrimenti le skill non sparirebbero mai. I nomi già riferiti vengono
+  sottratti dal gruppo.
+- Il testo di stato vuoto nomina entrambi i percorsi; 3 chiavi di gruppo in tutte le 9 lingue. Lo stato
+  guadagna `catalog`/`catalogCount`, `stateVersion` 0→1 (con default; stati vecchi si riprodurrebbero).
+
 ## 0.9.1 — 2026-10-13 (visualizzazione raggruppata)
 
 - La sezione «File prodotti» conta due gruppi separati: «Questo turno · N» in elenco diretto,

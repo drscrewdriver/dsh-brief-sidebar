@@ -2,6 +2,19 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.2 — 2026-10-13 (segundo canal de referencias + catálogo)
+
+- «Referencias de skills» ya no lee solo la llamada a la herramienta `skill`: el marcador que el propio
+  host publica, `user/message.source.kind === 'skill-invocation'` (invocación directa del usuario; el
+  host pide explícitamente al modelo que no vuelva a llamar la herramienta), entra en el mismo conteo.
+  De 250 sesiones reales, 10 tenían solo invocación y ninguna llamada: antes no se mostraba nada.
+- Nuevo grupo «Disponibles en esta sesión» desde `entries[].name` de los fotogramas `skill-catalog`,
+  plegado por defecto. Cada fotograma REEMPLAZA la lista (comentario del host: `update` marca una
+  sustitución), no una unión — si no, las skills nunca desaparecerían. Los nombres ya referenciados se
+  descuentan del grupo.
+- El texto de vacío nombra los dos caminos; 3 claves de grupo en los 9 idiomas. El estado gana
+  `catalog`/`catalogCount`, `stateVersion` 0→1 (con valores por defecto; estados viejos se reproducen).
+
 ## 0.9.1 — 2026-10-13 (agrupación visible)
 
 - La sección «Archivos producidos» cuenta dos grupos aparte: «Este turno · N» en lista directa y

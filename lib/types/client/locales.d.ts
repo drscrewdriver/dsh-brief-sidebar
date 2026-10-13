@@ -66,6 +66,9 @@ export declare const zh: {
     'skillUsage.uses': string;
     'skillUsage.count': string;
     'skillUsage.latestTag': string;
+    'skillUsage.invokedGroup': string;
+    'skillUsage.availableGroup': string;
+    'skillUsage.availableCapped': string;
     'settings.title': string;
     'settings.desc': string;
     'settings.memorySlots': string;
