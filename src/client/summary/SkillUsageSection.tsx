@@ -43,6 +43,12 @@ export interface SkillUsageSectionProps {
   ctx?: Context
   /** The session this tab is scoped to. */
   scope?: { readonly sessionId?: string }
+  /**
+   * Drop the section header. The references tab already says “技能”, so
+   * repeating it as a heading inside the pane is noise; standalone renders
+   * (and every existing test) keep the default `false`.
+   */
+  hideHeader?: boolean
 }
 
 const SECTION_STYLE: CSSProperties = {
@@ -121,7 +127,7 @@ const EMPTY_STYLE: CSSProperties = {
  * @param props - translation, client context, session scope.
  */
 export function SkillUsageSection(props: SkillUsageSectionProps): ReactNode {
-  const { t, ctx, scope } = props
+  const { t, ctx, scope, hideHeader = false } = props
   const [availableOpen, setAvailableOpen] = useState(false)
 
   const view = readSkillUsage(useProjectionValue(ctx, scope?.sessionId, SKILL_USAGE_KEY))
@@ -137,7 +143,7 @@ export function SkillUsageSection(props: SkillUsageSectionProps): ReactNode {
   return createElement(
     'div',
     { style: SECTION_STYLE, 'data-dsh-brief-sidebar': 'skill-usage-section' },
-    createElement('div', { style: HEADER_STYLE }, t('section.skillUsage')),
+    !hideHeader && createElement('div', { style: HEADER_STYLE }, t('section.skillUsage')),
     view.session.length === 0 && createElement(
       'div',
       { style: EMPTY_STYLE },

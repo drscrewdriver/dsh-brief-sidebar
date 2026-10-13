@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.3 — 2026-10-13 (compétences et mémoire côte à côte sous « Références »)
+
+- Les trois sections du bas (références de compétences, rappels de session, emplacements mémoire)
+  deviennent une section « Références » à deux onglets « Compétences » / « Mémoire », commutables au
+  clic ou avec les flèches gauche/droite ; le board et les fichiers ne sont plus chassés de la vue.
+- Le panneau inactif reste monté (`display:none`) : sélection en cours, note en attente et
+  historique déplié survivent au changement d’onglet.
+- Chaque onglet est conditionnel : aucun onglet menant à un vide ; si seule la mémoire est vivante,
+  l’onglet par défaut bascule dessus. Sans aucune capacité, la section disparaît.
+- 3 nouvelles clés dans les 9 langues.
+
 ## 0.9.2 — 2026-10-13 (second canal pour les références + catalogue)
 
 - « Références de compétences » ne lit plus seulement l’appel à l’outil `skill` : le marqueur posé par

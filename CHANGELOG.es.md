@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.3 — 2026-10-13 (skills y memoria lado a lado en «Referencias»)
+
+- Las tres secciones inferiores (referencias de skills, recuerdos de sesión, ranuras de memoria) pasan
+  a una sección «Referencias» con dos pestañas «Skills» / «Memoria», conmutables por clic o con las
+  flechas izquierda/derecha; ya no desplazan el tablero y los archivos fuera de la vista.
+- El panel inactivo permanece montado (`display:none`): la selección, la nota pendiente y
+  el historial desplegado sobreviven al cambiar de pestaña.
+- Cada pestaña es condicional: ninguna que lleve a la nada; si solo memoria está viva, la vista por
+  defecto cae en memoria. Sin ninguna capacidad, la sección desaparece.
+- 3 claves nuevas en los 9 idiomas.
+
 ## 0.9.2 — 2026-10-13 (segundo canal de referencias + catálogo)
 
 - «Referencias de skills» ya no lee solo la llamada a la herramienta `skill`: el marcador que el propio

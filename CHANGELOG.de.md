@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.3 — 2026-10-13 (Skills und Memory nebeneinander in „Referenzen“)
+
+- Die drei unteren Abschnitte (Skill-Referenzen, Sitzungsrückrufe, Speicher-Slots) sind jetzt ein
+  Abschnitt „Referenzen“ mit zwei Reitern „Skills“ und „Speicher“: per Klick oder mit den
+  Pfeiltasten umschaltbar; auf schmalen Sidebars verdrängen sie Fortschritt und Dateien nicht mehr.
+- Der inaktive Pane bleibt montiert (`display:none`), damit Auswahl, laufende Bewertung
+  und geöffnete Historie beim Wechseln nicht verloren gehen.
+- Beide Reiter sind einzeln bedingt: kein Reiter, der ins Leere zeigt; ist nur Memory live, fällt die
+  Vorschau auf Memory. Ohne beide Fähigkeiten verschwindet der Abschnitt ganz.
+- 3 neue Schlüssel in allen 9 Sprachen.
+
 ## 0.9.2 — 2026-10-13 (zweiter Kanal für Skill-Referenzen plus Katalog)
 
 - „Skill-Referenzen“ liest nicht mehr nur den `skill`-Toolaufruf: das vom Host selbst gesetzte

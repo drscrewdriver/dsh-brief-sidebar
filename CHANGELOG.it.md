@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.3 — 2026-10-13 (skill e memoria affiancate in «Riferimenti»)
+
+- Le tre sezioni in basso (riferimenti alle skill, richiami di sessione, slot di memoria) diventano una
+  sezione «Riferimenti» con due schede «Skill» / «Memoria», commutabili al clic o con i tasti freccia;
+  board e file non vengono più spinti fuori dalla vista.
+- Il pannello inattivo resta montato (`display:none`): selezione, voto in corso e cronologia
+  aperta sopravvivono al cambio di scheda.
+- Ogni scheda è condizionale: nessuna scheda che punta al vuoto; se solo la memoria è attiva, la vista
+  predefinita cade su memoria. Senza alcuna capacità, la sezione scompare.
+- 3 nuove chiavi in tutte le 9 lingue.
+
 ## 0.9.2 — 2026-10-13 (secondo canale per i riferimenti + catalogo)
 
 - «Riferimenti alle skill» non legge più soltanto la chiamata al tool `skill`: il marcatore che l’host

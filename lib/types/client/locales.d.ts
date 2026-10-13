@@ -61,6 +61,9 @@ export declare const zh: {
     'recall.supersededTag': string;
     'recall.noBody': string;
     'section.skillUsage': string;
+    'section.references': string;
+    'references.tabSkills': string;
+    'references.tabMemory': string;
     'skillUsage.empty': string;
     'skillUsage.emptyHint': string;
     'skillUsage.uses': string;

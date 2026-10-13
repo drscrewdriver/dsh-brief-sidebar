@@ -9,6 +9,12 @@ export interface SkillUsageSectionProps {
     scope?: {
         readonly sessionId?: string;
     };
+    /**
+     * Drop the section header. The references tab already says “技能”, so
+     * repeating it as a heading inside the pane is noise; standalone renders
+     * (and every existing test) keep the default `false`.
+     */
+    hideHeader?: boolean;
 }
 /**
  * The skill-usage section. The subscription is unconditional (a plain listener,

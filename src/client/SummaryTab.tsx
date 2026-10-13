@@ -2,11 +2,13 @@
  * The summary tab body: the session's at-a-glance state, composed of sections.
  *
  * Section order: 进展 (the todos board) → 产物 (produced files, codeplan
- * artifacts marked inline) → 技能引用 (which skills this session loaded) →
- * 本会话召回 (what prime-memory injected into this session and compaction has
- * not overwritten) → 记忆槽位 (hand-pinned resident conventions, off by default).
- * Each section owns its own data chain and its own gating contract; this
- * component owns only the shell.
+ * artifacts marked inline) → 引用 (two switchable tabs: 技能 and 记忆).
+ * The reference tabs replaced three stacked sections: which skills entered the
+ * session, what prime-memory injected and compaction has not overwritten, and
+ * the hand-pinned resident slots — all three answer "what is in this session's
+ * context", and stacking them pushed the board off a narrow sidebar. Each pane
+ * keeps its own data chain and its own gating contract; this component owns
+ * only the shell.
  *
  * Two better-sidebar contracts are honoured:
  *
@@ -24,9 +26,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { TodoSection } from './TodoBoardTab'
 import type { TodoScope } from './TodoBoardTab'
 import { DeliverablesSection } from './summary/DeliverablesSection'
-import { SkillUsageSection } from './summary/SkillUsageSection'
-import { MemorySlotsSection } from './summary/MemorySlotsSection'
-import { MemoryRecallSection } from './summary/MemoryRecallSection'
+import { ReferenceSection } from './summary/ReferenceSection'
 
 export interface SummaryTabProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -69,16 +69,10 @@ export function SummaryTab(props: SummaryTabProps): ReactNode {
     createElement('div', { style: SCROLL_STYLE },
       createElement(TodoSection, { key: 'progress', t, ctx, scope }),
       createElement(DeliverablesSection, { key: 'deliverables', t, ctx, scope }),
-      // 技能引用：本会话通过宿主 `skill` 工具载入过哪些技能（`dshSummarySkillUsage`
-      // 投影，本插件自己的 host 半注册）。与记忆两栏正交：这里讲“拉过哪些说明书”，
-      // 下面两栏讲“模型看到了哪些记忆”。只读，无开关，投影缺席即整段隐藏。
-      createElement(SkillUsageSection, { key: 'skill-usage', t, ctx, scope }),
-      // 本会话召回（固定最底）：入口开关（configForms `showMemoryRecall`，默认开）
-      // 与能力存在（dsh-prime-memory 的 `memoryRecall` 投影）缺一即整段隐藏。
-      // 这是"模型此刻看到哪些记忆"的诚实视图：非常驻，压缩后即清空。
-      createElement(MemoryRecallSection, { key: 'memory-recall', t, ctx, scope }),
-      // 记忆槽位分区：手动 pin 的常驻约定（`memorySlots` 投影），默认关。
-      createElement(MemorySlotsSection, { key: 'memory-slots', t, ctx, scope }),
+      // 引用：技能页（`dshSummarySkillUsage`，本插件自己的 host 半注册）与记忆页
+      // （`memoryRecall` / `memorySlots`，由 dsh-prime-memory 提供，各有开关）并列，
+      // 可点击或用左右方向键切换。两个页签都空时整节隐藏（无能力 ≠ 空态）。
+      createElement(ReferenceSection, { key: 'references', t, ctx, scope }),
     ),
   )
 }
