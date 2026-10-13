@@ -24,8 +24,9 @@ export const SKILL_USAGE_KEY = 'dshSummarySkillUsage'
 
 /**
  * The search-reference key (queries and returned sources of this session's
- * `advanced_search` calls). Same rule as above: the name is ours, so no other
- * host-side unit can answer for it by accident.
+ * web searches — the plugin's `advanced_search` and the harness's `web_search`).
+ * Same rule as above: the name is ours, so no other host-side unit can answer
+ * for it by accident.
  */
 export const SEARCH_REFS_KEY = 'dshSummarySearchRefs'
 
@@ -81,6 +82,8 @@ export interface SearchRefItemView {
   readonly snippet?: string
   /** The query that most recently surfaced it. */
   readonly query: string
+  /** Which tool answered: the plugin's `advanced_search` or the host's `web_search`. */
+  readonly tool: string
   /** Settled searches that surfaced this source. */
   readonly count: number
   readonly lastTurn: number
@@ -89,6 +92,8 @@ export interface SearchRefItemView {
 /** One query the session ran, with how many sources it returned. */
 export interface SearchQueryView {
   readonly query: string
+  /** `advanced_search` (plugin) or `web_search` (harness). */
+  readonly tool: string
   readonly turn: number
   readonly hits: number
 }

@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.5 — 2026-10-14 (la pestaña de búsquedas también cubre web_search del anfitrión)
+
+- Además de `advanced_search` se plie ahora `web_search`, la herramienta del anfitrión: el modelo
+  la usa por defecto, así que las sesiones que buscaron quedaban vacías.
+- Se leen ambas formas de argumento: `query` (cadena única) y `queries` (lista; una fila por
+  consulta, con el número de fuentes como total de la llamada).
+- Cada fila de consulta muestra la herramienta que respondió (sin traducir: es un identificador buscable en el transcript).
+- Reconstrucción de 250 sesiones reales: sesiones con consultas de 20 a 52, 472 filas del anfitrión y 777 fuentes.
+- El aviso de vacío menciona ambas herramientas (9 idiomas); si falta `tool` en un frame antiguo, la fila se
+  lee como `advanced_search` en vez de descartarse.
+
 ## 0.9.4 — 2026-10-14 (tercera pestaña «Búsquedas» en Referencias)
 
 - Nueva proyección `dshSummarySearchRefs`: pliega solo `advanced_search`, nunca el

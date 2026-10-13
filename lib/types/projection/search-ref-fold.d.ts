@@ -1,21 +1,30 @@
 /**
  * Host-side fold of search-reference facts — the projection unit state for
- * `dshSummarySearchRefs`: which queries this session ran through the user's
- * `advanced_search` tool, and which external sources came back.
+ * `dshSummarySearchRefs`: which queries this session ran against the web, and
+ * which external sources came back.
  *
- * Scope is deliberate: `advanced_search` only, not the harness's own
- * `web_search`. The two tools are separate facts for the reader — one is the
- * plugins the human installed and configures (engines, keys, prices), the other
- * is host plumbing — and folding them together would make the section report
- * searches the reader cannot inspect or change.
+ * Two tools feed it, and the split is stated on every row rather than merged
+ * away, because they are different facts for the reader:
+ *
+ * - `advanced_search` — the user's own `dsh-free-search` tool: engines, keys
+ *   and prices are things the human configures. Its argument is `query`, a
+ *   single string.
+ * - `web_search` — the harness's own tool, which `dsh-free-search` also feeds
+ *   (it registers a `WebSearchProvider`, so results can come from engines the
+ *   human picked while the call goes through host plumbing). Its argument is
+ *   `queries`, an array merged into one result set.
+ *
+ * Folding only the plugin tool turned out to be the wrong default: the model
+ * reaches for the host's `web_search` far more often, so the section sat empty
+ * in exactly the sessions where searching happened. Both are folded now; the
+ * `tool` on each row is what keeps the two honest.
  *
  * Two channels, both structured, no prose scraping:
  *
- * - the query string comes from `tool/call.arguments.query`;
- * - the returned sources come from `tool/result.meta.sources[]`, which
- *   `dsh-free-search` publishes through the tool's `output.presentationMeta`
- *   (shape mirrors the host's `searchMetaFromValue`: `sources[]` of
- *   url/title/snippet/publishedAt, plus `provider`/`answer`).
+ * - the query strings come from `tool/call.arguments`;
+ * - the returned sources come from `tool/result.meta.sources[]` — the host
+ *   publishes those itself for `web_search`, and `dsh-free-search` >= 0.9.25
+ *   publishes them for `advanced_search` via `output.presentationMeta`.
  *
  * Older `dsh-free-search` builds declare no `presentationMeta`, so their
  * results carry no meta. That is a degraded reading, not a missed search: the
@@ -39,6 +48,8 @@ export interface SearchRefItem {
     readonly snippet?: string;
     /** The query that most recently surfaced this source. */
     readonly query: string;
+    /** Which tool answered — the plugin's own or the harness's. */
+    readonly tool: string;
     /** How many settled searches surfaced it. */
     readonly count: number;
     /** Turn whose result last advanced this row. */
@@ -47,17 +58,26 @@ export interface SearchRefItem {
 /** One search the session ran, with how many sources it returned. */
 export interface SearchQueryRow {
     readonly query: string;
+    /** `advanced_search` (plugin) or `web_search` (host). */
+    readonly tool: string;
     readonly turn: number;
+    /**
+     * Sources the call returned. For a merged multi-query `web_search` this is
+     * the call's total repeated on each of its queries — the session never says
+     * which query produced which source, and inventing a per-query split would
+     * be worse than restating the shared total.
+     */
     readonly hits: number;
 }
 /** Fold state. Plain JSON, so the projection cache can persist it. */
 export interface SearchRefState {
     /** Turn number of the open (or latest seen) turn; 0 before the first turn. */
     readonly turn: number;
-    /** Open turns' `callId → query` map; only `advanced_search` calls are recorded. */
+    /** Open turns' `callId → the search it asked for`; only owned tools are recorded. */
     readonly calls: Readonly<Record<string, {
         readonly turn: number;
-        readonly query: string;
+        readonly tool: string;
+        readonly queries: readonly string[];
     }>>;
     /** URLs surfaced in the latest turn so far (`null` before the first turn). */
     readonly latest: {
@@ -91,13 +111,13 @@ export declare const CAPS: {
 /** The fold's initial state: no search has settled yet. */
 export declare function initSearchRefState(): SearchRefState;
 /**
- * Extract the query string from one committed `tool/call`.
+ * Extract the query list of one committed `tool/call`.
  *
  * @param name - wire tool name.
  * @param argsRaw - model-produced JSON arguments (a string by the session contract).
- * @returns the non-blank query, or null when this call is not a search.
+ * @returns the non-blank queries in published order, or null when this call is not a search.
  */
-export declare function queryFromArgs(name: string, argsRaw: string): string | null;
+export declare function queriesFromArgs(name: string, argsRaw: string): readonly string[] | null;
 /**
  * The dedupe key. Host case and a trailing slash are not meaningful for
  * identity; path case IS, so it is left alone. Exported because the client

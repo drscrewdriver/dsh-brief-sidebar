@@ -1,5 +1,15 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.9.5 — 2026-10-14（搜索页签兜底宿主 web_search）
+
+- 搜索引用除 `advanced_search` 外同时折宿主 `web_search`：模型默认走宿主那个工具，
+  只追插件工具会让「明明搜过了」的会话显示空态。
+- 两种参数形状都吃：`advanced_search` 的 `query`（单串）与 `web_search` 的 `queries`（数组，
+  一次调用合并多条查询时逐条成行；来源数是整次调用的总数，不硬拆到每条查询）。
+- 每条查询行标出回答它的工具名（不翻译：那是可以在转录里 grep 的线上标识）。
+- 真会话回灌 250 个：有查询行的会话由 20 个增至 52 个，折出 472 条宿主查询行与 777 条来源行。
+- 空态提示同时提到两个工具（9 语）；帧里没有 `tool`（宿主半未升级）时按 `advanced_search` 读，行不消失。
+
 ## 0.9.4 — 2026-10-14（引用节加「搜索」页签）
 
 - 新增投影 `dshSummarySearchRefs`：只折 `advanced_search`，不折宿主 `web_search`——

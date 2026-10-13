@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.5 — 2026-10-14 (la scheda ricerche copre anche web_search dell’host)
+
+- Oltre a `advanced_search` viene ora piegato `web_search`, lo strumento dell’host: il modello
+  usa quello di default, quindi le sessioni con ricerche restavano vuote.
+- Sono lette entrambe le forme di argomento: `query` (stringa singola) e `queries` (elenco; una
+  riga per query, col numero di fonti come totale della chiamata).
+- Ogni riga riporta lo strumento che ha risposto (non tradotto: è un identificatore ricercabile nella trascrizione).
+- Ricostruzione su 250 sessioni reali: sessioni con query da 20 a 52, 472 righe dell’host e 777 fonti.
+- Il messaggio a vuoto cita entrambi gli strumenti (9 lingue); se `tool` manca in un frame vecchio, la riga è
+  letta come `advanced_search` invece di essere scartata.
+
 ## 0.9.4 — 2026-10-14 (terza scheda «Ricerche» nei Riferimenti)
 
 - Nuova proiezione `dshSummarySearchRefs`: ripiega solo `advanced_search`, mai il

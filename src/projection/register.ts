@@ -176,7 +176,14 @@ export function registerSkillUsageProjection(ctx: Context): void {
 /** Zod schema of the search-reference fold state. */
 const searchStateSchema = z.object({
   turn: z.number(),
-  calls: z.record(z.string(), z.object({ turn: z.number(), query: z.string() })),
+  calls: z.record(z.string(), z.object({
+    turn: z.number(),
+    // Defaults, not requirements: a state persisted before 0.9.5 stored a single
+    // `query` and no `tool`. Replaying it must not fail — it just settles
+    // nothing extra, while the session's own new searches fold normally.
+    tool: z.string().default('advanced_search'),
+    queries: z.array(z.string()).default([]),
+  })),
   latest: z.object({ turn: z.number(), urls: z.array(z.string()) }).nullable(),
   items: z.array(z.object({
     url: z.string(),
@@ -184,10 +191,16 @@ const searchStateSchema = z.object({
     title: z.string().optional(),
     snippet: z.string().optional(),
     query: z.string(),
+    tool: z.string().default('advanced_search'),
     count: z.number(),
     lastTurn: z.number(),
   })),
-  queries: z.array(z.object({ query: z.string(), turn: z.number(), hits: z.number() })),
+  queries: z.array(z.object({
+    query: z.string(),
+    tool: z.string().default('advanced_search'),
+    turn: z.number(),
+    hits: z.number(),
+  })),
   sourceTotal: z.number(),
   queryTotal: z.number(),
 })
@@ -195,13 +208,19 @@ const searchStateSchema = z.object({
 /** Zod schema of the search-reference wire view. */
 const searchViewSchema = z.object({
   latest: z.object({ turn: z.number(), urls: z.array(z.string()) }).nullable(),
-  queries: z.array(z.object({ query: z.string(), turn: z.number(), hits: z.number() })),
+  queries: z.array(z.object({
+    query: z.string(),
+    tool: z.string(),
+    turn: z.number(),
+    hits: z.number(),
+  })),
   sources: z.array(z.object({
     url: z.string(),
     host: z.string(),
     title: z.string().optional(),
     snippet: z.string().optional(),
     query: z.string(),
+    tool: z.string(),
     count: z.number(),
     lastTurn: z.number(),
   })),

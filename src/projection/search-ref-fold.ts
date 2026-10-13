@@ -1,21 +1,30 @@
 /**
  * Host-side fold of search-reference facts — the projection unit state for
- * `dshSummarySearchRefs`: which queries this session ran through the user's
- * `advanced_search` tool, and which external sources came back.
+ * `dshSummarySearchRefs`: which queries this session ran against the web, and
+ * which external sources came back.
  *
- * Scope is deliberate: `advanced_search` only, not the harness's own
- * `web_search`. The two tools are separate facts for the reader — one is the
- * plugins the human installed and configures (engines, keys, prices), the other
- * is host plumbing — and folding them together would make the section report
- * searches the reader cannot inspect or change.
+ * Two tools feed it, and the split is stated on every row rather than merged
+ * away, because they are different facts for the reader:
+ *
+ * - `advanced_search` — the user's own `dsh-free-search` tool: engines, keys
+ *   and prices are things the human configures. Its argument is `query`, a
+ *   single string.
+ * - `web_search` — the harness's own tool, which `dsh-free-search` also feeds
+ *   (it registers a `WebSearchProvider`, so results can come from engines the
+ *   human picked while the call goes through host plumbing). Its argument is
+ *   `queries`, an array merged into one result set.
+ *
+ * Folding only the plugin tool turned out to be the wrong default: the model
+ * reaches for the host's `web_search` far more often, so the section sat empty
+ * in exactly the sessions where searching happened. Both are folded now; the
+ * `tool` on each row is what keeps the two honest.
  *
  * Two channels, both structured, no prose scraping:
  *
- * - the query string comes from `tool/call.arguments.query`;
- * - the returned sources come from `tool/result.meta.sources[]`, which
- *   `dsh-free-search` publishes through the tool's `output.presentationMeta`
- *   (shape mirrors the host's `searchMetaFromValue`: `sources[]` of
- *   url/title/snippet/publishedAt, plus `provider`/`answer`).
+ * - the query strings come from `tool/call.arguments`;
+ * - the returned sources come from `tool/result.meta.sources[]` — the host
+ *   publishes those itself for `web_search`, and `dsh-free-search` >= 0.9.25
+ *   publishes them for `advanced_search` via `output.presentationMeta`.
  *
  * Older `dsh-free-search` builds declare no `presentationMeta`, so their
  * results carry no meta. That is a degraded reading, not a missed search: the
@@ -40,6 +49,8 @@ export interface SearchRefItem {
   readonly snippet?: string
   /** The query that most recently surfaced this source. */
   readonly query: string
+  /** Which tool answered — the plugin's own or the harness's. */
+  readonly tool: string
   /** How many settled searches surfaced it. */
   readonly count: number
   /** Turn whose result last advanced this row. */
@@ -49,7 +60,15 @@ export interface SearchRefItem {
 /** One search the session ran, with how many sources it returned. */
 export interface SearchQueryRow {
   readonly query: string
+  /** `advanced_search` (plugin) or `web_search` (host). */
+  readonly tool: string
   readonly turn: number
+  /**
+   * Sources the call returned. For a merged multi-query `web_search` this is
+   * the call's total repeated on each of its queries — the session never says
+   * which query produced which source, and inventing a per-query split would
+   * be worse than restating the shared total.
+   */
   readonly hits: number
 }
 
@@ -57,8 +76,8 @@ export interface SearchQueryRow {
 export interface SearchRefState {
   /** Turn number of the open (or latest seen) turn; 0 before the first turn. */
   readonly turn: number
-  /** Open turns' `callId → query` map; only `advanced_search` calls are recorded. */
-  readonly calls: Readonly<Record<string, { readonly turn: number; readonly query: string }>>
+  /** Open turns' `callId → the search it asked for`; only owned tools are recorded. */
+  readonly calls: Readonly<Record<string, { readonly turn: number; readonly tool: string; readonly queries: readonly string[] }>>
   /** URLs surfaced in the latest turn so far (`null` before the first turn). */
   readonly latest: { readonly turn: number; readonly urls: readonly string[] } | null
   /** Distinct sources, most-recent-first, capped. */
@@ -92,18 +111,27 @@ export function initSearchRefState(): SearchRefState {
   return { turn: 0, calls: {}, latest: null, items: [], queries: [], sourceTotal: 0, queryTotal: 0 }
 }
 
-/** The tool this fold owns. Nothing else counts, even with a `query` argument. */
-const SEARCH_TOOL = 'advanced_search'
+/**
+ * The tools this fold owns, with how each one carries its query text.
+ * Anything else is not a search reference even if its arguments look alike.
+ */
+const SEARCH_TOOLS: Readonly<Record<string, 'query' | 'queries'>> = {
+  // The plugin's own tool: one query per call.
+  advanced_search: 'query',
+  // The harness's tool: 1..N queries whose result sets are merged.
+  web_search: 'queries',
+}
 
 /**
- * Extract the query string from one committed `tool/call`.
+ * Extract the query list of one committed `tool/call`.
  *
  * @param name - wire tool name.
  * @param argsRaw - model-produced JSON arguments (a string by the session contract).
- * @returns the non-blank query, or null when this call is not a search.
+ * @returns the non-blank queries in published order, or null when this call is not a search.
  */
-export function queryFromArgs(name: string, argsRaw: string): string | null {
-  if (name !== SEARCH_TOOL) return null
+export function queriesFromArgs(name: string, argsRaw: string): readonly string[] | null {
+  const shape = SEARCH_TOOLS[name]
+  if (shape === undefined) return null
   let args: unknown
   try {
     args = JSON.parse(argsRaw) as unknown
@@ -111,8 +139,19 @@ export function queryFromArgs(name: string, argsRaw: string): string | null {
     return null
   }
   if (typeof args !== 'object' || args === null || Array.isArray(args)) return null
-  const query = (args as Record<string, unknown>)['query']
-  return typeof query === 'string' && query.trim().length > 0 ? query : null
+  const record = args as Record<string, unknown>
+  const keep = (value: unknown, out: string[]): void => {
+    if (typeof value === 'string' && value.trim().length > 0) out.push(value.trim())
+  }
+  const out: string[] = []
+  if (shape === 'query') {
+    keep(record['query'], out)
+  } else {
+    // A non-array `queries` is a drifted argument, not a search we can name.
+    if (!Array.isArray(record['queries'])) return null
+    for (const entry of record['queries']) keep(entry, out)
+  }
+  return out.length > 0 ? out : null
 }
 
 /**
@@ -172,7 +211,7 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
   if (event.type === 'turn/start') {
     const turn = event.data as { turn?: unknown }
     if (typeof turn?.turn !== 'number') return state
-    const calls: Record<string, { readonly turn: number; readonly query: string }> = {}
+    const calls: Record<string, { readonly turn: number; readonly tool: string; readonly queries: readonly string[] }> = {}
     for (const [id, entry] of Object.entries(state.calls)) {
       if (entry.turn >= turn.turn - 1) calls[id] = entry
     }
@@ -183,11 +222,12 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
     const call = event.data as { callId?: unknown; name?: unknown; arguments?: unknown }
     if (typeof call?.callId !== 'string') return state
     if (typeof call.name !== 'string' || typeof call.arguments !== 'string') return state
-    const query = queryFromArgs(call.name, call.arguments)
+    if (SEARCH_TOOLS[call.name] === undefined) return state
+    const queries = queriesFromArgs(call.name, call.arguments)
     // An unreadable query is not recorded: the later result then settles nothing,
     // which is the honest reading of "we do not know what was searched".
-    if (query === null) return state
-    return { ...state, calls: { ...state.calls, [call.callId]: { turn: state.turn, query } } }
+    if (queries === null) return state
+    return { ...state, calls: { ...state.calls, [call.callId]: { turn: state.turn, tool: call.name, queries } } }
   }
 
   if (event.type !== 'tool/result') return state
@@ -202,7 +242,10 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
 
   const recorded = state.calls[callId]
   if (recorded === undefined) return state
-  const { query, turn } = recorded
+  const { tool, queries: asked, turn } = recorded
+  // The row label is the last query of the call: for a merged multi-query
+  // `web_search` that is the one whose wording the reader most recently saw.
+  const query = asked[asked.length - 1] ?? ''
 
   const sources = readSources(result.meta)
 
@@ -221,6 +264,7 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
       ...(source.title !== undefined ? { title: source.title } : {}),
       ...(source.snippet !== undefined ? { snippet: source.snippet } : {}),
       query,
+      tool,
       count: at < 0 ? 1 : (items[at]?.count ?? 0) + 1,
       lastTurn: turn,
     }
@@ -230,16 +274,20 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
   }
 
   // Queries: newest first, one row per distinct query text, hits accumulating.
+  // Every query of the call gets its own row — `web_search` merges N of them
+  // and the reader asked what was searched, not which call carried it.
   const queries = [...state.queries]
-  const qAt = queries.findIndex(row => row.query === query)
   let queryTotal = state.queryTotal
-  if (qAt >= 0) {
-    const previous = queries[qAt]
-    queries.splice(qAt, 1)
-    queries.unshift({ query, turn, hits: (previous?.hits ?? 0) + sources.length })
-  } else {
-    queries.unshift({ query, turn, hits: sources.length })
-    queryTotal += 1
+  for (const asked2 of asked) {
+    const qAt = queries.findIndex(row => row.query === asked2)
+    if (qAt >= 0) {
+      const previous = queries[qAt]
+      queries.splice(qAt, 1)
+      queries.unshift({ query: asked2, tool, turn, hits: (previous?.hits ?? 0) + sources.length })
+    } else {
+      queries.unshift({ query: asked2, tool, turn, hits: sources.length })
+      queryTotal += 1
+    }
   }
 
   const latest = state.latest

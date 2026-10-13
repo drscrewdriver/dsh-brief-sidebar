@@ -13,7 +13,7 @@ import {
   CAPS,
   applySearchRefEvent,
   initSearchRefState,
-  queryFromArgs,
+  queriesFromArgs,
 } from '../src/projection/search-ref-fold'
 
 const turnStart = (turn: number) => ({ type: 'turn/start', data: { turn } })
@@ -38,15 +38,27 @@ const result = (callId: string, meta?: unknown, isError = false) => ({
 
 const OPEN = applySearchRefEvent(initSearchRefState(), turnStart(1))
 
-describe('queryFromArgs', () => {
-  it('reads the query only from an advanced_search call', () => {
-    expect(queryFromArgs('advanced_search', '{"query":"量子纠错"}')).toBe('量子纠错')
-    // 别的工具即使带 query 也不算。
-    expect(queryFromArgs('read', '{"query":"x"}')).toBeNull()
-    expect(queryFromArgs('advanced_search', '{"maxResults":5}')).toBeNull()
-    expect(queryFromArgs('advanced_search', 'not json')).toBeNull()
-    expect(queryFromArgs('advanced_search', '"a string"')).toBeNull()
-    expect(queryFromArgs('advanced_search', '{"query":"   "}')).toBeNull()
+describe('queriesFromArgs', () => {
+  it('reads the single query of an advanced_search call', () => {
+    expect(queriesFromArgs('advanced_search', '{"query":"量子纠错"}')).toEqual(['量子纠错'])
+    expect(queriesFromArgs('advanced_search', '{"maxResults":5}')).toBeNull()
+    expect(queriesFromArgs('advanced_search', 'not json')).toBeNull()
+    expect(queriesFromArgs('advanced_search', '"a string"')).toBeNull()
+    expect(queriesFromArgs('advanced_search', '{"query":"   "}')).toBeNull()
+  })
+
+  it('reads every query of a host web_search call, in published order', () => {
+    // 宿主 web_search 的参数是 queries: string[]，一次调用可合并多条查询。
+    expect(queriesFromArgs('web_search', '{"queries":["a","b"," c "]}')).toEqual(['a', 'b', 'c'])
+    expect(queriesFromArgs('web_search', '{"queries":["a","",null,"   "]}')).toEqual(['a'])
+    expect(queriesFromArgs('web_search', '{"queries":"a"}')).toBeNull()
+    expect(queriesFromArgs('web_search', '{}')).toBeNull()
+  })
+
+  it('ignores search-ish tools it does not own', () => {
+    expect(queriesFromArgs('read', '{"query":"x"}')).toBeNull()
+    expect(queriesFromArgs('web_fetch', '{"queries":["x"]}')).toBeNull()
+    expect(queriesFromArgs('multi_search', '{"query":"x"}')).toBeNull()
   })
 })
 
@@ -60,7 +72,7 @@ describe('search-ref fold', () => {
   it('counts a settled call with no meta as a query with zero sources', () => {
     let s = applySearchRefEvent(OPEN, call('c1', { query: '量子纠错' }))
     s = applySearchRefEvent(s, result('c1'))
-    expect(s.queries).toEqual([{ query: '量子纠错', turn: 1, hits: 0 }])
+    expect(s.queries).toEqual([{ query: '量子纠错', tool: 'advanced_search', turn: 1, hits: 0 }])
     expect(s.queryTotal).toBe(1)
     expect(s.items).toHaveLength(0)
     expect(s.sourceTotal).toBe(0)
@@ -81,7 +93,7 @@ describe('search-ref fold', () => {
     expect(s.sourceTotal).toBe(2)
     // latest 存的是归一化键（与条目同一算法），客户端才能拿它对上行。
     expect(s.latest?.urls).toEqual(['https://b.org', 'https://a.org/x'])
-    expect(s.queries[0]).toEqual({ query: '3dgs', turn: 1, hits: 2 })
+    expect(s.queries[0]).toEqual({ query: '3dgs', tool: 'advanced_search', turn: 1, hits: 2 })
   })
 
   it('merges a repeated URL into one row with a growing count', () => {
@@ -106,7 +118,7 @@ describe('search-ref fold', () => {
   it('ignores malformed meta without losing the query', () => {
     let s = applySearchRefEvent(OPEN, call('c1', { query: 'q1' }))
     s = applySearchRefEvent(s, result('c1', { sources: 'nope' }))
-    expect(s.queries[0]).toEqual({ query: 'q1', turn: 1, hits: 0 })
+    expect(s.queries[0]).toEqual({ query: 'q1', tool: 'advanced_search', turn: 1, hits: 0 })
     expect(s.items).toHaveLength(0)
     // 条目级畸形只丢那一条：无 url 的被过滤，有 url 的留下。
     let s2 = applySearchRefEvent(OPEN, call('c2', { query: 'q2' }))
@@ -114,8 +126,21 @@ describe('search-ref fold', () => {
     expect(s2.items.map(i => i.url)).toEqual(['https://ok.org'])
   })
 
+  it('folds the host web_search tool too, one row per query', () => {
+    // 模型默认走宿主那个 web_search，只追插件工具会让常见会话看起来“没搜过”。
+    const call2 = { type: 'tool/call', data: { turn: 1, step: 1, callId: 'w1', name: 'web_search', arguments: '{"queries":["今天天气 上海","明天天气 上海"]}' } }
+    let s = applySearchRefEvent(OPEN, call2)
+    s = applySearchRefEvent(s, result('w1', { sources: [{ url: 'https://a.org/w', title: 'A' }], truncated: false }))
+    expect(s.queries.map(q => [q.query, q.tool, q.hits])).toEqual([
+      ['明天天气 上海', 'web_search', 1],
+      ['今天天气 上海', 'web_search', 1],
+    ])
+    expect(s.queryTotal).toBe(2)
+    expect(s.items[0]).toMatchObject({ tool: 'web_search', query: '明天天气 上海' })
+  })
+
   it('leaves unrelated events and other tools alone (same reference)', () => {
-    const other = { type: 'tool/call', data: { callId: 'x', name: 'web_search', arguments: '{"queries":["a"]}' } }
+    const other = { type: 'tool/call', data: { callId: 'x', name: 'multi_search', arguments: '{"query":"a"}' } }
     expect(applySearchRefEvent(OPEN, other)).toBe(OPEN)
     expect(applySearchRefEvent(OPEN, { type: 'turn/end', data: { turn: 1 } })).toBe(OPEN)
     expect(applySearchRefEvent(OPEN, { type: 'tool/result', data: { message: { content: [], source: {} } } })).toBe(OPEN)

@@ -2,10 +2,11 @@
  * The `dshSummarySearchRefs` projection — reading it.
  *
  * The unit is registered by THIS plugin's host half (key `dshSummarySearchRefs`):
- * the queries this session ran through `advanced_search`, and the sources those
- * searches brought back. It answers "what did the session pull in from outside"
- * — where the skill tab says which instruction packs were loaded and the memory
- * tab says which of the user's own knowledge was injected.
+ * the queries this session ran — through the harness's `web_search` or the
+ * user's own `advanced_search` — and the sources those searches brought back.
+ * It answers "what did the session pull in from outside" — where the skill tab
+ * says which instruction packs were loaded and the memory tab says which of the
+ * user's own knowledge was injected.
  *
  * Reading discipline, same as every other brief section:
  * - `undefined` = the capability is ABSENT (no projection registry, or a frame

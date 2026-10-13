@@ -3,12 +3,14 @@
  * one tab of the references section.
  *
  * It answers "what did this session pull in from outside": the queries it ran
- * through `advanced_search`, and the sources those searches returned. Two
- * groups, because they are two different facts — a query says what was asked,
- * a source says what came back, and an older `dsh-free-search` without
- * `presentationMeta` produces queries with no sources at all. That degraded
- * case is stated rather than hidden, because an empty source list would
- * otherwise read as "the search found nothing".
+ * — via the harness's `web_search` or the user's own `advanced_search` — and the
+ * sources those searches returned. Each query row carries its tool name, because
+ * which of the two answered is a fact the reader asks about. Two groups, because
+ * they are two different facts — a query says what was asked, a source says what
+ * came back, and an older `dsh-free-search` without `presentationMeta` produces
+ * queries with no sources at all. That degraded case is stated rather than
+ * hidden, because an empty source list would otherwise read as "the search found
+ * nothing".
  *
  * Optional on both sides: no registry, or a host half that never registered the
  * unit, means the client reads capability absence and the section hides.
@@ -174,6 +176,11 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
         'li',
         { key: `${row.turn}:${row.query}`, style: ROW_STYLE, 'data-dsh-brief-sidebar': 'search-refs-query' },
         createElement('span', { style: QUERY_STYLE }, row.query),
+        // Which tool answered. Not localized: it is a wire identifier the
+        // reader greps for in the transcript, and `web_search` (host plumbing)
+        // versus `advanced_search` (the plugin they configured) is the
+        // distinction they ask about when a search looks unexpected.
+        createElement('span', { style: TAG_STYLE }, row.tool),
         createElement('span', { style: META_STYLE }, expandCount(t('searchRefs.hits'), row.hits)),
       )),
     ))

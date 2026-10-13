@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.5 — 2026-10-14 (l’onglet Recherche couvre aussi l’outil hôte web_search)
+
+- En plus de `advanced_search`, les appels de `web_search` (outil du hôte) sont désormais pliés :
+  le modèle utilise celui-là par défaut, si bien que les sessions ayant cherché restaient vides.
+- Les deux formes d’arguments sont lues : `query` (chaîne unique) et `queries` (tableau ; une
+  requête par ligne, le nombre de sources restant le total de l’appel).
+- Chaque ligne de requête affiche le nom de l’outil qui a répondu (non traduit : c’est un identifiant que l’on retrouve dans le transcript).
+- Rejeu sur 250 sessions réelles : sessions avec requêtes passées de 20 à 52, 472 lignes d’hôte et 777 sources.
+- Le message vide cite les deux outils (9 langues) ; sans champ `tool` dans un ancien frame, la ligne est lue
+  comme `advanced_search` au lieu d’être jetée.
+
 ## 0.9.4 — 2026-10-14 (troisième onglet « Recherches » dans les Références)
 
 - Nouvelle projection `dshSummarySearchRefs` : ne replie que `advanced_search`, jamais le

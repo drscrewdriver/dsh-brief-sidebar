@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.5 — 2026-10-14 (Suchanfragen erfassen auch das Host-Tool web_search)
+
+- Neben `advanced_search` wird jetzt auch `web_search` vom Harness gefaltet: das Modell greift
+  standardmäßig auf das Host-Tool zu, sodass Sitzungen mit Suchen sonst leer blieben.
+- Beide Argumentformen werden gelesen: `query` (Einzelfeld) und `queries` (Feldliste; eine
+  Zusammenlegung mehrerer Anfragen ergibt eine Zeile pro Anfrage, Quellzahl bleibt die Gesamtzahl des Aufrufs).
+- Jede Anfragezeile trägt den Werkzeugnamen (unübersetzt — er ist im Transkript durchsuchbar).
+- Nachbau von 250 echten Sitzungen: Sitzungen mit Anfragen von 20 auf 52, dazu 472 Host-Zeilen und 777 Quellen.
+- Der Leer-Hinweis nennt beide Werkzeuge (9 Sprachen); fehlt `tool` in einem alten Frame, wird die Zeile
+  als `advanced_search` gelesen statt verworfen.
+
 ## 0.9.4 — 2026-10-14 (dritter Reiter „Suchen“ in den Referenzen)
 
 - Neue Projektion `dshSummarySearchRefs`: faltet ausschließlich `advanced_search` (nicht den hosteigenen

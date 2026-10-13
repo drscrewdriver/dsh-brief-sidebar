@@ -2,10 +2,11 @@
  * The `dshSummarySearchRefs` projection — reading it.
  *
  * The unit is registered by THIS plugin's host half (key `dshSummarySearchRefs`):
- * the queries this session ran through `advanced_search`, and the sources those
- * searches brought back. It answers "what did the session pull in from outside"
- * — where the skill tab says which instruction packs were loaded and the memory
- * tab says which of the user's own knowledge was injected.
+ * the queries this session ran — through the harness's `web_search` or the
+ * user's own `advanced_search` — and the sources those searches brought back.
+ * It answers "what did the session pull in from outside" — where the skill tab
+ * says which instruction packs were loaded and the memory tab says which of the
+ * user's own knowledge was injected.
  *
  * Reading discipline, same as every other brief section:
  * - `undefined` = the capability is ABSENT (no projection registry, or a frame
@@ -27,6 +28,15 @@ function isCounter(value: unknown): value is number {
   return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 }
 
+/**
+ * The tool a row came from, defaulting to the plugin's own for a frame written
+ * before the host half started publishing `tool`. Absent is "we do not know",
+ * never "not a search", so the row still shows.
+ */
+function readTool(value: unknown): string {
+  return typeof value === 'string' && value.length > 0 ? value : 'advanced_search'
+}
+
 /** Narrow one source row; `undefined` = malformed, dropped. */
 function readItem(value: unknown): SearchRefItemView | undefined {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined
@@ -39,6 +49,7 @@ function readItem(value: unknown): SearchRefItemView | undefined {
     url: raw['url'],
     host: raw['host'],
     query: raw['query'],
+    tool: readTool(raw['tool']),
     count: raw['count'],
     lastTurn: raw['lastTurn'],
   }
@@ -53,7 +64,7 @@ function readQuery(value: unknown): SearchQueryView | undefined {
   const raw = value as Record<string, unknown>
   if (typeof raw['query'] !== 'string' || raw['query'].length === 0) return undefined
   if (!isCounter(raw['turn']) || !isCounter(raw['hits'])) return undefined
-  return { query: raw['query'], turn: raw['turn'], hits: raw['hits'] }
+  return { query: raw['query'], tool: readTool(raw['tool']), turn: raw['turn'], hits: raw['hits'] }
 }
 
 /** The latest-turn key set, or `null` when absent OR drifted (only a tag rides it). */

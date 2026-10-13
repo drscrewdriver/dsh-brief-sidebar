@@ -58,8 +58,8 @@ const VIEW = {
   // latest 存的是折叠产出的归一化键（去尾斜杠 + host 小写），不是原样 URL。
   latest: { turn: 4, urls: ['https://b.org/paper'] },
   queries: [
-    { query: '量子纠错 最新进展', turn: 4, hits: 2 },
-    { query: '3dgs survey', turn: 3, hits: 0 },
+    { query: '量子纠错 最新进展', tool: 'web_search', turn: 4, hits: 2 },
+    { query: '3dgs survey', tool: 'advanced_search', turn: 3, hits: 0 },
   ],
   sources: [
     { url: 'https://b.org/paper', host: 'b.org', title: 'B 论文', snippet: '摘要乙', query: '量子纠错 最新进展', count: 1, lastTurn: 4 },
@@ -72,6 +72,23 @@ const VIEW = {
 function renderSection(values: Record<string, unknown>): string {
   return renderToStaticMarkup(createElement(SearchRefSection, { t, ctx: ctxWith(values), scope: { sessionId: SESSION } }))
 }
+
+describe('tool attribution', () => {
+  it('labels each query row with the tool that answered', () => {
+    const html = renderSection({ [SEARCH_REFS_KEY]: VIEW })
+    // 两个工具都得看得见：模型走宿主 web_search 还是走用户自己配的插件工具，
+    // 是读者判断“这次搜索是谁干的”的唯一依据。
+    expect(html).toContain('web_search')
+    expect(html).toContain('advanced_search')
+  })
+
+  it('still reads a pre-0.9.5 frame that carries no tool field', () => {
+    // 宿主半没升级时帧里没有 tool：行必须还在，不能因为“不知道是谁”就消失。
+    const legacy = { ...VIEW, queries: [{ query: 'q', turn: 1, hits: 0 }] }
+    const view = readSearchRefs(legacy)
+    expect(view?.queries).toEqual([{ query: 'q', tool: 'advanced_search', turn: 1, hits: 0 }])
+  })
+})
 
 describe('readSearchRefs', () => {
   it('reads a live view', () => {
