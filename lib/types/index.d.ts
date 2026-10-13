@@ -4,7 +4,7 @@
  * The Cordis loader needs an entry point for the profile row; the browser half
  * (`./client`, served by `dsh-client-modules`) renders the summary tab.
  *
- * Since the summary upgrade, this half owns TWO behaviours:
+ * Since the summary upgrade, this half owns THREE behaviours:
  *
  * 1. contributing the `dshSummaryDeliverables` projection unit (see
  *    `./projection/register`), which folds successful mutation calls into a
@@ -22,6 +22,13 @@
  *    never reads it, the export exists so the host has a settings surface to
  *    validate and persist against (the DSH 0.1.7+ declarative-settings
  *    contract, same as dsh-thinking-levels).
+ * 3. contributing the `dshSummarySkillUsage` projection unit, which folds the
+ *    host's `skill` tool calls into "which skills did this session actually
+ *    load". Same optional-contribution shape as (1), and the same reason for
+ *    reading it off `tool/call.arguments`: the skill tool publishes no
+ *    `presentationMeta` on any supported line (verified per tag from
+ *    `dsh-v0.1.0-rc.8` to `dsh-v0.2.0-rc.2`), so the argument is the only
+ *    durable fact about a skill load.
  *
  * In particular this half still never touches the filesystem at load time: a
  * profile row is instantiated on the boot path, and a synchronous read there

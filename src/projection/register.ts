@@ -1,10 +1,11 @@
 /**
- * Registration of the `dshSummaryDeliverables` projection unit.
+ * Registration of this plugin's projection units: `dshSummaryDeliverables` and
+ * `dshSummarySkillUsage`.
  *
- * The unit is an OPTIONAL contribution: a composition without the
- * session-projection registry (or an older host) simply never registers it,
- * and the client reads the key as capability absence — the deliverables
- * section stays hidden. That is why this module routes through
+ * Both units are OPTIONAL contributions: a composition without the
+ * session-projection registry (or an older host) simply never registers them,
+ * and the client reads those keys as capability absence — the deliverables and
+ * skill-usage sections stay hidden. That is why this module routes through
  * `ctx.inject(['sessionProjections'], …)` (wait for the service, register only
  * when it appears) instead of declaring the service in the plugin's own
  * `inject` list, which would make the whole profile row fail to load.
@@ -17,21 +18,24 @@ import { z } from 'zod'
 import type { Context } from '@deepseek-ai/cordis'
 import { applyDeliverablesEvent, CAPS, initDeliverablesState } from './deliverables-fold'
 import type { DeliverablesState } from './deliverables-fold'
-import { DELIVERABLES_KEY } from './keys'
-import type { DeliverablesView } from './keys'
+import { applySkillUsageEvent, CAPS as SKILL_CAPS, initSkillUsageState } from './skill-usage-fold'
+import type { SkillUsageState } from './skill-usage-fold'
+import { DELIVERABLES_KEY, SKILL_USAGE_KEY } from './keys'
+import type { DeliverablesView, SkillUsageView } from './keys'
 
 /**
  * Structural view of the registry this plugin needs. Declared locally on
  * purpose: the plugin has no compile dependency on the session-projection
- * package, and `register` accepts any string key at runtime.
+ * package, and `register` accepts any string key at runtime. Generic over the
+ * unit's own state/view pair so both contributions share one shape.
  */
 interface ProjectionRegistryLike {
-  register(definition: {
+  register<S, V>(definition: {
     key: string
     stateSchema: { parse(value: unknown): unknown }
-    init(): DeliverablesState
-    apply(state: DeliverablesState, event: { type: string; data: unknown }): DeliverablesState
-    wire: { viewSchema: { parse(value: unknown): unknown }; view(state: DeliverablesState): DeliverablesView }
+    init(): S
+    apply(state: S, event: { type: string; data: unknown }): S
+    wire: { viewSchema: { parse(value: unknown): unknown }; view(state: S): V }
     stateVersion: number
   }): () => void
 }
@@ -93,6 +97,65 @@ export function registerDeliverablesProjection(ctx: Context): void {
       init: () => initDeliverablesState(),
       apply: applyDeliverablesEvent,
       wire: { viewSchema, view },
+      stateVersion: 0,
+    })
+  })
+}
+
+/** Zod schema of the skill-usage fold state. */
+const skillStateSchema = z.object({
+  turn: z.number(),
+  calls: z.record(z.string(), z.object({ turn: z.number(), skill: z.string() })),
+  latest: z.object({ turn: z.number(), names: z.array(z.string()) }).nullable(),
+  items: z.array(z.object({ name: z.string(), count: z.number(), lastTurn: z.number() })),
+  sessionTotal: z.number(),
+  callTotal: z.number(),
+})
+
+/** Zod schema of the skill-usage wire view. */
+const skillViewSchema = z.object({
+  latest: z.object({ turn: z.number(), names: z.array(z.string()) }).nullable(),
+  session: z.array(z.object({ name: z.string(), count: z.number(), lastTurn: z.number() })),
+  sessionTotal: z.number(),
+  callTotal: z.number(),
+})
+
+/** Same reference-stability memo as above, for the skill-usage unit. */
+const skillViewMemo = new WeakMap<SkillUsageState, SkillUsageView>()
+
+/** State → wire view, reference-stable across unchanged states. */
+function skillView(state: SkillUsageState): SkillUsageView {
+  const memoized = skillViewMemo.get(state)
+  if (memoized !== undefined) return memoized
+  const next: SkillUsageView = {
+    latest: state.latest === null
+      ? null
+      : { turn: state.latest.turn, names: state.latest.names.slice(0, SKILL_CAPS.latest) },
+    session: state.items.slice(0, SKILL_CAPS.view),
+    sessionTotal: state.sessionTotal,
+    callTotal: state.callTotal,
+  }
+  skillViewMemo.set(state, next)
+  return next
+}
+
+/**
+ * Register the skill-usage projection as an optional contribution.
+ *
+ * @param ctx - the host context the plugin's `apply` receives.
+ */
+export function registerSkillUsageProjection(ctx: Context): void {
+  ctx.inject(['sessionProjections'], (injected) => {
+    const registry = (injected as unknown as { sessionProjections?: ProjectionRegistryLike })
+      .sessionProjections
+    if (registry === undefined || typeof registry.register !== 'function') return
+    registry.register({
+      key: SKILL_USAGE_KEY,
+      stateSchema: skillStateSchema,
+      init: () => initSkillUsageState(),
+      apply: applySkillUsageEvent,
+      wire: { viewSchema: skillViewSchema, view: skillView },
+      // 0 = the first published shape of this key.
       stateVersion: 0,
     })
   })

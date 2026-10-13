@@ -7,3 +7,9 @@ import type { Context } from '@deepseek-ai/cordis';
  *   unloading the plugin removes the key (clients then read capability absence).
  */
 export declare function registerDeliverablesProjection(ctx: Context): void;
+/**
+ * Register the skill-usage projection as an optional contribution.
+ *
+ * @param ctx - the host context the plugin's `apply` receives.
+ */
+export declare function registerSkillUsageProjection(ctx: Context): void;

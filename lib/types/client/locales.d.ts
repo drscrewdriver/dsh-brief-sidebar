@@ -55,6 +55,12 @@ export declare const zh: {
     'recall.strikeHint': string;
     'recall.supersededHidden': string;
     'recall.noBody': string;
+    'section.skillUsage': string;
+    'skillUsage.empty': string;
+    'skillUsage.emptyHint': string;
+    'skillUsage.uses': string;
+    'skillUsage.count': string;
+    'skillUsage.latestTag': string;
     'settings.title': string;
     'settings.desc': string;
     'settings.memorySlots': string;
