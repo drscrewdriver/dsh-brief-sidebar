@@ -1,5 +1,25 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.9.0-local.8 — 2026-10-13
+
+### Added
+
+- **技能引用分区**：概要 tab 新增只读小节，列出本会话通过宿主 `skill` 工具**成功载入**的技能
+  （技能名 · 载入次数 · 本轮标签）。数据源是投影 `dshSummarySkillUsage`（本插件 host 半注册，
+  纯同步折叠 `turn/start` / `tool/call` / `tool/result`）。技能名取自 `tool/call.arguments`：
+  `skill` 工具在六线宿主上都**没有声明 `presentationMeta`**（逐 git tag 核过），所以
+  `tool/result.meta` 对技能不存在；结果文本也不读（那是展示形，不能当第二个事实源）。
+  失败的调用不算引用（与产物分区同口径）。新增 6 个 key × 9 语。投影缺席即整段隐藏，
+  不设开关（它只陈述已发生的事）。
+
+### Fixed
+
+- **双清单版本同步**：`dsh.plugin.json` 停在 `0.9.0-local.4` 而 `package.json` 已到 `local.7`
+  （包门禁 V1 报错），现两面均为 `0.9.0-local.8`。
+
+> 记一笔诚实账：`0.6.0`→`0.9.0-local.7` 这一批（本会话召回分区、压缩取代语义、交付物分层等）
+> **没有逐版写进本文件**，只到了这一节才补。若要把那段补齐，它是一次独立的补写。
+
 ## 0.5.0 — 2026-10-04（转正）
 
 > beta.1~3 全部能力定版,挂 `latest` 与 `dsh-0.2.0`。内容见下。
