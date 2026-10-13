@@ -2,15 +2,19 @@
  * The search-reference section: the `dshSummarySearchRefs` projection drawn as
  * one tab of the references section.
  *
- * It answers "what did this session pull in from outside": the queries it ran
- * — via the harness's `web_search` or the user's own `advanced_search` — and the
- * sources those searches returned. Each query row carries its tool name, because
- * which of the two answered is a fact the reader asks about. Two groups, because
- * they are two different facts — a query says what was asked, a source says what
- * came back, and an older `dsh-free-search` without `presentationMeta` produces
- * queries with no sources at all. That degraded case is stated rather than
- * hidden, because an empty source list would otherwise read as "the search found
- * nothing".
+ * It answers "what did this session pull in from outside", and it answers it the
+ * way the conversation to its left does: **one left-aligned bubble per source**,
+ * title as a link, host and provider snippet under it. No group headers, no list
+ * of query titles — that wall duplicated what the transcript already shows, and a
+ * reader who opens this tab is looking for the results, not for a restatement of
+ * the questions.
+ *
+ * The fold still records which query and which tool (`web_search` or the user's
+ * own `advanced_search`) surfaced each source; that data stays in the frame for
+ * any surface that wants it, it is just no longer drawn here. An older
+ * `dsh-free-search` without `presentationMeta` yields queries with no sources —
+ * that degraded case is stated (`searchRefs.noSourcesHint`) rather than left as
+ * an empty pane, because an empty list reads as "the search found nothing".
  *
  * Optional on both sides: no registry, or a host half that never registered the
  * unit, means the client reads capability absence and the section hides.
@@ -28,8 +32,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import { SEARCH_REFS_KEY } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
-import { GroupHeader } from './FoldToggle'
-import { expandCount, expandTotal } from '../locales'
+import { expandTotal } from '../locales'
 import { isLatestSource, readSearchRefs, safeHref } from './search-refs'
 
 export interface SearchRefSectionProps {
@@ -58,34 +61,47 @@ const HEADER_STYLE: CSSProperties = {
 const LIST_STYLE: CSSProperties = {
   listStyle: 'none',
   margin: 0,
-  padding: '6px 0',
+  padding: '8px 12px 10px',
   display: 'flex',
   flexDirection: 'column',
-}
-
-const ROW_STYLE: CSSProperties = {
-  display: 'flex',
   alignItems: 'flex-start',
   gap: 8,
-  padding: '6px 12px',
 }
 
-const QUERY_STYLE: CSSProperties = {
+/**
+ * One result, drawn as a chat bubble: left-aligned, background-filled, rounded,
+ * and narrower than the column. The reader reads this tab the way they read the
+ * conversation to its left — each bubble is one thing the session pulled in — so
+ * the list chrome (row rules, group headers, per-query title lines) is dropped
+ * rather than restyled.
+ *
+ * `alignItems: flex-start` on the list is what keeps bubbles hugging the left
+ * edge; without it a flex child stretches to the full column and the bubble
+ * reads as a plain card.
+ */
+const BUBBLE_STYLE: CSSProperties = {
+  maxWidth: '92%',
+  padding: '8px 10px',
+  borderRadius: 10,
+  background: 'var(--dsw-alias-bg-layer-3)',
+  border: '1px solid var(--dsw-alias-border-l2)',
+  color: 'var(--dsw-alias-label-primary)',
+  fontSize: 12,
+  lineHeight: '17px',
   minWidth: 0,
-  flex: '1 1 auto',
-  overflowWrap: 'anywhere',
-  color: 'var(--dsw-alias-label-secondary)',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: 2,
 }
 
-/** The source title, one line: the host and URL carry the identification. */
+/** The source title, up to three lines: inside a bubble it IS the content. */
 const TITLE_STYLE: CSSProperties = {
   minWidth: 0,
-  flex: '1 1 auto',
+  overflowWrap: 'anywhere',
   display: '-webkit-box',
-  WebkitLineClamp: 2,
+  WebkitLineClamp: 3,
   WebkitBoxOrient: 'vertical',
   overflow: 'hidden',
-  color: 'var(--dsw-alias-label-secondary)',
 }
 
 const SNIPPET_STYLE: CSSProperties = {
@@ -97,12 +113,20 @@ const SNIPPET_STYLE: CSSProperties = {
   lineHeight: '16px',
 }
 
-const META_STYLE: CSSProperties = {
-  flexShrink: 0,
+const HOST_STYLE: CSSProperties = {
   color: 'var(--dsw-alias-label-tertiary)',
   fontSize: 11,
-  lineHeight: '18px',
-  whiteSpace: 'nowrap',
+  lineHeight: '16px',
+  overflowWrap: 'anywhere',
+}
+
+/** The bubble's own footer strip — where the "本轮" pill lives now. */
+const BUBBLE_FOOT_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 6,
+  marginTop: 2,
+  minWidth: 0,
 }
 
 /** The "本轮" pill: same form as the skill tag, tertiary emphasis. */
@@ -163,35 +187,10 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
 
   const body: ReactNode[] = []
 
-  if (view.queries.length > 0) {
-    body.push(createElement(GroupHeader, {
-      key: 'qh',
-      text: expandCount(t('searchRefs.queryGroup'), view.queries.length),
-      marker: 'search-refs-query-group',
-    }))
-    body.push(createElement(
-      'ul',
-      { key: 'ql', style: LIST_STYLE },
-      view.queries.map(row => createElement(
-        'li',
-        { key: `${row.turn}:${row.query}`, style: ROW_STYLE, 'data-dsh-brief-sidebar': 'search-refs-query' },
-        createElement('span', { style: QUERY_STYLE }, row.query),
-        // Which tool answered. Not localized: it is a wire identifier the
-        // reader greps for in the transcript, and `web_search` (host plumbing)
-        // versus `advanced_search` (the plugin they configured) is the
-        // distinction they ask about when a search looks unexpected.
-        createElement('span', { style: TAG_STYLE }, row.tool),
-        createElement('span', { style: META_STYLE }, expandCount(t('searchRefs.hits'), row.hits)),
-      )),
-    ))
-  }
-
   if (view.sources.length > 0) {
-    body.push(createElement(GroupHeader, {
-      key: 'sh',
-      text: expandCount(t('searchRefs.sourceGroup'), view.sources.length),
-      marker: 'search-refs-source-group',
-    }))
+    // One bubble per source, in the order the session surfaced them. The query
+    // list is gone on purpose: it was a wall of titles that duplicated what the
+    // conversation already shows, and the reader came here for the results.
     body.push(createElement(
       'ul',
       { key: 'sl', style: LIST_STYLE },
@@ -207,17 +206,28 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
             { style: TITLE_STYLE, href, target: '_blank', rel: 'noreferrer noopener' },
             label,
           )
+        const latest = isLatestSource(view, item.url)
         return createElement(
           'li',
-          { key: item.url, style: ROW_STYLE, 'data-dsh-brief-sidebar': 'search-refs-source' },
+          { key: item.url, style: { minWidth: 0 }, 'data-dsh-brief-sidebar': 'search-refs-source' },
           createElement(
             'div',
-            { style: { minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 2 } },
+            { style: BUBBLE_STYLE, 'data-dsh-brief-sidebar': 'search-refs-bubble' },
             link,
-            createElement('span', { style: META_STYLE }, item.host),
+            createElement('span', { style: HOST_STYLE }, item.host),
             item.snippet !== undefined && createElement('p', { style: SNIPPET_STYLE }, item.snippet),
+            // The pill sits inside the bubble so a result and its freshness
+            // cannot drift apart when the column scrolls.
+            (latest || item.count > 1) && createElement(
+              'div',
+              { style: BUBBLE_FOOT_STYLE },
+              latest && createElement('span', { style: TAG_STYLE }, t('searchRefs.latestTag')),
+              // Surfaced by more than one settled search — a fact about the
+              // source, drawn on it rather than in a header the tab no longer
+              // has. No new locale key: the count speaks for itself.
+              item.count > 1 && createElement('span', { style: HOST_STYLE }, `\u00d7${item.count}`),
+            ),
           ),
-          isLatestSource(view, item.url) && createElement('span', { style: TAG_STYLE }, t('searchRefs.latestTag')),
         )
       }),
     ))

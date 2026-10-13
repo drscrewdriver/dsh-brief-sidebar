@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.6 — 2026-10-14 (la scheda ricerche diventa un flusso di fumetti)
+
+- La scheda «Ricerche» non elenca più i titoli delle query né i marchi di strumento
+  `advanced_search`/`web_search`; cadono anche le intestazioni «Query · N» e «Fonti · N».
+- Ogni fonte è un **fumetto allineato a sinistra**, con la stessa lettura della chat a fianco:
+  titolo (collegamento cliccabile), dominio, estratto.
+- Il contrassegno «Questo giro» sta dentro il fumetto; una fonte trovata più volte mostra `×N`.
+- La piegatura non cambia: query e strumento restano nel frame `dshSummarySearchRefs`, non vengono più disegnati.
+- Restano l’avviso per le fonti assenti e la nota di troncamento; disciplina dei link invariata (solo http/https, con `rel="noreferrer noopener"`).
+
 ## 0.9.5 — 2026-10-14 (la scheda ricerche copre anche web_search dell’host)
 
 - Oltre a `advanced_search` viene ora piegato `web_search`, lo strumento dell’host: il modello

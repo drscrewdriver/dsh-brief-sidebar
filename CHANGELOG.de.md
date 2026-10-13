@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.6 — 2026-10-14 (Suchreiter als Luftblasen-Strom statt Titelliste)
+
+- Der Reiter „Suchen“ listet keine Abfragetitel mehr und zeigt keine Werkzeugmarken;
+  die Gruppenüberschriften „Anfragen · N“ und „Quellen · N“ entfallen ebenfalls.
+- Jede Quelle wird als **linksbündige Luftblase** gezeichnet — dieselbe Lesart wie der Chat links:
+  Titel (anklickbarer Link), Domain, Snippet.
+- Die Marke „Diese Runde“ sitzt jetzt in der Blase; mehrfach gefundene Quellen tragen dort ein `×N`.
+- Am Faltwerk ändert sich nichts: Abfrage und Werkzeug bleiben im Frame `dshSummarySearchRefs`, sie werden nur nicht mehr gezeichnet.
+- Hinweis auf fehlende Quellen und Kürzungs-Fußzeile bleiben; Link-Disziplin unverändert (nur http/https als Anker, mit `rel="noreferrer noopener"`).
+
 ## 0.9.5 — 2026-10-14 (Suchanfragen erfassen auch das Host-Tool web_search)
 
 - Neben `advanced_search` wird jetzt auch `web_search` vom Harness gefaltet: das Modell greift

@@ -2,6 +2,17 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.6 — 2026-10-14 (l’onglet Recherche devient un fil de bulles)
+
+- L’onglet « Recherche » n’affiche plus la liste des requêtes ni les marques d’outil
+NaNadvanced_search`/`web_search` ;
+  les titres de groupe « Requêtes · N » et « Sources · N » disparaissent aussi.
+- Chaque source devient une **bulle alignée à gauche**, lisible comme la conversation de gauche :
+  titre (lien cliquable), domaine, extrait.
+- La pastille « Ce tour » passe dans la bulle ; une source retrouvée plusieurs fois y porte un `×N`.
+- Rien ne change au pliage : requête et outil restent dans la trame `dshSummarySearchRefs`, ils ne sont plus dessinés.
+- L’astuce « sources absentes » et la note de troncature restent ; discipline des liens inchangée (http/https seulement, avec `rel="noreferrer noopener"`).
+
 ## 0.9.5 — 2026-10-14 (l’onglet Recherche couvre aussi l’outil hôte web_search)
 
 - En plus de `advanced_search`, les appels de `web_search` (outil du hôte) sont désormais pliés :

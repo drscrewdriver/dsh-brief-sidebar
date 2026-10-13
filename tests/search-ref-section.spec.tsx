@@ -74,12 +74,12 @@ function renderSection(values: Record<string, unknown>): string {
 }
 
 describe('tool attribution', () => {
-  it('labels each query row with the tool that answered', () => {
+  it('keeps the fold data but drops the query wall and tool tags from the tab', () => {
     const html = renderSection({ [SEARCH_REFS_KEY]: VIEW })
-    // 两个工具都得看得见：模型走宿主 web_search 还是走用户自己配的插件工具，
-    // 是读者判断“这次搜索是谁干的”的唯一依据。
-    expect(html).toContain('web_search')
-    expect(html).toContain('advanced_search')
+    // 读者来这一页是看结果的：查询标题墙与工具名不再上屏（数据仍在帧里）。
+    expect(html).not.toContain('advanced_search')
+    expect(html).not.toContain('量子纠错 最新进展')
+    expect(html).toContain('data-dsh-brief-sidebar="search-refs-bubble"')
   })
 
   it('still reads a pre-0.9.5 frame that carries no tool field', () => {
@@ -141,14 +141,18 @@ describe('SearchRefSection rendering', () => {
     expect(markup).toContain(t('searchRefs.emptyHint'))
   })
 
-  it('renders the query and source groups with their counts', () => {
+  it('renders one left-aligned bubble per source, with the link intact', () => {
     const markup = renderSection({ [SEARCH_REFS_KEY]: VIEW })
-    expect(markup).toContain(label('searchRefs.queryGroup', 2))
-    expect(markup).toContain(label('searchRefs.sourceGroup', 2))
-    expect(markup).toContain('量子纠错 最新进展')
+    // 不再有任何分组标题：气泡自己是内容。
+    expect(markup).not.toContain(label('searchRefs.queryGroup', 2))
+    expect(markup).not.toContain(label('searchRefs.sourceGroup', 2))
     expect(markup).toContain('B 论文')
     expect(markup).toContain('摘要乙')
+    expect(markup).toContain('b.org')
     expect(markup).toContain(t('searchRefs.latestTag'))
+    expect(markup.match(/data-dsh-brief-sidebar="search-refs-bubble"/g)).toHaveLength(2)
+    // 被多次搜到的那条带 ×N（VIEW 里 a.org/x 的 count=2）。
+    expect(markup).toContain('×2')
   })
 
   it('turns an unsafe provider URL into text, not a link', () => {
@@ -168,7 +172,6 @@ describe('SearchRefSection rendering', () => {
     const noMeta = { ...VIEW, sources: [], sourceTotal: 0 }
     const markup = renderSection({ [SEARCH_REFS_KEY]: noMeta })
     expect(markup).toContain(t('searchRefs.noSourcesHint'))
-    expect(markup).not.toContain(label('searchRefs.sourceGroup', 0))
   })
 
   it('separates the capped list length from the session total', () => {
@@ -222,7 +225,8 @@ describe('ReferenceSection search tab', () => {
       })
       // 记忆页签不存在 ⇒ 一步就到搜索页，而不是停在隐藏的空页。
       expect((searchPane as HTMLElement | null)?.style.display).toBe('')
-      expect(host.textContent).toContain('量子纠错 最新进展')
+      // 页签内容真在：拿来源标题当凭据（查询串已不再上屏）。
+      expect(host.textContent).toContain('B 论文')
     } finally {
       act(() => { root?.unmount() })
       host.remove()

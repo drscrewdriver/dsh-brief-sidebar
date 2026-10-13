@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.6 — 2026-10-14 (la pestaña de búsquedas pasa a flujo de burbujas)
+
+- La pestaña «Búsquedas» ya no enumera títulos de consulta ni muestra las marcas de herramienta
+  `advanced_search`/`web_search`; caen también los encabezados «Consultas · N» y «Fuentes · N».
+- Cada fuente se dibuja como **burbuja alineada a la izquierda**, con la misma lectura que el chat:
+  título (enlace pulsable), dominio, extracto.
+- La marca «Esta ronda» vive dentro de la burbuja; una fuente encontrada varias veces muestra `×N`.
+- El plegado no cambia: consulta y herramienta siguen en el fotograma `dshSummarySearchRefs`, solo dejan de dibujarse.
+- Se conservan el aviso de fuentes ausentes y la nota de recorte; disciplina de enlaces igual (solo http/https, con `rel="noreferrer noopener"`).
+
 ## 0.9.5 — 2026-10-14 (la pestaña de búsquedas también cubre web_search del anfitrión)
 
 - Además de `advanced_search` se plie ahora `web_search`, la herramienta del anfitrión: el modelo
