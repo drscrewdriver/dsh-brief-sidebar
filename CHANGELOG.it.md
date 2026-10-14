@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.7 — 2026-10-14 (risultati raggrupati per query e compressi)
+
+- La scheda «Ricerche» raggruppa ora **per query**: una riga comprimibile per domanda
+  (`query · N risultati`) e, aprendola, i fumetti portati da quella query.
+- Per impostazione predefinita è aperto solo il gruppo del turno corrente; lo stato è indicizzato sul testo della
+  query, quindi un frame nuovo non chiude ciò che si è appena aperto.
+- Una fonte ricorda **tutte** le query che l’hanno riportata (`queries[]`, max 5, unione tra chiamate):
+  una chiamata multi-query non pende più solo dall’ultima; una fonte può comparire in più gruppi — fatto, non duplicato.
+- Le fonti senza query elencata (lista satura, frame precedente) finiscono in un gruppo «Fonti · N» invece di sparire.
+- Retrocompatibile: default sullo schema per `queries` e un vecchio `query` singolo riparato in `[query]` in lettura.
+- Rimossa l’etichetta dello strumento aggiunta in 0.9.5 (i dati restano nel frame).
+
 ## 0.9.6 — 2026-10-14 (la scheda ricerche diventa un flusso di fumetti)
 
 - La scheda «Ricerche» non elenca più i titoli delle query né i marchi di strumento

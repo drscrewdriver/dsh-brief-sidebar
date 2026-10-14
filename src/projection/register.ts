@@ -190,7 +190,10 @@ const searchStateSchema = z.object({
     host: z.string(),
     title: z.string().optional(),
     snippet: z.string().optional(),
-    query: z.string(),
+    // Defaulted: a frame persisted before the cluster change carries a single
+    // `query` string instead. Those rows keep their URL and count; they just
+    // join no cluster until the session searches them again.
+    queries: z.array(z.string()).default([]),
     tool: z.string().default('advanced_search'),
     count: z.number(),
     lastTurn: z.number(),
@@ -219,7 +222,7 @@ const searchViewSchema = z.object({
     host: z.string(),
     title: z.string().optional(),
     snippet: z.string().optional(),
-    query: z.string(),
+    queries: z.array(z.string()),
     tool: z.string(),
     count: z.number(),
     lastTurn: z.number(),

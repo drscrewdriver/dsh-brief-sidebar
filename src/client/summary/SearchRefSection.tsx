@@ -27,13 +27,15 @@
  * Source links are untrusted external data, so only `http`/`https` become
  * anchors (see `safeHref`) and they open with `rel="noreferrer noopener"`.
  */
-import { createElement } from 'react'
+import { createElement, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import { SEARCH_REFS_KEY } from '../../projection/keys'
+import type { SearchRefItemView } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
-import { expandTotal } from '../locales'
-import { isLatestSource, readSearchRefs, safeHref } from './search-refs'
+import { FoldToggle } from './FoldToggle'
+import { expandCount, expandTotal } from '../locales'
+import { clusterByQuery, isLatestSource, readSearchRefs, safeHref } from './search-refs'
 
 export interface SearchRefSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -168,6 +170,11 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
 
   const view = readSearchRefs(useProjectionValue(ctx, scope?.sessionId, SEARCH_REFS_KEY))
 
+  // Manual overrides on top of the default (latest turn open, older folded).
+  // Keyed by query text, so a re-render that pushes new frames does not reset
+  // what the reader just opened.
+  const [openMap, setOpenMap] = useState<Readonly<Record<string, boolean>>>({})
+
   // Capability absent — the optional unit never registered. Hide, don't nag.
   if (view === undefined) return null
 
@@ -187,50 +194,72 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
 
   const body: ReactNode[] = []
 
+  /** One result bubble; shared by every cluster so the cards stay identical. */
+  const renderBubble = (item: SearchRefItemView): ReactNode => {
+    const href = safeHref(item.url)
+    const label = item.title ?? item.url
+    const link = href === undefined
+      // A non-web scheme (or a malformed URL) from a provider stays text:
+      // it must not become a clickable thing in the user's sidebar.
+      ? createElement('span', { style: TITLE_STYLE }, label)
+      : createElement(
+        'a',
+        { style: TITLE_STYLE, href, target: '_blank', rel: 'noreferrer noopener' },
+        label,
+      )
+    const latest = isLatestSource(view, item.url)
+    return createElement(
+      'li',
+      { key: item.url, style: { minWidth: 0 }, 'data-dsh-brief-sidebar': 'search-refs-source' },
+      createElement(
+        'div',
+        { style: BUBBLE_STYLE, 'data-dsh-brief-sidebar': 'search-refs-bubble' },
+        link,
+        createElement('span', { style: HOST_STYLE }, item.host),
+        item.snippet !== undefined && createElement('p', { style: SNIPPET_STYLE }, item.snippet),
+        // The pill sits inside the bubble so a result and its freshness
+        // cannot drift apart when the column scrolls.
+        (latest || item.count > 1) && createElement(
+          'div',
+          { style: BUBBLE_FOOT_STYLE },
+          latest && createElement('span', { style: TAG_STYLE }, t('searchRefs.latestTag')),
+          // Surfaced by more than one settled search — a fact about the
+          // source, drawn on it rather than in a header the tab no longer
+          // has. No new locale key: the count speaks for itself.
+          item.count > 1 && createElement('span', { style: HOST_STYLE }, `\u00d7${item.count}`),
+        ),
+      ),
+    )
+  }
+
   if (view.sources.length > 0) {
-    // One bubble per source, in the order the session surfaced them. The query
-    // list is gone on purpose: it was a wall of titles that duplicated what the
-    // conversation already shows, and the reader came here for the results.
-    body.push(createElement(
-      'ul',
-      { key: 'sl', style: LIST_STYLE },
-      view.sources.map(item => {
-        const href = safeHref(item.url)
-        const label = item.title ?? item.url
-        const link = href === undefined
-          // A non-web scheme (or a malformed URL) from a provider stays text:
-          // it must not become a clickable thing in the user's sidebar.
-          ? createElement('span', { style: TITLE_STYLE }, label)
-          : createElement(
-            'a',
-            { style: TITLE_STYLE, href, target: '_blank', rel: 'noreferrer noopener' },
-            label,
-          )
-        const latest = isLatestSource(view, item.url)
-        return createElement(
-          'li',
-          { key: item.url, style: { minWidth: 0 }, 'data-dsh-brief-sidebar': 'search-refs-source' },
-          createElement(
-            'div',
-            { style: BUBBLE_STYLE, 'data-dsh-brief-sidebar': 'search-refs-bubble' },
-            link,
-            createElement('span', { style: HOST_STYLE }, item.host),
-            item.snippet !== undefined && createElement('p', { style: SNIPPET_STYLE }, item.snippet),
-            // The pill sits inside the bubble so a result and its freshness
-            // cannot drift apart when the column scrolls.
-            (latest || item.count > 1) && createElement(
-              'div',
-              { style: BUBBLE_FOOT_STYLE },
-              latest && createElement('span', { style: TAG_STYLE }, t('searchRefs.latestTag')),
-              // Surfaced by more than one settled search — a fact about the
-              // source, drawn on it rather than in a header the tab no longer
-              // has. No new locale key: the count speaks for itself.
-              item.count > 1 && createElement('span', { style: HOST_STYLE }, `\u00d7${item.count}`),
-            ),
-          ),
-        )
-      }),
-    ))
+    // Results clustered under the query that surfaced them: the newest turn's
+    // clusters open, older ones fold to one line each. Eight searches should
+    // read as eight questions, not as forty bubbles — and the reader who wants
+    // an older answer can open it.
+    for (const cluster of clusterByQuery(view)) {
+      const key = cluster.query === '' ? '\u0000tail' : cluster.query
+      const open = openMap[key] ?? cluster.latest
+      body.push(createElement(FoldToggle, {
+        key: `h:${key}`,
+        // The tail group has no query to name it, so it borrows the source
+        // count heading — “来源 · N” is exactly what it holds, and no locale key
+        // gets spent on a case that only shows up when a query aged out of the
+        // capped list.
+        label: cluster.query === ''
+          ? expandCount(t('searchRefs.sourceGroup'), cluster.items.length)
+          : `${cluster.query} · ${expandCount(t('searchRefs.hits'), cluster.hits)}`,
+        open,
+        marker: 'search-refs-cluster',
+        onToggle: () => { setOpenMap(prev => ({ ...prev, [key]: !open })) },
+      }))
+      if (!open) continue
+      body.push(createElement(
+        'ul',
+        { key: `b:${key}`, style: LIST_STYLE, 'data-dsh-brief-sidebar': 'search-refs-cluster-items' },
+        cluster.items.map(renderBubble),
+      ))
+    }
   } else {
     // 有查询无来源：老版 dsh-free-search 不发 meta。说清楚，别让人以为搜了没结果。
     body.push(createElement(

@@ -17,7 +17,7 @@
  * The module is deliberately PURE — no React, no context, no IO.
  */
 import { SEARCH_REFS_KEY } from '../../projection/keys';
-import type { SearchRefView } from '../../projection/keys';
+import type { SearchRefItemView, SearchRefView } from '../../projection/keys';
 /** The key this plugin's client half subscribes to (re-exported for callers). */
 export { SEARCH_REFS_KEY };
 /**
@@ -29,6 +29,28 @@ export { SEARCH_REFS_KEY };
 export declare function readSearchRefs(value: unknown): SearchRefView | undefined;
 /** Whether one source row was surfaced by the latest turn's searches. */
 export declare function isLatestSource(view: SearchRefView, url: string): boolean;
+/** One query cluster: a question the session asked, and what answered it. */
+export interface SearchCluster {
+    /** The query text; `''` marks the tail group (sources no listed query claims). */
+    readonly query: string;
+    readonly tool: string;
+    readonly turn: number;
+    readonly hits: number;
+    readonly items: readonly SearchRefItemView[];
+    /** Belongs to the latest turn — the tab opens these, folds the rest. */
+    readonly latest: boolean;
+}
+/**
+ * Cluster the result bubbles under the queries that surfaced them.
+ *
+ * Membership is the source's own `queries` list, so a source a merged
+ * multi-query `web_search` brought back appears under each of them — that is
+ * what happened, and hiding the repeat would make the counts under the headers
+ * disagree with the cards on screen. Queries come newest-first from the fold;
+ * a source no listed query claims (its query aged out of the capped list, or a
+ * pre-cluster frame) lands in a tail group rather than disappearing.
+ */
+export declare function clusterByQuery(view: SearchRefView): readonly SearchCluster[];
 /**
  * The href to render for a source URL, or `undefined` when it must not be a link.
  *

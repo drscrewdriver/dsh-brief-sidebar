@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.7 — 2026-10-14 (resultados agrupados por consulta y plegados)
+
+- La pestaña «Búsquedas» agrupa ahora **por consulta**: una plegable por pregunta
+  (`consulta · N resultados`) y, al abrirla, las burbujas que esa consulta trajo.
+- Por defecto solo está abierto el grupo del turno actual; el estado cuelga del texto de la consulta, así que
+  un fotograma nuevo no cierra lo que la persona acaba de abrir.
+- Una fuente recuerda **todas** las consultas que la trajeron (`queries[]`, máx 5, unión entre llamadas):
+  una llamada multi-consulta ya no cuelga solo de la última; una fuente puede salir en varios grupos — hecho, no duplicado.
+- Las fuentes sin consulta listada (lista saturada, fotograma antiguo) van a un grupo «Fuentes · N» en vez de desaparecer.
+- Compatible hacia atrás: valores por defecto en `queries` y un viejo `query` único se repara como `[query]` al leer.
+- Se retira la etiqueta de herramienta que añadió 0.9.5 (los datos siguen en el fotograma).
+
 ## 0.9.6 — 2026-10-14 (la pestaña de búsquedas pasa a flujo de burbujas)
 
 - La pestaña «Búsquedas» ya no enumera títulos de consulta ni muestra las marcas de herramienta

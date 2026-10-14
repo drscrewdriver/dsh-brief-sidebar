@@ -47,8 +47,14 @@ export interface SearchRefItem {
   readonly title?: string
   /** Provider snippet, capped (see CAPS.snippet). */
   readonly snippet?: string
-  /** The query that most recently surfaced this source. */
-  readonly query: string
+  /**
+   * Every query that has surfaced this source (newest call first, capped).
+   * A merged multi-query `web_search` attributes its whole result set to each
+   * of its queries, and a later call UNIONs onto this list rather than
+   * replacing it — otherwise a source would silently leave the earlier query's
+   * cluster while that query's `hits` still counted it.
+   */
+  readonly queries: readonly string[]
   /** Which tool answered — the plugin's own or the harness's. */
   readonly tool: string
   /** How many settled searches surfaced it. */
@@ -104,6 +110,8 @@ export const CAPS = {
   latest: 20,
   /** Snippet characters kept per source. */
   snippet: 160,
+  /** Distinct queries kept per source (cluster membership, newest first). */
+  queriesPerSource: 5,
 } as const
 
 /** The fold's initial state: no search has settled yet. */
@@ -243,9 +251,6 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
   const recorded = state.calls[callId]
   if (recorded === undefined) return state
   const { tool, queries: asked, turn } = recorded
-  // The row label is the last query of the call: for a merged multi-query
-  // `web_search` that is the one whose wording the reader most recently saw.
-  const query = asked[asked.length - 1] ?? ''
 
   const sources = readSources(result.meta)
 
@@ -258,12 +263,13 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
     const key = urlKey(source.url)
     urls.push(key)
     const at = items.findIndex(item => urlKey(item.url) === key)
+    const previousQueries = at >= 0 ? items[at]?.queries ?? [] : []
     const row: SearchRefItem = {
       url: source.url,
       host: hostOf(source.url),
       ...(source.title !== undefined ? { title: source.title } : {}),
       ...(source.snippet !== undefined ? { snippet: source.snippet } : {}),
-      query,
+      queries: [...new Set([...asked, ...previousQueries])].slice(0, CAPS.queriesPerSource),
       tool,
       count: at < 0 ? 1 : (items[at]?.count ?? 0) + 1,
       lastTurn: turn,

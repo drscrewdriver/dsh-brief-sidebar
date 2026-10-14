@@ -89,7 +89,7 @@ describe('search-ref fold', () => {
       ],
     }))
     expect(s.items.map(i => i.url)).toEqual(['https://b.org/', 'https://a.org/x'])
-    expect(s.items[0]).toMatchObject({ title: 'B 标题', host: 'b.org', query: '3dgs', count: 1 })
+    expect(s.items[0]).toMatchObject({ title: 'B 标题', host: 'b.org', queries: ['3dgs'], count: 1 })
     expect(s.sourceTotal).toBe(2)
     // latest 存的是归一化键（与条目同一算法），客户端才能拿它对上行。
     expect(s.latest?.urls).toEqual(['https://b.org', 'https://a.org/x'])
@@ -103,7 +103,8 @@ describe('search-ref fold', () => {
     // 归一化只动 host 大小写与末尾斜杠：路径大小写对真 URL 是有意义的，不能抹。
     s = applySearchRefEvent(s, result('c2', { sources: [{ url: 'HTTPS://A.org/x/', title: '新标题' }] }))
     expect(s.items).toHaveLength(1)
-    expect(s.items[0]).toMatchObject({ count: 2, query: 'q2', title: '新标题' })
+    // 聚类归属取并集（新查询在前）：旧查询的簇不能因为后来又被搜了一次就丢了它。
+    expect(s.items[0]).toMatchObject({ count: 2, queries: ['q2', 'q1'], title: '新标题' })
     expect(s.sourceTotal).toBe(1)
   })
 
@@ -136,7 +137,8 @@ describe('search-ref fold', () => {
       ['今天天气 上海', 'web_search', 1],
     ])
     expect(s.queryTotal).toBe(2)
-    expect(s.items[0]).toMatchObject({ tool: 'web_search', query: '明天天气 上海' })
+    // 同一次调用里的多条查询按发布顺序入列（不反转：那是整次调用的提问清单）。
+    expect(s.items[0]).toMatchObject({ tool: 'web_search', queries: ['今天天气 上海', '明天天气 上海'] })
   })
 
   it('leaves unrelated events and other tools alone (same reference)', () => {

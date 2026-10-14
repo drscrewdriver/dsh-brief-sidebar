@@ -10,7 +10,7 @@ import { act, createElement } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { Context } from '@deepseek-ai/cordis'
-import { SEARCH_REFS_KEY, isLatestSource, readSearchRefs, safeHref } from '../src/client/summary/search-refs'
+import { SEARCH_REFS_KEY, clusterByQuery, isLatestSource, readSearchRefs, safeHref } from '../src/client/summary/search-refs'
 import { SearchRefSection } from '../src/client/summary/SearchRefSection'
 import { ReferenceSection } from '../src/client/summary/ReferenceSection'
 import { SKILL_USAGE_KEY } from '../src/projection/keys'
@@ -62,8 +62,8 @@ const VIEW = {
     { query: '3dgs survey', tool: 'advanced_search', turn: 3, hits: 0 },
   ],
   sources: [
-    { url: 'https://b.org/paper', host: 'b.org', title: 'B 论文', snippet: '摘要乙', query: '量子纠错 最新进展', count: 1, lastTurn: 4 },
-    { url: 'https://a.org/x', host: 'a.org', title: 'A 页面', query: '3dgs survey', count: 2, lastTurn: 3 },
+    { url: 'https://b.org/paper', host: 'b.org', title: 'B 论文', snippet: '摘要乙', queries: ['量子纠错 最新进展'], count: 1, lastTurn: 4 },
+    { url: 'https://a.org/x', host: 'a.org', title: 'A 页面', queries: ['3dgs survey'], count: 2, lastTurn: 3 },
   ],
   queryTotal: 2,
   sourceTotal: 2,
@@ -74,11 +74,11 @@ function renderSection(values: Record<string, unknown>): string {
 }
 
 describe('tool attribution', () => {
-  it('keeps the fold data but drops the query wall and tool tags from the tab', () => {
+  it('clusters bubbles under their query and keeps the tool name off screen', () => {
     const html = renderSection({ [SEARCH_REFS_KEY]: VIEW })
-    // 读者来这一页是看结果的：查询标题墙与工具名不再上屏（数据仍在帧里）。
+    // 查询串以“可折叠组标题”的形式回来（聚类键），但工具名不再上屏。
+    expect(html).toContain('量子纠错 最新进展')
     expect(html).not.toContain('advanced_search')
-    expect(html).not.toContain('量子纠错 最新进展')
     expect(html).toContain('data-dsh-brief-sidebar="search-refs-bubble"')
   })
 
@@ -128,6 +128,57 @@ describe('safeHref', () => {
   })
 })
 
+describe('clusterByQuery', () => {
+  it('puts a shared source in every cluster that surfaced it', () => {
+    const view = readSearchRefs({
+      latest: { turn: 4, urls: ['https://same.org'] },
+      queries: [
+        { query: 'q2', tool: 'web_search', turn: 4, hits: 1 },
+        { query: 'q1', tool: 'advanced_search', turn: 3, hits: 1 },
+      ],
+      sources: [{ url: 'https://same.org', host: 'same.org', queries: ['q2', 'q1'], tool: 'web_search', count: 2, lastTurn: 4 }],
+      queryTotal: 2,
+      sourceTotal: 1,
+    })
+    const clusters = clusterByQuery(view!)
+    expect(clusters).toHaveLength(2)
+    expect(clusters.map(c => c.query)).toEqual(['q2', 'q1'])
+    // 两个簇都含它：那确实是两条查询各自带回的结果。
+    expect(clusters.every(c => c.items.some(i => i.url === 'https://same.org'))).toBe(true)
+    // 只有本轮那个默认展开。
+    expect(clusters.map(c => c.latest)).toEqual([true, false])
+  })
+
+  it('collects sources no listed query claims into a tail cluster instead of dropping them', () => {
+    const view = readSearchRefs({
+      latest: null,
+      queries: [{ query: 'q1', tool: 'advanced_search', turn: 1, hits: 1 }],
+      sources: [
+        { url: 'https://a.org', host: 'a.org', queries: ['q1'], tool: 'advanced_search', count: 1, lastTurn: 1 },
+        { url: 'https://orphan.org', host: 'orphan.org', queries: [], tool: 'advanced_search', count: 1, lastTurn: 2 },
+      ],
+      queryTotal: 1,
+      sourceTotal: 2,
+    })
+    const clusters = clusterByQuery(view!)
+    expect(clusters.map(c => c.query)).toEqual(['q1', ''])
+    expect(clusters[1]?.items.map(i => i.url)).toEqual(['https://orphan.org'])
+    expect(clusters[1]?.latest).toBe(false)
+  })
+
+  it('repairs a pre-cluster frame that carries a single query string', () => {
+    const view = readSearchRefs({
+      latest: { turn: 1, urls: [] },
+      queries: [{ query: '旧帧查询', tool: 'advanced_search', turn: 1, hits: 1 }],
+      sources: [{ url: 'https://old.org', host: 'old.org', query: '旧帧查询', tool: 'advanced_search', count: 1, lastTurn: 1 }],
+      queryTotal: 1,
+      sourceTotal: 1,
+    })
+    const clusters = clusterByQuery(view!)
+    expect(clusters[0]?.items.map(i => i.url)).toEqual(['https://old.org'])
+  })
+})
+
 describe('SearchRefSection rendering', () => {
   it('hides entirely when the capability is absent', () => {
     expect(renderSection({})).toBe('')
@@ -141,24 +192,26 @@ describe('SearchRefSection rendering', () => {
     expect(markup).toContain(t('searchRefs.emptyHint'))
   })
 
-  it('renders one left-aligned bubble per source, with the link intact', () => {
+  it('opens the latest turn\'s cluster and folds the older ones', () => {
     const markup = renderSection({ [SEARCH_REFS_KEY]: VIEW })
-    // 不再有任何分组标题：气泡自己是内容。
-    expect(markup).not.toContain(label('searchRefs.queryGroup', 2))
-    expect(markup).not.toContain(label('searchRefs.sourceGroup', 2))
+    // 两个簇、只展开本轮那个（latest.turn=4）。
+    expect(markup.match(/data-dsh-brief-sidebar="search-refs-cluster"/g)).toHaveLength(2)
     expect(markup).toContain('B 论文')
     expect(markup).toContain('摘要乙')
     expect(markup).toContain('b.org')
-    expect(markup).toContain(t('searchRefs.latestTag'))
-    expect(markup.match(/data-dsh-brief-sidebar="search-refs-bubble"/g)).toHaveLength(2)
-    // 被多次搜到的那条带 ×N（VIEW 里 a.org/x 的 count=2）。
-    expect(markup).toContain('×2')
+    expect(markup.match(/data-dsh-brief-sidebar="search-refs-bubble"/g)).toHaveLength(1)
+    // 被折叠的簇只留标题：A 页面与它的 ×2 不得出现在静态渲染里。
+    expect(markup).not.toContain('A 页面')
+    expect(markup).not.toContain('×2')
+    // 来路计数写在组标题上。
+    expect(markup).toContain(label('searchRefs.hits', 2))
   })
 
   it('turns an unsafe provider URL into text, not a link', () => {
     const evil = {
       ...VIEW,
-      sources: [{ url: 'javascript:alert(1)', host: 'javascript:', title: '恶意标题', query: 'q', count: 1, lastTurn: 1 }],
+      // 挂在本轮已列出的查询下，否则它会被归进默认折叠的尾组，测不到点。
+      sources: [{ url: 'javascript:alert(1)', host: 'javascript:', title: '恶意标题', queries: ['量子纠错 最新进展'], count: 1, lastTurn: 4 }],
     }
     const markup = renderSection({ [SEARCH_REFS_KEY]: evil })
     expect(markup).not.toContain('href=')

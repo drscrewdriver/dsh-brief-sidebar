@@ -37,18 +37,33 @@ function readTool(value: unknown): string {
   return typeof value === 'string' && value.length > 0 ? value : 'advanced_search'
 }
 
+/**
+ * The queries that surfaced a source, newest first.
+ *
+ * Two legacy shapes are repaired rather than dropped: a frame written before
+ * the cluster change carries a single `query` string, and a drifted value
+ * (non-array, or an array of junk) reads as "member of no cluster" — the row
+ * still shows, it just joins the tail group.
+ */
+function readQueries(value: unknown): readonly string[] {
+  if (Array.isArray(value)) {
+    return [...new Set(value.filter((q): q is string => typeof q === 'string' && q.length > 0))]
+  }
+  if (typeof value === 'string' && value.length > 0) return [value]
+  return []
+}
+
 /** Narrow one source row; `undefined` = malformed, dropped. */
 function readItem(value: unknown): SearchRefItemView | undefined {
   if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined
   const raw = value as Record<string, unknown>
   if (typeof raw['url'] !== 'string' || raw['url'].length === 0) return undefined
   if (typeof raw['host'] !== 'string') return undefined
-  if (typeof raw['query'] !== 'string') return undefined
   if (!isCounter(raw['count']) || !isCounter(raw['lastTurn'])) return undefined
   const item: { -readonly [K in keyof SearchRefItemView]: SearchRefItemView[K] } = {
     url: raw['url'],
     host: raw['host'],
-    query: raw['query'],
+    queries: readQueries(raw['queries'] ?? raw['query']),
     tool: readTool(raw['tool']),
     count: raw['count'],
     lastTurn: raw['lastTurn'],
@@ -108,6 +123,58 @@ export function readSearchRefs(value: unknown): SearchRefView | undefined {
 /** Whether one source row was surfaced by the latest turn's searches. */
 export function isLatestSource(view: SearchRefView, url: string): boolean {
   return view.latest?.urls.includes(urlKey(url)) === true
+}
+
+/** One query cluster: a question the session asked, and what answered it. */
+export interface SearchCluster {
+  /** The query text; `''` marks the tail group (sources no listed query claims). */
+  readonly query: string
+  readonly tool: string
+  readonly turn: number
+  readonly hits: number
+  readonly items: readonly SearchRefItemView[]
+  /** Belongs to the latest turn — the tab opens these, folds the rest. */
+  readonly latest: boolean
+}
+
+/**
+ * Cluster the result bubbles under the queries that surfaced them.
+ *
+ * Membership is the source's own `queries` list, so a source a merged
+ * multi-query `web_search` brought back appears under each of them — that is
+ * what happened, and hiding the repeat would make the counts under the headers
+ * disagree with the cards on screen. Queries come newest-first from the fold;
+ * a source no listed query claims (its query aged out of the capped list, or a
+ * pre-cluster frame) lands in a tail group rather than disappearing.
+ */
+export function clusterByQuery(view: SearchRefView): readonly SearchCluster[] {
+  const latestTurn = view.latest?.turn
+  const claimed = new Set<string>()
+  const out: SearchCluster[] = []
+  for (const row of view.queries) {
+    const items = view.sources.filter(item => item.queries.includes(row.query))
+    for (const item of items) claimed.add(item.url)
+    out.push({
+      query: row.query,
+      tool: row.tool,
+      turn: row.turn,
+      hits: row.hits,
+      items,
+      latest: latestTurn !== undefined && row.turn === latestTurn,
+    })
+  }
+  const rest = view.sources.filter(item => !claimed.has(item.url))
+  if (rest.length > 0) {
+    out.push({
+      query: '',
+      tool: rest[0]?.tool ?? '',
+      turn: rest[0]?.lastTurn ?? 0,
+      hits: rest.length,
+      items: rest,
+      latest: false,
+    })
+  }
+  return out
 }
 
 /**

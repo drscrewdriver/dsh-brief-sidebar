@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.7 — 2026-10-14 (résultats groupés par requête et repliés)
+
+- L’onglet « Recherche » groupe désormais **par requête** : une ligne repliable par question
+  (`requête · N résultats`), et sous la ligne les bulles apportées par cette requête.
+- Seul le groupe du tour courant est ouvert ; les autres restent repliés. L’état est indexé sur le texte de la
+  requête, donc un nouveau frame ne referme pas ce que le lecteur vient d’ouvrir.
+- Une source mémorise **toutes** les requêtes qui l’ont ramenée (`queries[]`, max 5, union entre appels) :
+  un appel multi-requêtes n’est plus rattaché à la seule dernière ; une source peut figurer dans plusieurs groupes — fait, pas doublon.
+- Les sources sans requête listée (liste saturée, ancien frame) tombent dans un groupe « Sources · N » au lieu de disparaître.
+- Rétro-compatible : valeurs par défaut sur `queries` dans le schéma, et un vieil `query` unique est réparé en `[query]` à la lecture.
+- L’étiquette d’outil ajoutée en 0.9.5 est retirée (les données restent dans la trame).
+
 ## 0.9.6 — 2026-10-14 (l’onglet Recherche devient un fil de bulles)
 
 - L’onglet « Recherche » n’affiche plus la liste des requêtes ni les marques d’outil

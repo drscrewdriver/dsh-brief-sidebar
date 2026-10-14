@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.7 — 2026-10-14 (Ergebnisse nach Abfrage gruppiert und gefaltet)
+
+- Der Reiter „Suchen“ gruppiert jetzt **pro Abfrage**: eine Zeile pro Frage (`Abfrage · N Ergebnisse`),
+  aufgefaltet erscheinen die Ergebnis-Luftblasen dieser Abfrage statt einer durchlaufenden Liste.
+- Standardmäßig ist nur die aktuelle Runde offen, ältere Gruppen bleiben gefaltet; der aufgefaltete Zustand
+  hängt am Query-Text, neue Frames klappen zu, was die Leserin gerade geöffnet hat.
+- Eine Quelle merkt sich **alle** Abfragen, die sie gebracht haben (`queries[]`, max 5, über Aufrufe hinweg vereinigt):
+  ein zusammengelegter Multi-Query-Aufruf hängt nicht mehr an der letzten Frage allein; eine Quelle kann in mehreren Gruppen stehen — das ist die Tatsache, keine Doppelung.
+- Quellen ohne zugewiesene gelistete Abfrage (ausgereizte Liste, altes Frame) landen in einer „Quellen · N“-Gruppe statt still zu verschwinden.
+- Abwärtskompatibel: Schema-Defaults für `queries`, ein altes einzelnes `query`-Feld wird lesend zu `[query]` repariert.
+- Das Werkzeug-Schild aus 0.9.5 ist wieder weg (die Daten bleiben im Frame, sie werden nur nicht mehr gezeichnet).
+
 ## 0.9.6 — 2026-10-14 (Suchreiter als Luftblasen-Strom statt Titelliste)
 
 - Der Reiter „Suchen“ listet keine Abfragetitel mehr und zeigt keine Werkzeugmarken;

@@ -46,8 +46,14 @@ export interface SearchRefItem {
     readonly title?: string;
     /** Provider snippet, capped (see CAPS.snippet). */
     readonly snippet?: string;
-    /** The query that most recently surfaced this source. */
-    readonly query: string;
+    /**
+     * Every query that has surfaced this source (newest call first, capped).
+     * A merged multi-query `web_search` attributes its whole result set to each
+     * of its queries, and a later call UNIONs onto this list rather than
+     * replacing it — otherwise a source would silently leave the earlier query's
+     * cluster while that query's `hits` still counted it.
+     */
+    readonly queries: readonly string[];
     /** Which tool answered — the plugin's own or the harness's. */
     readonly tool: string;
     /** How many settled searches surfaced it. */
@@ -107,6 +113,8 @@ export declare const CAPS: {
     readonly latest: 20;
     /** Snippet characters kept per source. */
     readonly snippet: 160;
+    /** Distinct queries kept per source (cluster membership, newest first). */
+    readonly queriesPerSource: 5;
 };
 /** The fold's initial state: no search has settled yet. */
 export declare function initSearchRefState(): SearchRefState;

@@ -80,8 +80,8 @@ export interface SearchRefItemView {
   readonly title?: string
   /** Provider snippet, capped by the fold. */
   readonly snippet?: string
-  /** The query that most recently surfaced it. */
-  readonly query: string
+  /** Every query that surfaced it (newest first) — what the clusters key on. */
+  readonly queries: readonly string[]
   /** Which tool answered: the plugin's `advanced_search` or the host's `web_search`. */
   readonly tool: string
   /** Settled searches that surfaced this source. */
