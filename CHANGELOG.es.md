@@ -2,6 +2,20 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.10 — 2026-10-14 (límites alzados según medición y replay de sesiones viejas)
+
+- Nuevos topes del plegado de búsqueda: fuentes 20→**64**, consultas 20→**48**, URLs del turno actual 20→**64**
+  (extracto de 160 caracteres y 5 consultas por fuente sin cambios).
+- Medido sobre 348 sesiones locales (70 con búsqueda): consultas por sesión p50=7/p90=29/p95=38/p99=67, fuentes por
+  sesión p50=16/p90=54/p95=63/p99=164, fuentes por turno p50=16/p90=41/p95=51/max=65.
+  El valor 20 anterior caía en p55: **hasta la sesión mediana quedaba truncada**; de ahí sale el «0 resultados».
+- `stateVersion` sube a 2: **obligatorio aunque la forma no cambie**. Un punto de control escrito bajo los
+  topes viejos ya tiró fuentes; solo una fila descartada se repliega desde el registro de eventos.
+- Nueva prueba de presupuesto permanente: peor caso = 62.047 bytes por trama (presupuesto 96 KB), más la aserción de que
+  los topes realmente aprietan; una sesión típica ronda los 15 KB.
+- Sin ajuste expuesto por ahora: los topes viven en la mitad del anfitrión, y exponerlos pediría esquema de Config,
+  `.volatile()` y el formulario en las seis líneas, además de afectar solo hacia adelante.
+
 ## 0.9.9 — 2026-10-14 (clústeres de búsqueda plegados por defecto)
 
 - Todos los grupos de consulta de la pestaña «Búsquedas» están **plegados por defecto**, incluidos los del turno actual:

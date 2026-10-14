@@ -97,17 +97,28 @@ export interface SearchRefState {
 }
 
 /**
- * Capacity bounds. `snippet` is capped because it is the only long text in the
- * state and the frame is republished per event; the provider already caps it
- * once in its own `presentationMeta`, so this is a second, tighter belt.
+ * Capacity bounds, set from measurement rather than feel: 348 local sessions
+ * (70 of them containing searches) gave distinct-queries-per-session
+ * p50=7 / p90=29 / p95=38 / p99=67, distinct-sources-per-session
+ * p50=16 / p90=54 / p95=63 / p99=164, and sources-per-turn p50=16 / p90=41 /
+ * p95=51 / max=65. The previous 20/20/20 sat at roughly p55, which is what made
+ * real clusters read "0 results" while the session had searched — a cap that
+ * truncates the median session is a bug, not a limit.
+ *
+ * The cost of these numbers is bounded and known: one frame carries at most 64
+ * sources and 48 queries, and a source row is URL + host + a capped title and
+ * snippet plus at most 5 query strings. `snippet` is capped because it is the
+ * only long text in the state and the frame is republished per event; the
+ * provider already caps it once in its own `presentationMeta`, so this is a
+ * second, tighter belt (measured snippet length: p95=137 characters).
  */
 export const CAPS = {
-  /** Distinct sources kept in state. */
-  items: 20,
-  /** Distinct queries kept in state. */
-  queries: 20,
-  /** URLs kept in the latest-turn bucket. */
-  latest: 20,
+  /** Distinct sources kept in state (measured p95=63, rounded up). */
+  items: 64,
+  /** Distinct queries kept in state (measured p95=38, headroom to ~p97). */
+  queries: 48,
+  /** URLs kept in the latest-turn bucket (measured per-turn max=65). */
+  latest: 64,
   /** Snippet characters kept per source. */
   snippet: 160,
   /** Distinct queries kept per source (cluster membership, newest first). */

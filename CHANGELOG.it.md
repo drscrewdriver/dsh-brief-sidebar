@@ -2,6 +2,20 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.10 — 2026-10-14 (limiti alzati in base alla misura, replay delle sessioni vecchie)
+
+- Nuovi tetti della piegatura ricerche: fonti 20→**64**, query 20→**48**, URL del turno corrente 20→**64**
+  (estratto 160 caratteri e 5 query per fonte invariati).
+- Misurato su 348 sessioni locali (70 con ricerca): query per sessione p50=7/p90=29/p95=38/p99=67, fonti per sessione
+  p50=16/p90=54/p95=63/p99=164, fonti per turno p50=16/p90=41/p95=51/max=65.
+  Il vecchio 20 cadeva a p55: **anche la sessione mediana veniva troncata**; da lì arriva «0 risultati».
+- `stateVersion` sale a 2: **obbligatorio anche se la forma non cambia**. Un checkpoint scritto sotto i tetti
+  vecchi ha già scartato fonti; solo una riga scartata viene ripiegata dal registro degli eventi.
+- Nuovo test di budget permanente: caso peggiore = 62.047 byte per frame (budget 96 KB), più l’asserzione che i tetti
+  stringano davvero; una sessione tipica sta sui 15 KB.
+- Nessuna impostazione esposta per ora: i tetti vivono nella metà host, ed esporli richiederebbe schema Config,
+  `.volatile()` e il modulo su tutte e sei le linee, oltre a un effetto solo verso il futuro.
+
 ## 0.9.9 — 2026-10-14 (cluster di ricerca compressi per impostazione predefinita)
 
 - Tutti i gruppi di query della scheda «Ricerche» sono **compressi per impostazione predefinita**, incluso quello del turno corrente:

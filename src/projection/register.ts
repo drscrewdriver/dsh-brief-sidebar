@@ -273,7 +273,12 @@ export function registerSearchRefProjection(ctx: Context): void {
       // :122-126), which is exactly what a shape change needs: defaulting the new
       // field instead would silently strip every membership link and leave
       // expanded clusters with nothing inside.
-      stateVersion: 1,
+      // 2 = 0.9.10's capacity raise (20/20/20 → 64/48/64). The shape is the same,
+      // but a checkpoint written under the old caps has already thrown sources
+      // away, and only a discarded row gets re-folded from the event log. Without
+      // this bump the fix would apply to new sessions only, and the sessions that
+      // motivated it — the ones already reading "0 results" — would stay broken.
+      stateVersion: 2,
     })
   })
 }

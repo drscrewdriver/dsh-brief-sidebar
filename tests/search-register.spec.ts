@@ -42,14 +42,16 @@ function ctxCapturingRegistry(): { ctx: Context; defs: Captured[] } {
 }
 
 describe('search unit registration', () => {
-  it('registers the search key with a non-zero stateVersion', () => {
+  it('registers the search key with a stateVersion past the pre-cluster row', () => {
     const { ctx, defs } = ctxCapturingRegistry()
     registerSearchRefProjection(ctx)
     const unit = defs.find(d => d.key === SEARCH_REFS_KEY)
     expect(unit, `no registration under ${SEARCH_REFS_KEY}`).toBeDefined()
     // 0 was the pre-cluster version; replaying a version-0 row through the
     // cluster shape is the bug, so the number itself is the regression guard.
-    expect(unit?.stateVersion).toBe(1)
+    // 2 is 0.9.10's capacity raise: a checkpoint written under 20/20/20 has
+    // already dropped sources, and only a discarded row gets re-folded.
+    expect(unit?.stateVersion).toBe(2)
   })
 
   it('would empty a pre-cluster checkpoint row, which is why the version had to move', () => {

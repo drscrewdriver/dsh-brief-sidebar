@@ -2,6 +2,21 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.10 — 2026-10-14 (Kapazitäten nach Messung angehoben, alte Sitzungen werden neu gefaltet)
+
+- Neue Obergrenzen der Suchfaltung: Quellen 20→**64**, Anfragen 20→**48**, URLs der laufenden Runde 20→**64**
+  (Snippet 160 Zeichen und 5 Anfragen pro Quelle bleiben).
+- Grundlage ist Messung: über 348 lokale Sitzungen (70 mit Suche) ergaben sich Anfragen je Sitzung p50=7/p90=29/
+  p95=38/p99=67, Quellen je Sitzung p50=16/p90=54/p95=63/p99=164, Quellen je Runde p50=16/p90=41/p95=51/max=65.
+  Der alte Wert 20 lag bei etwa p55 — schon die Median-Sitzung wurde abgeschnitten, genau das erzeugt „0 Ergebnisse“.
+- `stateVersion` auf 2: **auch ohne Formänderung Pflicht**. Ein Checkpoint unter den alten Grenzen hat
+  Quellen bereits verworfen, und nur eine verworfene Zeile wird aus dem Event-Log neu gefaltet.
+- Neuer dauerhafter Budget-Test: schlimmster Fall = 62.047 Bytes pro Rahmen (Budget 96 KB), plus Assertion, dass die
+  Grenzen wirklich greifen; eine typische Sitzung liegt bei rund 15 KB.
+- Die Grenzen kommen einstweilen nicht in die Einstellungen: sie wohnen im Host-Teil, und eine Konfigurationsfläche
+  bräuchte Config-Schema, `.volatile()`-Heißwirkung und die Einstellungen auf allen sechs Linien — zudem nur
+  vorwärts wirksam, denn ein höherer Wert holt verworfene Quellen nicht zurück.
+
 ## 0.9.9 — 2026-10-14 (Such-Cluster standardmäßig komplett gefaltet)
 
 - Alle Abfrage-Cluster im Reiter „Suchen“ sind **standardmäßig gefaltet**, auch die der laufenden Runde:

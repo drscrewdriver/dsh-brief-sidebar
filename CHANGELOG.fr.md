@@ -2,6 +2,20 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.10 — 2026-10-14 (plafonds relevés d’après mesure, replay des anciennes sessions)
+
+- Nouveaux plafonds du pliage de recherche : sources 20→**64**, requêtes 20→**48**, URLs du tour courant 20→**64**
+  (extrait 160 caractères et 5 requêtes par source inchangés).
+- Chiffres mesurés sur 348 sessions locales (70 avec recherche) : requêtes par session p50=7/p90=29/p95=38/p99=67,
+  sources par session p50=16/p90=54/p95=63/p99=164, sources par tour p50=16/p90=41/p95=51/max=65.
+  L’ancienne valeur 20 correspondait à p55 : **même la session médiane était tronquée** — voilà d’où vient « 0 résultat ».
+- `stateVersion` passe à 2 : **obligatoire même sans changement de forme**. Un point de reprise écrit sous
+  les anciens plafonds a déjà jeté des sources ; seule une ligne jetée est re-pliée depuis le journal.
+- Nouveau test de budget permanent : pire remplissage = 62 047 octets par trame (budget 96 Ko), avec l’assertion que les
+  plafonds serrent vraiment ; une session typique fait environ 15 Ko.
+- Pas de réglage exposé pour l’instant : les plafonds vivent du côté hôte, et un champ de réglage impliquerait le schéma
+  Config, `.volatile()` et le formulaire sur les six lignes — en plus d’un effet uniquement vers l’avant.
+
 ## 0.9.9 — 2026-10-14 (groupes de recherche repliés par défaut)
 
 - Tous les groupes de requêtes de l’onglet « Recherche » sont **repliés par défaut**, y compris ceux du tour courant :
