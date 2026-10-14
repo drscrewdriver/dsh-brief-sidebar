@@ -58,6 +58,8 @@ import { TODOS_KEY } from './brief/use-todos'
 import { projectionSnapshot } from './use-projection'
 import { BriefSettingsCard } from './settings-card'
 import type { BriefSettingsCardProps } from './settings-card'
+import { claimFamilyHostIfOrphaned } from './family-host'
+import type { FamilyHostSlots } from './family-host'
 import type { BriefClientConfig, ConfigFormsLike } from './scope-face'
 
 /**
@@ -278,6 +280,10 @@ export function apply(ctx: Context): void {
   //    settings module, which may start after this apply; the callback simply
   //    never fires on a host without it (the gate then reads its default).
   const slots = ctx.get('slots') as SlotsLike | undefined
+  /** 探针：宿主执行过我们的 tab 工厂 == 有人声明了 `dsh-family.tab`。这是插件侧
+   * 唯一合法的「容器在不在」判据（槽门面不暴露 spec 查询，entriesOfSlot 也不区分
+   * 「已声明但空」与「未声明」）。 */
+  let familyTabHeld = false
   ;(ctx as unknown as {
     inject: (deps: string[], cb: (scope: { configForms?: ConfigFormsLike }) => void) => void
   }).inject(['configForms'], (scope) => {
@@ -292,8 +298,10 @@ export function apply(ctx: Context): void {
     /** The slot core hands the component `unknown` props (registry typing). */
     const component = BriefSettingsCard as unknown as (props: unknown) => ReactNode
 
-    slots.inject('dsh-family.tab', () =>
-      slots.register(
+    slots.inject('dsh-family.tab', () => {
+      // 工厂被调用即说明子席位已有人声明：本插件只做成员，不上位。
+      familyTabHeld = true
+      return slots.register(
         {
           name: 'dsh-family.tab',
           id: 'brief-sidebar',
@@ -302,8 +310,8 @@ export function apply(ctx: Context): void {
           inject: injectFactory,
         },
         component,
-      ),
-    )
+      )
+    })
     slots.inject('plugins.bundle.config', () =>
       slots.register(
         {
@@ -315,6 +323,23 @@ export function apply(ctx: Context): void {
       ),
     )
   })
+
+  // 家族容器兜底：若到分级时刻仍无人声明 `dsh-family.tab`（owner 全部让位或声明
+  // 失败），本插件自己上位成通用容器——否则成员卡整轮启动不可见且不报任何错。
+  // 注册在 apply 顶层而不是 configForms 回调里：没有 configForms 的主机上，
+  // 容器仍然需要有人接管。
+  if (slots !== undefined) {
+    ctx.effect(
+      () => claimFamilyHostIfOrphaned(
+        slots as unknown as FamilyHostSlots,
+        () => familyTabHeld,
+        // 家族共享节标题，不是本插件名：接管的是别人的那一节。
+        () => '起子插件设置',
+        LOG,
+      ),
+      'brief: family host backstop',
+    )
+  }
 
   // One-line environment snapshot: what this apply could see at mount time.
   // Cross-reference with the `surface=` line to tell "arm never fired" from
