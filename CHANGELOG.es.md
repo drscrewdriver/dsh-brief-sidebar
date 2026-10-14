@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.8 — 2026-10-14 (grupos vacíos corregidos: cambiar la forma exige subir stateVersion)
+
+- Corrige un fallo de 0.9.7: los encabezados de grupo contaban resultados y al abrirlos no había nada.
+- Causa: el estado del plegado pasó de un `query` simple a `queries[]` y `stateVersion` siguió en 0.
+  El `restore` del anfitrión solo descarta un punto de control si la versión difiere y entonces reinterpreta el registro
+  (`session-projection/src/index.ts:88-92`, `:122-126`): la fila antigua cruzó el esquema nuevo, cada campo
+  `queries` quedó en su valor por defecto vacío y todas las fuentes cayeron al grupo final.
+- `stateVersion` pasa a 1: los puntos de control rancios se descartan y se pliegan bien desde el evento.
+- Los encabezados ahora muestran cuántas entradas **contienen de verdad**, no los `hits` de la llamada: título y contenido ya no pueden contradecirse.
+- Un grupo vacío pasa a ser una línea normal sin flecha; las fuentes sin reclamo siguen en «Fuentes · N», nada desaparece en silencio.
+- Nueva guarda de registro: `stateVersion`=1 queda clavada, más la prueba de que una fila antigua sale vacía del esquema nuevo.
+
 ## 0.9.7 — 2026-10-14 (resultados agrupados por consulta y plegados)
 
 - La pestaña «Búsquedas» agrupa ahora **por consulta**: una plegable por pregunta

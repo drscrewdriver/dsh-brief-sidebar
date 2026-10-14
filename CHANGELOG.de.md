@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.8 — 2026-10-14 (Gruppen ohne Inhalt behoben: Shape-Änderung braucht neue stateVersion)
+
+- Behebt einen Fehler aus 0.9.7: die Gruppenüberschriften zählten Ergebnisse, beim Aufklappen war nichts da.
+- Ursache: Der Falt-State ging von einem einzelnen `query`-String auf `queries[]` um, `stateVersion` blieb 0.
+  Das Host-`restore` verwirft einen Checkpoint nur bei abweichender Version und spielt dann das Event-Log neu
+  (`session-projection/src/index.ts:88-92`, `:122-126`) — der alte Row lief durch das neue Schema, alle `queries`-Felder
+  wurden auf die leere Vorgabe gesetzt, jede Quelle rutschte in die Endgruppe.
+- `stateVersion` ist jetzt 1: alte Checkpoints werden verworfen und korrekt neu gefaltet.
+- Überschriften nennen nun die **tatsächlich enthaltenen** Einträge statt der Aufruf-`hits` — Titel und Inhalt können nicht mehr auseinanderlaufen.
+- Leere Gruppen sind eine normale Zeile ohne Schalter; nicht zugeordnete Quellen bleiben in „Quellen · N“, nichts verschwindet still.
+- Neuer Registrierungs-Guard: `stateVersion`=1 ist festgenagelt, plus der Nachweis, dass ein Alt-Row durch das neue Schema leer wird.
+
 ## 0.9.7 — 2026-10-14 (Ergebnisse nach Abfrage gruppiert und gefaltet)
 
 - Der Reiter „Suchen“ gruppiert jetzt **pro Abfrage**: eine Zeile pro Frage (`Abfrage · N Ergebnisse`),

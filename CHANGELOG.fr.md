@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.8 — 2026-10-14 (groupes vides corrigés : un changement de forme exige une nouvelle stateVersion)
+
+- Corrige un défaut de 0.9.7 : les titres de groupe comptaient des résultats, le panneau ouvert restait vide.
+- Cause : l’état de pliage est passé d’un simple `query` à `queries[]` sans que `stateVersion` quitte 0.
+  Le `restore` de l’hôte ne jette un point de reprise qu’en cas de version différente, puis rejoue le journal
+  (`session-projection/src/index.ts:88-92`, `:122-126`) : la ligne ancienne a traversé le nouveau schéma, chaque champ
+  `queries` est tombé à sa valeur par défaut vide, et toutes les sources ont glissé dans le groupe final.
+- `stateVersion` passe à 1 : les points de reprise périmés sont jetés et re-pliés correctement.
+- Les titres affichent désormais le nombre **réellement contenu**, plus les `hits` de l’appel : titre et contenu ne peuvent plus se contredire.
+- Un groupe vide devient une ligne simple sans chevron ; les sources non réclamées restent dans « Sources · N », rien ne disparaît en silence.
+- Nouveau garde d’enregistrement : `stateVersion`=1 est épinglée, avec la preuve qu’une ligne ancienne ressort vide du nouveau schéma.
+
 ## 0.9.7 — 2026-10-14 (résultats groupés par requête et repliés)
 
 - L’onglet « Recherche » groupe désormais **par requête** : une ligne repliable par question

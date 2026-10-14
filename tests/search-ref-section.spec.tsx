@@ -203,8 +203,24 @@ describe('SearchRefSection rendering', () => {
     // 被折叠的簇只留标题：A 页面与它的 ×2 不得出现在静态渲染里。
     expect(markup).not.toContain('A 页面')
     expect(markup).not.toContain('×2')
-    // 来路计数写在组标题上。
-    expect(markup).toContain(label('searchRefs.hits', 2))
+    // 组标题报的是“里面真有多少”，不是调用时的 hits（VIEW 里 hits=2 但只有一条来源归属它）。
+    expect(markup).toContain(label('searchRefs.hits', 1))
+  })
+
+  it('gives an empty cluster a plain line instead of a chevron that opens nothing', () => {
+    // 这就是 0.9.7 现场那个坑的形状：查询说“返回 5 条”，展开却什么都没有。
+    const orphaned = {
+      ...VIEW,
+      sources: VIEW.sources.map(s => ({ ...s, queries: [] })),
+    }
+    const markup = renderSection({ [SEARCH_REFS_KEY]: orphaned })
+    // 两条查询都无成员 ⇒ 两行普通标题（无开关），计数不再撒谎。
+    expect(markup.match(/data-dsh-brief-sidebar="search-refs-cluster-empty"/g)).toHaveLength(2)
+    expect(markup).not.toContain(label('searchRefs.hits', 2))
+    // 来路全部进尾部一个默认折叠的「来源 · 2」开关——内容没丢，只是收起来了。
+    expect(markup).toContain(label('searchRefs.sourceGroup', 2))
+    expect(markup.match(/data-dsh-brief-sidebar="search-refs-cluster"/g)).toHaveLength(1)
+    expect(markup).not.toContain('B 论文')
   })
 
   it('turns an unsafe provider URL into text, not a link', () => {

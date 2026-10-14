@@ -2,6 +2,18 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.8 — 2026-10-14 (gruppi vuoti risolti: un cambio di forma richiede una nuova stateVersion)
+
+- Corregge un difetto di 0.9.7: i titoli dei gruppi contavano risultati, ma aprendoli non c’era nulla.
+- Causa: lo stato di piegatura è passato da un singolo `query` a `queries[]` mentre `stateVersion` restava 0.
+  Il `restore` dell’host scarta un checkpoint solo se la versione differisce e poi rigioca il log degli eventi
+  (`session-projection/src/index.ts:88-92`, `:122-126`): la riga vecchia è passata dallo schema nuovo, ogni campo
+  `queries` è finito sul valore predefinito vuoto e tutte le fonti sono scivolate nel gruppo finale.
+- `stateVersion` sale a 1: i checkpoint vecchi vengono scartati e ripiegati correttamente.
+- I titoli ora indicano quanti elementi **contengono davvero**, non i `hits` della chiamata: titolo e contenuto non possono più contraddirsi.
+- Un gruppo vuoto diventa una riga semplice senza freccia; le fonti non rivendicate restano in «Fonti · N», nulla scompare in silenzio.
+- Nuova guardia sulla registrazione: `stateVersion`=1 è fissata, più la prova che una riga vecchia esce vuota dallo schema nuovo.
+
 ## 0.9.7 — 2026-10-14 (risultati raggrupati per query e compressi)
 
 - La scheda «Ricerche» raggruppa ora **per query**: una riga comprimibile per domanda

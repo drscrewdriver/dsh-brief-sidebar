@@ -33,7 +33,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { SEARCH_REFS_KEY } from '../../projection/keys'
 import type { SearchRefItemView } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
-import { FoldToggle } from './FoldToggle'
+import { FoldToggle, GroupHeader } from './FoldToggle'
 import { expandCount, expandTotal } from '../locales'
 import { clusterByQuery, isLatestSource, readSearchRefs, safeHref } from './search-refs'
 
@@ -239,6 +239,22 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
     // an older answer can open it.
     for (const cluster of clusterByQuery(view)) {
       const key = cluster.query === '' ? '\u0000tail' : cluster.query
+      // The count on a heading is the count *inside* it. The fold's `hits` is
+      // what the call returned session-wide; a source can since have aged out of
+      // the capped list, and a heading promising five cards over an empty pane
+      // is the bug this line exists to prevent.
+      const shown = expandCount(t('searchRefs.hits'), cluster.items.length)
+      if (cluster.items.length === 0) {
+        // Nothing to open: a plain line, not a chevron that reveals an empty
+        // group. The query still shows, because "it was asked" is the fact. (A
+        // tail group never gets here — it only exists when it holds sources.)
+        body.push(createElement(GroupHeader, {
+          key: `h:${key}`,
+          text: `${cluster.query} · ${shown}`,
+          marker: 'search-refs-cluster-empty',
+        }))
+        continue
+      }
       const open = openMap[key] ?? cluster.latest
       body.push(createElement(FoldToggle, {
         key: `h:${key}`,
@@ -248,7 +264,7 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
         // capped list.
         label: cluster.query === ''
           ? expandCount(t('searchRefs.sourceGroup'), cluster.items.length)
-          : `${cluster.query} · ${expandCount(t('searchRefs.hits'), cluster.hits)}`,
+          : `${cluster.query} · ${shown}`,
         open,
         marker: 'search-refs-cluster',
         onToggle: () => { setOpenMap(prev => ({ ...prev, [key]: !open })) },

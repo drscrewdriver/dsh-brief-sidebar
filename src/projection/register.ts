@@ -267,8 +267,13 @@ export function registerSearchRefProjection(ctx: Context): void {
       init: () => initSearchRefState(),
       apply: applySearchRefEvent,
       wire: { viewSchema: searchViewSchema, view: searchView },
-      // 0 = the first published shape of this key.
-      stateVersion: 0,
+      // 1 = the 0.9.7 cluster change: sources moved from a single `query` string
+      // to a `queries[]` set. The host's `restore` discards a checkpoint whose
+      // `ver` differs and replays the log (session-projection/src/index.ts:88-92,
+      // :122-126), which is exactly what a shape change needs: defaulting the new
+      // field instead would silently strip every membership link and leave
+      // expanded clusters with nothing inside.
+      stateVersion: 1,
     })
   })
 }
