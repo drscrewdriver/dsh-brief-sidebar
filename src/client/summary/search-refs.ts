@@ -133,8 +133,6 @@ export interface SearchCluster {
   readonly turn: number
   readonly hits: number
   readonly items: readonly SearchRefItemView[]
-  /** Belongs to the latest turn — the tab opens these, folds the rest. */
-  readonly latest: boolean
 }
 
 /**
@@ -146,22 +144,16 @@ export interface SearchCluster {
  * disagree with the cards on screen. Queries come newest-first from the fold;
  * a source no listed query claims (its query aged out of the capped list, or a
  * pre-cluster frame) lands in a tail group rather than disappearing.
+ *
+ * The section renders every cluster folded; nothing here decides what opens.
  */
 export function clusterByQuery(view: SearchRefView): readonly SearchCluster[] {
-  const latestTurn = view.latest?.turn
   const claimed = new Set<string>()
   const out: SearchCluster[] = []
   for (const row of view.queries) {
     const items = view.sources.filter(item => item.queries.includes(row.query))
     for (const item of items) claimed.add(item.url)
-    out.push({
-      query: row.query,
-      tool: row.tool,
-      turn: row.turn,
-      hits: row.hits,
-      items,
-      latest: latestTurn !== undefined && row.turn === latestTurn,
-    })
+    out.push({ query: row.query, tool: row.tool, turn: row.turn, hits: row.hits, items })
   }
   const rest = view.sources.filter(item => !claimed.has(item.url))
   if (rest.length > 0) {
@@ -171,7 +163,6 @@ export function clusterByQuery(view: SearchRefView): readonly SearchCluster[] {
       turn: rest[0]?.lastTurn ?? 0,
       hits: rest.length,
       items: rest,
-      latest: false,
     })
   }
   return out

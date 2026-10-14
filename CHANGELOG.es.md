@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.9 — 2026-10-14 (clústeres de búsqueda plegados por defecto)
+
+- Todos los grupos de consulta de la pestaña «Búsquedas» están **plegados por defecto**, incluidos los del turno actual:
+  se ve una línea por pregunta con el número real que contiene, en vez de volcar burbujas al entrar.
+- La regla anterior («abrir el turno actual») tapaba, en una sesión real, la lista de preguntas que uno viene a recorrer.
+- Se abre lo que se pulsa; el estado cuelga del texto de la consulta, así que un fotograma nuevo no cierra nada.
+- Se quitó el campo `SearchCluster.latest` en cuanto dejó de consumirse.
+- Las pruebas ahora fijan: todo plegado por defecto, un clic abre un solo grupo y un segundo lo vuelve a cerrar; el test de
+  desinfección de enlaces abre primero, en vez de confundir «no renderizado» con «sin enlace».
+
 ## 0.9.8 — 2026-10-14 (grupos vacíos corregidos: cambiar la forma exige subir stateVersion)
 
 - Corrige un fallo de 0.9.7: los encabezados de grupo contaban resultados y al abrirlos no había nada.

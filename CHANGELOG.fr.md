@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.9 — 2026-10-14 (groupes de recherche repliés par défaut)
+
+- Tous les groupes de requêtes de l’onglet « Recherche » sont **repliés par défaut**, y compris ceux du tour courant :
+  on voit une ligne par question avec le nombre qu’elle contient vraiment, au lieu d’un flot de bulles.
+- La règle précédente (« ouvrir le tour courant ») masquait, sur une session réelle, la liste des questions que l’on vient parcourir.
+- On ouvre ce que l’on clique ; l’état est indexé sur le texte de la requête, un nouveau cadre ne referme rien.
+- Le champ `SearchCluster.latest` a été supprimé, personne ne le consommant plus.
+- Les tests épinglent : tout replié par défaut, un clic n’ouvre qu’un groupe, un second le referme ; le test de désinfection
+  des liens ouvre d’abord, au lieu de confondre « non rendu » et « pas de lien ».
+
 ## 0.9.8 — 2026-10-14 (groupes vides corrigés : un changement de forme exige une nouvelle stateVersion)
 
 - Corrige un défaut de 0.9.7 : les titres de groupe comptaient des résultats, le panneau ouvert restait vide.

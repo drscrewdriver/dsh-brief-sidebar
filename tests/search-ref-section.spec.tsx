@@ -76,10 +76,11 @@ function renderSection(values: Record<string, unknown>): string {
 describe('tool attribution', () => {
   it('clusters bubbles under their query and keeps the tool name off screen', () => {
     const html = renderSection({ [SEARCH_REFS_KEY]: VIEW })
-    // 查询串以“可折叠组标题”的形式回来（聚类键），但工具名不再上屏。
+    // 查询串以“可折叠组标题”的形式回来（聚类键），但工具名不上屏。
     expect(html).toContain('量子纠错 最新进展')
     expect(html).not.toContain('advanced_search')
-    expect(html).toContain('data-dsh-brief-sidebar="search-refs-bubble"')
+    // 默认收拢 ⇒ 静态渲染里一个气泡都没有。
+    expect(html).not.toContain('data-dsh-brief-sidebar="search-refs-bubble"')
   })
 
   it('still reads a pre-0.9.5 frame that carries no tool field', () => {
@@ -145,8 +146,6 @@ describe('clusterByQuery', () => {
     expect(clusters.map(c => c.query)).toEqual(['q2', 'q1'])
     // 两个簇都含它：那确实是两条查询各自带回的结果。
     expect(clusters.every(c => c.items.some(i => i.url === 'https://same.org'))).toBe(true)
-    // 只有本轮那个默认展开。
-    expect(clusters.map(c => c.latest)).toEqual([true, false])
   })
 
   it('collects sources no listed query claims into a tail cluster instead of dropping them', () => {
@@ -163,7 +162,6 @@ describe('clusterByQuery', () => {
     const clusters = clusterByQuery(view!)
     expect(clusters.map(c => c.query)).toEqual(['q1', ''])
     expect(clusters[1]?.items.map(i => i.url)).toEqual(['https://orphan.org'])
-    expect(clusters[1]?.latest).toBe(false)
   })
 
   it('repairs a pre-cluster frame that carries a single query string', () => {
@@ -192,19 +190,43 @@ describe('SearchRefSection rendering', () => {
     expect(markup).toContain(t('searchRefs.emptyHint'))
   })
 
-  it('opens the latest turn\'s cluster and folds the older ones', () => {
+  it('folds every cluster, including the current turn\'s, until it is opened', () => {
     const markup = renderSection({ [SEARCH_REFS_KEY]: VIEW })
-    // 两个簇、只展开本轮那个（latest.turn=4）。
+    // 两个簇、全折叠：一点进来就倒出内容会把读者要看的问题清单埋掉。
     expect(markup.match(/data-dsh-brief-sidebar="search-refs-cluster"/g)).toHaveLength(2)
-    expect(markup).toContain('B 论文')
-    expect(markup).toContain('摘要乙')
-    expect(markup).toContain('b.org')
-    expect(markup.match(/data-dsh-brief-sidebar="search-refs-bubble"/g)).toHaveLength(1)
-    // 被折叠的簇只留标题：A 页面与它的 ×2 不得出现在静态渲染里。
+    expect(markup).not.toContain('data-dsh-brief-sidebar="search-refs-bubble"')
+    expect(markup).not.toContain('B 论文')
     expect(markup).not.toContain('A 页面')
-    expect(markup).not.toContain('×2')
-    // 组标题报的是“里面真有多少”，不是调用时的 hits（VIEW 里 hits=2 但只有一条来源归属它）。
+    // 标题只报“里面真有多少”（VIEW 里量子簇 1 条、dgs 簇 1 条）。
     expect(markup).toContain(label('searchRefs.hits', 1))
+  })
+
+  it('reveals that cluster\'s bubbles when its line is clicked', () => {
+    let root: Root | undefined
+    const host = document.createElement('div')
+    document.body.append(host)
+    try {
+      act(() => {
+        root = createRoot(host)
+        root.render(createElement(SearchRefSection, {
+          t, ctx: ctxWith({ [SEARCH_REFS_KEY]: VIEW }), scope: { sessionId: SESSION },
+        }))
+      })
+      const first = host.querySelector<HTMLButtonElement>('[data-dsh-brief-sidebar="search-refs-cluster"]')
+      expect(first).not.toBeNull()
+      expect(host.innerHTML).not.toContain('search-refs-bubble')
+      act(() => { first?.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
+      // 只开被点的那个：本轮、更早一律同样处理。
+      expect(host.innerHTML).toContain('B 论文')
+      expect(host.innerHTML).toContain('rel="noreferrer noopener"')
+      expect(host.innerHTML).not.toContain('A 页面')
+      expect(first?.getAttribute('aria-expanded')).toBe('true')
+      act(() => { first?.dispatchEvent(new MouseEvent('click', { bubbles: true })) })
+      expect(host.innerHTML).not.toContain('B 论文')
+    } finally {
+      act(() => { root?.unmount() })
+      host.remove()
+    }
   })
 
   it('gives an empty cluster a plain line instead of a chevron that opens nothing', () => {
@@ -226,14 +248,44 @@ describe('SearchRefSection rendering', () => {
   it('turns an unsafe provider URL into text, not a link', () => {
     const evil = {
       ...VIEW,
-      // 挂在本轮已列出的查询下，否则它会被归进默认折叠的尾组，测不到点。
+      // 挂在本轮已列出的查询下，否则它会被归进尾组。
       sources: [{ url: 'javascript:alert(1)', host: 'javascript:', title: '恶意标题', queries: ['量子纠错 最新进展'], count: 1, lastTurn: 4 }],
     }
-    const markup = renderSection({ [SEARCH_REFS_KEY]: evil })
-    expect(markup).not.toContain('href=')
-    expect(markup).toContain('恶意标题')
-    // 正常来源则带 rel 保护。
-    const ok = renderSection({ [SEARCH_REFS_KEY]: VIEW })
+    let root: Root | undefined
+    const host = document.createElement('div')
+    document.body.append(host)
+    let ok = ''
+    try {
+      act(() => {
+        root = createRoot(host)
+        root.render(createElement(SearchRefSection, {
+          t, ctx: ctxWith({ [SEARCH_REFS_KEY]: evil }), scope: { sessionId: SESSION },
+        }))
+      })
+      // 默认折叠，所以先点开再看内容——不能拿“没渲染”当成“没链接”。
+      act(() => {
+        host.querySelector<HTMLButtonElement>('[data-dsh-brief-sidebar="search-refs-cluster"]')
+          ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      })
+      expect(host.innerHTML).toContain('恶意标题')
+      expect(host.innerHTML).not.toContain('href=')
+      // 正常来源则带 rel 保护（重新挂载 + 单独一步点开，提交才完成）。
+      act(() => { root?.unmount() })
+      act(() => {
+        root = createRoot(host)
+        root.render(createElement(SearchRefSection, {
+          t, ctx: ctxWith({ [SEARCH_REFS_KEY]: VIEW }), scope: { sessionId: SESSION },
+        }))
+      })
+      act(() => {
+        host.querySelector<HTMLButtonElement>('[data-dsh-brief-sidebar="search-refs-cluster"]')
+          ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+      })
+      ok = host.innerHTML
+    } finally {
+      act(() => { root?.unmount() })
+      host.remove()
+    }
     expect(ok).toContain('rel="noreferrer noopener"')
   })
 
@@ -294,8 +346,8 @@ describe('ReferenceSection search tab', () => {
       })
       // 记忆页签不存在 ⇒ 一步就到搜索页，而不是停在隐藏的空页。
       expect((searchPane as HTMLElement | null)?.style.display).toBe('')
-      // 页签内容真在：拿来源标题当凭据（查询串已不再上屏）。
-      expect(host.textContent).toContain('B 论文')
+      // 页签内容真在：拿查询组标题当凭据（结果默认折叠，不靠气泡证明它渲染了）。
+      expect(host.textContent).toContain('量子纠错 最新进展')
     } finally {
       act(() => { root?.unmount() })
       host.remove()

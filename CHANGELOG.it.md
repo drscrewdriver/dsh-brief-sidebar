@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.9 — 2026-10-14 (cluster di ricerca compressi per impostazione predefinita)
+
+- Tutti i gruppi di query della scheda «Ricerche» sono **compressi per impostazione predefinita**, incluso quello del turno corrente:
+  si vede una riga per domanda col numero che contiene davvero, invece di rovesciare fumetti all’ingresso.
+- La regola precedente («apri il turno corrente») copriva, in una sessione reale, l’elenco delle domande che si viene a scandire.
+- Si apre ciò che si clicca; lo stato è indicizzato sul testo della query, quindi un frame nuovo non chiude nulla.
+- Rimossa la proprietà `SearchCluster.latest` da quando nessuno la consumava più.
+- I test fissano: tutto compresso per default, un clic apre un solo gruppo e un secondo lo richiude; il test di bonifica dei
+  link apre prima, invece di confondere «non renderizzato» con «nessun link».
+
 ## 0.9.8 — 2026-10-14 (gruppi vuoti risolti: un cambio di forma richiede una nuova stateVersion)
 
 - Corregge un difetto di 0.9.7: i titoli dei gruppi contavano risultati, ma aprendoli non c’era nulla.

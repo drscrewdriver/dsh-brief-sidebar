@@ -37,8 +37,6 @@ export interface SearchCluster {
     readonly turn: number;
     readonly hits: number;
     readonly items: readonly SearchRefItemView[];
-    /** Belongs to the latest turn — the tab opens these, folds the rest. */
-    readonly latest: boolean;
 }
 /**
  * Cluster the result bubbles under the queries that surfaced them.
@@ -49,6 +47,8 @@ export interface SearchCluster {
  * disagree with the cards on screen. Queries come newest-first from the fold;
  * a source no listed query claims (its query aged out of the capped list, or a
  * pre-cluster frame) lands in a tail group rather than disappearing.
+ *
+ * The section renders every cluster folded; nothing here decides what opens.
  */
 export declare function clusterByQuery(view: SearchRefView): readonly SearchCluster[];
 /**

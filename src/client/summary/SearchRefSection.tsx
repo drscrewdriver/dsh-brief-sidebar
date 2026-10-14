@@ -2,19 +2,28 @@
  * The search-reference section: the `dshSummarySearchRefs` projection drawn as
  * one tab of the references section.
  *
- * It answers "what did this session pull in from outside", and it answers it the
- * way the conversation to its left does: **one left-aligned bubble per source**,
- * title as a link, host and provider snippet under it. No group headers, no list
- * of query titles — that wall duplicated what the transcript already shows, and a
- * reader who opens this tab is looking for the results, not for a restatement of
- * the questions.
+ * It answers "what did this session pull in from outside" as a list of the
+ * questions the session asked: **one line per query, every one folded**. Opening
+ * a line reveals that query's results as left-aligned bubbles — title as a link,
+ * host and provider snippet under it — in the same reading idiom as the
+ * conversation to the left.
  *
- * The fold still records which query and which tool (`web_search` or the user's
- * own `advanced_search`) surfaced each source; that data stays in the frame for
- * any surface that wants it, it is just no longer drawn here. An older
- * `dsh-free-search` without `presentationMeta` yields queries with no sources —
- * that degraded case is stated (`searchRefs.noSourcesHint`) rather than left as
- * an empty pane, because an empty list reads as "the search found nothing".
+ * Folded-by-default is a deliberate call, not a leftover: a tab that spills its
+ * whole result set the moment it is clicked buries the question list the reader
+ * came to scan, and one session can carry forty results across eight queries.
+ *
+ * Each line counts what it actually holds, never what the call returned: a query
+ * whose results aged out of the capped source list reads "0" and is drawn as a
+ * plain line with no chevron, because a switch that opens onto nothing is worse
+ * than no switch. Sources no listed query claims (their query aged out, or the
+ * frame predates the cluster change) collect in a tail group rather than vanish.
+ *
+ * The fold still records which tool (`web_search` or the user's own
+ * `advanced_search`) answered each query; that stays in the frame for any surface
+ * that wants it and is not drawn here. An older `dsh-free-search` without
+ * `presentationMeta` yields queries with no sources at all — that degraded case
+ * is stated (`searchRefs.noSourcesHint`) rather than left as an empty pane,
+ * because an empty list reads as "the search found nothing".
  *
  * Optional on both sides: no registry, or a host half that never registered the
  * unit, means the client reads capability absence and the section hides.
@@ -170,9 +179,11 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
 
   const view = readSearchRefs(useProjectionValue(ctx, scope?.sessionId, SEARCH_REFS_KEY))
 
-  // Manual overrides on top of the default (latest turn open, older folded).
-  // Keyed by query text, so a re-render that pushes new frames does not reset
-  // what the reader just opened.
+  // Which clusters the reader has opened, keyed by query text. The default is
+  // **folded for every one of them** — including the current turn's — because a
+  // tab that dumps its contents the moment it is clicked is a tab the reader has
+  // to fight. Keying the overrides means new projection frames cannot reset what
+  // they just opened.
   const [openMap, setOpenMap] = useState<Readonly<Record<string, boolean>>>({})
 
   // Capability absent — the optional unit never registered. Hide, don't nag.
@@ -233,10 +244,9 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
   }
 
   if (view.sources.length > 0) {
-    // Results clustered under the query that surfaced them: the newest turn's
-    // clusters open, older ones fold to one line each. Eight searches should
-    // read as eight questions, not as forty bubbles — and the reader who wants
-    // an older answer can open it.
+    // Results clustered under the query that surfaced them, every cluster folded
+    // to one line. Eight searches read as eight questions and nothing else; the
+    // reader opens the one they care about.
     for (const cluster of clusterByQuery(view)) {
       const key = cluster.query === '' ? '\u0000tail' : cluster.query
       // The count on a heading is the count *inside* it. The fold's `hits` is
@@ -255,7 +265,7 @@ export function SearchRefSection(props: SearchRefSectionProps): ReactNode {
         }))
         continue
       }
-      const open = openMap[key] ?? cluster.latest
+      const open = openMap[key] === true
       body.push(createElement(FoldToggle, {
         key: `h:${key}`,
         // The tail group has no query to name it, so it borrows the source

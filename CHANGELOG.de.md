@@ -2,6 +2,16 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.9 — 2026-10-14 (Such-Cluster standardmäßig komplett gefaltet)
+
+- Alle Abfrage-Cluster im Reiter „Suchen“ sind **standardmäßig gefaltet**, auch die der laufenden Runde:
+  Der Reiter zeigt jetzt eine Zeile pro Frage mit der Zahl, die er wirklich enthält, statt sofort Blasen auszuschütten.
+- Die vorherige Regel „aktuelle Runde aufgeklappt“ hat im echten Sitzungsbild die Fragenliste verdeckt, die man scannen will.
+- Geöffnet wird, was angeklickt wird; der Zustand hängt am Query-Text, neue Frames klappen nichts zu.
+- Das Feld `SearchCluster.latest` wurde entfernt, nachdem es niemand mehr konsumiert — ungenutzte Daten veralten.
+- Tests prüfen jetzt: alles gefaltet per Default, ein Klick öffnet genau eine Gruppe, ein zweiter klappt sie wieder zu;
+  der Link-Desinfektionstest öffnet zuerst, statt „nicht gerendert“ mit „kein Link“ zu verwechseln.
+
 ## 0.9.8 — 2026-10-14 (Gruppen ohne Inhalt behoben: Shape-Änderung braucht neue stateVersion)
 
 - Behebt einen Fehler aus 0.9.7: die Gruppenüberschriften zählten Ergebnisse, beim Aufklappen war nichts da.
