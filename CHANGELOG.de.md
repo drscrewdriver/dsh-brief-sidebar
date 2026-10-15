@@ -2,6 +2,15 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.11 — 2026-10-15 (Memory-Viewer in dieses Plugin aufgenommen)
+
+- **Sprung zum Detail verdrahtet**: rechts an der Bewertungsleiste und an jeder Ref-Zeile der Slots sitzt ein Button; er öffnet über `betterSidebar.openTab` den Tab `dsh-md-memory-viewer:memory`. **Tab-Kanal, kein Dateisystem**: der frühere fileViewer-Weg (vorgetäuschter Pfad `<id>.memory`) wurde vom EditorHost als physischer Pfad gelesen und lief immer auf ENOENT.
+- **Viewer-Komponente liegt jetzt hier** (`src/client/memory-viewer/viewer.tsx`), das eigenständige Plugin `dsh-md-memory-viewer` ist entfernt. Der Tab-Typ wird in `apply()` registriert (`hidden: true`, nicht im +-Menü), damit wiederhergestellte Tabs nach einem Neustart weiterhin einen Besitzer haben.
+- **Service-Referenz über das Modul `memory-tab.ts`**: `ctx.get('betterSidebar')` in tiefen Komponenten wird vom strict proxy still abgelehnt (Klick ohne Reaktion und ohne Fehler); die Referenz wird einmal in `apply()` als Closure gehalten.
+- **Leerer Zustand**: ohne `memoryId` (Tab vor der Registrierung wiederhergestellt) steht im Panel „In diesem Startzyklus kein Memory zum Ansehen gewählt“ statt einer weißen Fläche.
+- **Markdown im Körpertext**: Sprechblase und Viewer teilen das dependency-freie `renderMd` (Überschriften / Fett / Inline-Code / Listen); alle Daten kommen aus `dsh-memory/records-meta`.
+- **Hierarchie der Anzeige**: Titel nutzt das Feld `name` (13px/600/Primärfarbe), die Szenenzeile fällt auf 10px — zuvor sahen beide fast gleich aus, und Abschnittsüberschriften wie `## Fazit` wurden als Namen dargestellt.
+
 ## 0.9.10 — 2026-10-14 (Kapazitäten nach Messung angehoben, alte Sitzungen werden neu gefaltet)
 
 - Neue Obergrenzen der Suchfaltung: Quellen 20→**64**, Anfragen 20→**48**, URLs der laufenden Runde 20→**64**

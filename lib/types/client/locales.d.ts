@@ -40,6 +40,7 @@ export declare const zh: {
     'slots.empty': string;
     'slots.emptyHint': string;
     'slots.openCount': string;
+    'slots.viewMemory': string;
     'slots.status.open': string;
     'slots.status.done': string;
     'slots.status.dropped': string;
@@ -54,6 +55,7 @@ export declare const zh: {
     'recall.rated': string;
     'recall.failed': string;
     'recall.obsoleteWhy': string;
+    'recall.viewDetail': string;
     'recall.strikeHint': string;
     'recall.supersededHidden': string;
     'recall.activeGroup': string;

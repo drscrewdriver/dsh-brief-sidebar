@@ -21,7 +21,7 @@
  * bubble separates from the list by border and background layer rather than by
  * elevation — a literal `box-shadow` colour would break the contract.
  */
-import { createElement } from 'react'
+import { createElement, Fragment } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { MemoryRecallItem } from './memory-recall'
 import { expandCount } from '../locales'
@@ -130,6 +130,92 @@ const FOOTER_STYLE: CSSProperties = {
 /** A retired record stays readable in the bubble, just marked. */
 const STALE_BODY_STYLE: CSSProperties = { ...BODY_STYLE, textDecoration: 'line-through' }
 
+/* ── Lightweight Markdown renderer (no external deps) ──────────────────── */
+
+const MD_H_STYLES: CSSProperties[] = [
+  { fontSize: 14, fontWeight: 700, margin: '6px 0 2px', color: 'var(--dsw-alias-label-primary)' },
+  { fontSize: 13, fontWeight: 600, margin: '5px 0 2px', color: 'var(--dsw-alias-label-primary)' },
+  { fontSize: 12, fontWeight: 600, margin: '4px 0 1px', color: 'var(--dsw-alias-label-secondary)' },
+  { fontSize: 12, fontWeight: 600, margin: '4px 0 1px', color: 'var(--dsw-alias-label-secondary)' },
+  { fontSize: 11, fontWeight: 600, margin: '3px 0 1px', color: 'var(--dsw-alias-label-secondary)' },
+  { fontSize: 11, fontWeight: 600, margin: '3px 0 1px', color: 'var(--dsw-alias-label-tertiary)' },
+]
+
+const MD_P_STYLE: CSSProperties = { margin: '2px 0', whiteSpace: 'pre-wrap' }
+const MD_LI_STYLE: CSSProperties = { margin: '1px 0 1px 12px', whiteSpace: 'pre-wrap' }
+const MD_CODE_STYLE: CSSProperties = {
+  fontFamily: 'var(--dsw-alias-font-mono, monospace)',
+  fontSize: 11,
+  background: 'var(--dsw-alias-fill-tertiary)',
+  padding: '0 3px',
+  borderRadius: 3,
+}
+
+/** Parse inline bold (`**x**`) and code (`` `x` ``) spans. */
+function renderInline(text: string, key: string): ReactNode[] {
+  const nodes: ReactNode[] = []
+  // Split by **bold** or `code`
+  const re = /\*\*(.+?)\*\*|`(.+?)`/
+  let rest = text
+  let i = 0
+  while (rest.length > 0) {
+    const m = re.exec(rest)
+    if (m === null) { nodes.push(rest); break }
+    if (m.index > 0) nodes.push(rest.slice(0, m.index))
+    if (m[1] !== undefined) {
+      nodes.push(createElement('strong', { key: `${key}-b${i++}` }, m[1]))
+    } else {
+      nodes.push(createElement('code', { key: `${key}-c${i++}`, style: MD_CODE_STYLE }, m[2]))
+    }
+    rest = rest.slice(m.index + m[0].length)
+  }
+  return nodes
+}
+
+/**
+ * Render a markdown string into React nodes.
+ * Supports: headings (h1-h6), unordered/ordered lists, bold, inline code, paragraphs.
+ */
+export function renderMd(md: string): ReactNode {
+  const lines = md.split('\n')
+  const out: ReactNode[] = []
+  let idx = 0
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed.length === 0) continue
+    // Heading
+    const hMatch = /^(#{1,6})\s+(.+)/.exec(trimmed)
+    if (hMatch) {
+      const level = hMatch[1].length
+      out.push(createElement(`h${level}`, { key: `h${idx}`, style: MD_H_STYLES[level - 1] },
+        ...renderInline(hMatch[2], `h${idx}`)))
+      idx++
+      continue
+    }
+    // Unordered list item
+    const ulMatch = /^[-*]\s+(.+)/.exec(trimmed)
+    if (ulMatch) {
+      out.push(createElement('span', { key: `li${idx}`, style: MD_LI_STYLE },
+        '• ', ...renderInline(ulMatch[1], `li${idx}`)))
+      idx++
+      continue
+    }
+    // Ordered list item
+    const olMatch = /^\d+\.\s+(.+)/.exec(trimmed)
+    if (olMatch) {
+      out.push(createElement('span', { key: `li${idx}`, style: MD_LI_STYLE },
+        trimmed.slice(0, trimmed.indexOf('.') + 2), ...renderInline(olMatch[1], `li${idx}`)))
+      idx++
+      continue
+    }
+    // Paragraph
+    out.push(createElement('span', { key: `p${idx}`, style: MD_P_STYLE },
+      ...renderInline(trimmed, `p${idx}`)))
+    idx++
+  }
+  return createElement(Fragment, null, ...out)
+}
+
 /**
  * The bubble itself.
  *
@@ -161,9 +247,8 @@ export function RecallBubble(props: {
     createElement(
       'div',
       { style: stale ? STALE_BODY_STYLE : BODY_STYLE },
-      // No body on this frame (an older prime-memory): say so rather than
-      // quietly showing only the first line as if it were everything.
-      item.body ?? `${item.title}\n${t('recall.noBody')}`,
+      // Render markdown body; fallback when absent.
+      item.body !== undefined ? renderMd(item.body) : `${item.title}\n${t('recall.noBody')}`,
     ),
     scenario !== undefined && createElement('div', { style: SCENARIO_STYLE }, scenario),
     createElement('div', { style: FOOTER_STYLE }, foot),

@@ -136,7 +136,21 @@ describe('选中一行才出打分条，且打分条不吃掉选中态', () => {
     await press(rows()[0])
     const strip = host.querySelector('[data-dsh-brief-sidebar="recall-rating-strip"]')
     expect(strip).not.toBeNull()
-    expect(buttons(strip as Element)).toHaveLength(7)
+    expect(buttons(strip as Element)).toHaveLength(8)
+    // 第 8 枚是「查看详情」跳转，不属于打分档位。
+    expect(buttonByText(strip as Element, zh['recall.viewDetail'])).toBeDefined()
+  })
+
+  it('点「查看详情」不发打分请求、也不把行取消选中（同 -1 那个 bug 的面）', async () => {
+    const sent: Sent[] = []
+    mount(transport(sent))
+    await press(rows()[0])
+    const view = buttonByText(host, zh['recall.viewDetail'])
+    expect(view).toBeDefined()
+
+    await press(view)
+    expect(sent).toHaveLength(0)
+    expect(host.querySelector('[data-dsh-brief-sidebar="recall-rating-strip"]')).not.toBeNull()
   })
 
   it('回归护栏：点 -1 不再把行取消选中（这条就是那个 bug）', async () => {

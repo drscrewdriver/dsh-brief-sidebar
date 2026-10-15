@@ -41,6 +41,10 @@ export interface MemorySlotView {
 export interface SlotRefView {
     readonly ref: string;
     readonly title: string;
+    /** 记忆文件相对路径（`<type>/<name>.memory.md`）。 */
+    readonly filePath?: string;
+    /** 记忆归属的工作区绝对路径；undefined = global。 */
+    readonly workspaceId?: string;
 }
 /** The whole wire view of one frame. */
 export interface MemorySlotsView {

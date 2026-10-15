@@ -2,6 +2,15 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.11 — 2026-10-15 (visionneuse de mémoire intégrée dans ce plugin)
+
+- **Accès au détail enfin câblé** : un bouton à droite de la barre de notation et sur chaque ligne `ref` des emplacements ouvre l'onglet `dsh-md-memory-viewer:memory` via `betterSidebar.openTab`. **Canal onglet, pas de système de fichiers** : l'ancienne approche fileViewer (chemin `<id>.memory` déguisé) était résolue par l'EditorHost hôte comme un fichier réel et finissait en ENOENT.
+- **Le composant visionneuse vit désormais ici** (`src/client/memory-viewer/viewer.tsx`) ; le plugin autonome `dsh-md-memory-viewer` est supprimé. Le type d'onglet est enregistré dans `apply()` (`hidden: true`, absent du menu +), donc les onglets restaurés après redémarrage gardent un propriétaire.
+- **Référence au service via le module `memory-tab.ts`** : dans les composants profonds, `ctx.get('betterSidebar')` est silencieusement refusé par le proxy strict (clic sans effet ni erreur) ; la référence est capturée une fois dans `apply()`.
+- **État vide** : sans `memoryId` (onglet restauré avant l'enregistrement), le panneau affiche « Aucune mémoire sélectionnée pour cette session de démarrage » au lieu d'un vide.
+- **Corps en Markdown** : bulle et visionneuse partagent `renderMd` sans dépendance (titres / gras / code inline / listes) ; toutes les données viennent de `dsh-memory/records-meta`.
+- **Hiérarchie visuelle** : le titre prend le champ `name` (13px/600/couleur primaire), la ligne de scénario retombe à 10px — auparavant un `## Conclusion` de corps était affiché comme nom.
+
 ## 0.9.10 — 2026-10-14 (plafonds relevés d’après mesure, replay des anciennes sessions)
 
 - Nouveaux plafonds du pliage de recherche : sources 20→**64**, requêtes 20→**48**, URLs du tour courant 20→**64**

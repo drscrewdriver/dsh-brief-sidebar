@@ -17,7 +17,7 @@
  * Colours come from `--dsw-alias-*` tokens only (skin contract, enforced by
  * `tests/purity.spec.ts`).
  */
-import { createElement } from 'react'
+import { createElement, useCallback } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import type { Context } from '@deepseek-ai/cordis'
 import {
@@ -25,11 +25,12 @@ import {
   readSlots,
   truncateBody,
 } from './memory-slots'
-import type { MemorySlotView, MemorySlotsView } from './memory-slots'
+import type { MemorySlotView, MemorySlotsView, SlotRefView } from './memory-slots'
 import { resolveShowMemorySlots } from '../scope-face'
 import { useConfigFlag } from './use-config-flag'
 import { useProjectionValue } from '../use-projection'
 import { expandCount } from '../locales'
+import { openMemoryTab } from '../memory-tab'
 
 export interface MemorySlotsSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -149,14 +150,28 @@ const STATUS_KEY: Record<string, string> = {
   expired: 'slots.status.expired',
 }
 
+/** The “查看” button beside a mem_* refView. */
+const VIEW_BTN_STYLE: CSSProperties = {
+  display: 'inline-block',
+  marginLeft: 6,
+  padding: '0 4px',
+  fontSize: 10,
+  lineHeight: '14px',
+  color: 'var(--dsw-alias-label-secondary)',
+  border: '1px solid var(--dsw-alias-border-secondary)',
+  borderRadius: 3,
+  cursor: 'pointer',
+  background: 'none',
+  verticalAlign: 'middle',
+}
+
 /**
  * One slot row: kind pill, title (full body rides the tooltip), status pill,
  * priority; body line underneath when the wire view carries it; refs as
- * resolved 名称简述 (record_id → title) with the raw refs on the tooltip, or
- * raw refs when the host has not resolved them.
+ * resolved 名称简述 (record_id → title) with a 「查看」 button for mem_* refs.
  */
-function SlotRow(props: { slot: MemorySlotView; t: (key: string) => string }): ReactNode {
-  const { slot, t } = props
+function SlotRow(props: { slot: MemorySlotView; t: (key: string) => string; onViewMemory?: (ref: string) => void }): ReactNode {
+  const { slot, t, onViewMemory } = props
   const statusLabel = STATUS_KEY[slot.status] === undefined ? slot.status : t(STATUS_KEY[slot.status])
   const title = slot.body === undefined ? slot.title : `${slot.title} — ${slot.body}`
   const refsLine = slot.refViews !== undefined
@@ -180,7 +195,20 @@ function SlotRow(props: { slot: MemorySlotView; t: (key: string) => string }): R
             style: REFS_STYLE,
             title: slot.refs !== undefined ? slot.refs.join('\n') : undefined,
           },
-          refsLine,
+          ...(slot.refViews !== undefined
+            ? slot.refViews.flatMap((view) => {
+              const nodes: ReactNode[] = [view.title]
+              if (view.ref.startsWith('mem_') && onViewMemory !== undefined) {
+                nodes.push(createElement('button', {
+                  key: `view-${view.ref}`,
+                  type: 'button' as const,
+                  style: VIEW_BTN_STYLE,
+                  onClick: (e: { stopPropagation(): void }) => { e.stopPropagation(); onViewMemory(view.ref) },
+                }, t('slots.viewMemory')))
+              }
+              return nodes
+            }).flatMap((node, i) => i === 0 ? [node] : [' · ', node])
+            : [refsLine]),
         ),
     ),
     createElement('span', { style: META_STYLE }, `P${slot.priority}`),
@@ -217,6 +245,11 @@ export function MemorySlotsSection(props: MemorySlotsSectionProps): ReactNode {
     useProjectionValue(ctx, scope?.sessionId, MEMORY_SLOTS_KEY),
   )
 
+  // 查看按钮的 opener：经模块级 openMemoryTab 走 betterSidebar.openTab，完全绕过文件系统。
+  const onViewMemory = useCallback((ref: string) => {
+    openMemoryTab(ref)
+  }, [])
+
   // Switched off at the settings faces — the section is willed away, not
   // empty (an empty state would claim prime-memory answered when the user
   // simply closed the section).
@@ -247,7 +280,7 @@ export function MemorySlotsSection(props: MemorySlotsSectionProps): ReactNode {
     createElement(
       'ul',
       { style: LIST_STYLE },
-      view.slots.map(slot => createElement(SlotRow, { key: slot.id, slot, t })),
+      view.slots.map(slot => createElement(SlotRow, { key: slot.id, slot, t, onViewMemory })),
     ),
     createElement(
       'div',

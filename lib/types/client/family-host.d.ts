@@ -16,7 +16,7 @@ export interface FamilyHostSlots {
  * 接管分级——唯一真源是 `mine-dsh-plugins/_tools/family-rank.mjs`（离线实测 GitHub
  * star + npm 周下载量加权）。延迟 = BASE + RANK * STEP；rank 越大越靠后兜底。
  */
-export declare const FAMILY_CLAIM_RANK = 6;
+export declare const FAMILY_CLAIM_RANK = 4;
 /** 派生而非硬编码：改 rank 表就自动改时刻。 */
 export declare const FAMILY_CLAIM_DELAY_MS: number;
 type HostObservable<T> = {

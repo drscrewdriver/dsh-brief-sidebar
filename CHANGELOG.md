@@ -1,5 +1,14 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.9.11 — 2026-10-15（记忆详情查看器内聚进本插件）
+
+- **查看入口打通**：召回列表的打分行右侧与槽位的 ref 行都给出跳转按钮，点击经 `betterSidebar.openTab` 打开 `dsh-md-memory-viewer:memory` tab。**走 tab 通道，不碰文件系统**：之前伪装成 `<id>.memory` 的 fileViewer 方案会被宿主 EditorHost 当物理路径去 fsRead，永远 ENOENT。
+- **查看器组件内聚**（`src/client/memory-viewer/viewer.tsx`）：独立插件 `dsh-md-memory-viewer` 退役删除，tab 类型改由本插件 `apply()` 注册（`hidden: true`，不进 + 菜单，只能由按钮程序化打开）。因此重启后 better-sidebar 恢复的持久 tab 仍有认领方，不再退化成「这类内容还没有可用的查看方式」。
+- **服务引用改走模块级 `memory-tab.ts`**：深层组件里 `ctx.get('betterSidebar')` 会被 strict proxy 静默拒绝（按钮点了没反应且无报错），改为 apply 时一次性取好存闭包。
+- **空态兜底**：`memoryId` 为空（重启后 tab 先于注册恢复）时显示「未在本轮启动周期选择查看的记忆」，不再留空白面板。
+- **记忆正文 markdown 化**：悬停泡泡与查看器共用轻量 `renderMd`（零外部依赖：heading 层级 / 粗体 / 行内代码 / 列表），数据全部走 `dsh-memory/records-meta` API，不再读磁盘。
+- **展示层级修正**：标题取记忆的 `name`并以 13px/600/主色显示，场景行降为 10px 作为从属信息——之前两者字号接近，且 `## 结论/事实` 这类正文分节被当成记忆名称顶在上面。
+
 ## 0.9.10 — 2026-10-14（搜索容量按实测抬高，并让旧会话重放）
 
 - 搜索折叠上限重定：来源 20→**64**、查询 20→**48**、本轮 URL 桶 20→**64**（摘要 160 字、每源 5 条查询不变）。

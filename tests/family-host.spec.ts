@@ -11,6 +11,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   FAMILY_CLAIM_DELAY_MS,
+  FAMILY_CLAIM_RANK,
   claimFamilyHostIfOrphaned,
   projectLedger,
 } from '../src/client/family-host'
@@ -86,8 +87,11 @@ describe('family host backstop', () => {
   })
 
   it('derives its moment from the rank ladder rather than a hardcoded number', () => {
-    // 200 + RANK * 900：改 rank 表就自动改时刻，不允许再出现各自拍的毫秒。
-    expect(FAMILY_CLAIM_DELAY_MS).toBe(200 + 6 * 900)
+    // 断言形式本身就是派生式：不在此重复写 rank 数字（否则这个用例会成为冻结表的
+    // 第三个真源 —— 改 rank 时必须连带改断言，那正是它声称要防的事）。
+    expect(FAMILY_CLAIM_DELAY_MS).toBe(200 + FAMILY_CLAIM_RANK * 900)
+    // 冻结表（_tools/family-rank.mjs）当前定 brief 为 rank 4。
+    expect(FAMILY_CLAIM_RANK).toBe(4)
   })
 })
 

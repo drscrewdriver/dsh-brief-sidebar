@@ -44,6 +44,10 @@ export interface MemorySlotView {
 export interface SlotRefView {
   readonly ref: string
   readonly title: string
+  /** 记忆文件相对路径（`<type>/<name>.memory.md`）。 */
+  readonly filePath?: string
+  /** 记忆归属的工作区绝对路径；undefined = global。 */
+  readonly workspaceId?: string
 }
 
 /** The whole wire view of one frame. */
@@ -116,7 +120,12 @@ function readSlot(value: unknown): MemorySlotView | undefined {
       const view = entry as Record<string, unknown>
       if (typeof view['ref'] !== 'string' || view['ref'].length === 0) continue
       if (typeof view['title'] !== 'string' || view['title'].length === 0) continue
-      views.push({ ref: view['ref'], title: view['title'] })
+      views.push({
+        ref: view['ref'],
+        title: view['title'],
+        ...(typeof view['filePath'] === 'string' && view['filePath'].length > 0 ? { filePath: view['filePath'] } : {}),
+        ...(typeof view['workspaceId'] === 'string' && view['workspaceId'].length > 0 ? { workspaceId: view['workspaceId'] } : {}),
+      })
     }
     if (views.length > 0) slot.refViews = views
   }

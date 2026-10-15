@@ -30,6 +30,11 @@ export declare function bubblePos(r: {
     left: number;
 };
 /**
+ * Render a markdown string into React nodes.
+ * Supports: headings (h1-h6), unordered/ordered lists, bold, inline code, paragraphs.
+ */
+export declare function renderMd(md: string): ReactNode;
+/**
  * The bubble itself.
  *
  * @param props - the item to show, the clamped coordinates, and the lookup.

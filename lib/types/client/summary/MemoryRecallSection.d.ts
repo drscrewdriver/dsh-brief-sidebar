@@ -37,7 +37,9 @@ export declare function RatingStrip(props: {
     obsoleteLabel: string;
     confirmLabel: string;
     whyLabel: string;
+    viewLabel: string;
     onScore(score: FeedbackScore): void;
+    onViewMemory?(): void;
 }): ReactNode;
 /**
  * The session-recall section. All hooks run unconditionally (a conditional hook

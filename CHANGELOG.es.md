@@ -2,6 +2,15 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.11 — 2026-10-15 (visor de memoria integrado en este plugin)
+
+- **Salto al detalle ya conectado**: un botón a la derecha de la barra de valoración y en cada línea `ref` de los espacios abre la pestaña `dsh-md-memory-viewer:memory` vía `betterSidebar.openTab`. **Canal de pestaña, sin sistema de archivos**: el enfoque fileViewer previo (ruta `<id>.memory` fingida) el EditorHost anfitrión la resolvía como archivo físico y siempre daba ENOENT.
+- **El componente visor vive aquí ahora** (`src/client/memory-viewer/viewer.tsx`); el plugin independiente `dsh-md-memory-viewer` se retira. El tipo de pestaña se registra en `apply()` (`hidden: true`, fuera del menú +), así las pestañas restauradas tras reiniciar siguen teniendo dueño.
+- **Referencia al service vía el módulo `memory-tab.ts`**: en componentes profundos `ctx.get('betterSidebar')` es rechazado en silencio por el proxy estricto (clic sin efecto ni error); la referencia se captura una vez en `apply()`.
+- **Estado vacío**: sin `memoryId` (pestaña restaurada antes del registro) el panel muestra «Ninguna memoria elegida para ver en este ciclo de arranque» en lugar de un hueco.
+- **Cuerpo en Markdown**: la burbuja y el visor comparten `renderMd` sin dependencias (encabezados / negrita / código inline / listas); todos los datos vienen de `dsh-memory/records-meta`.
+- **Jerarquía visual**: el título usa el campo `name` (13px/600/color primario) y la línea de escenarios baja a 10px — antes un `## Conclusión` del cuerpo se mostraba como nombre.
+
 ## 0.9.10 — 2026-10-14 (límites alzados según medición y replay de sesiones viejas)
 
 - Nuevos topes del plegado de búsqueda: fuentes 20→**64**, consultas 20→**48**, URLs del turno actual 20→**64**

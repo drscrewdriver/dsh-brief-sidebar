@@ -2,6 +2,15 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.11 — 2026-10-15 (visore delle memorie integrato in questo plugin)
+
+- **Apertura del dettaglio finalmente collegata**: un pulsante a destra della barra di valutazione e su ogni riga `ref` degli slot apre la scheda `dsh-md-memory-viewer:memory` tramite `betterSidebar.openTab`. **Canale scheda, niente filesystem**: il precedente approccio fileViewer (percorso `<id>.memory` fingendo un file) veniva risolto dall'EditorHost ospite come file reale e finiva sempre in ENOENT.
+- **Il componente visore ora vive qui** (`src/client/memory-viewer/viewer.tsx`); il plugin autonomo `dsh-md-memory-viewer` è rimosso. Il tipo di scheda è registrato in `apply()` (`hidden: true`, assente dal menu +), così le schede ripristinate dopo il riavvio hanno ancora un proprietario.
+- **Riferimento al service tramite il modulo `memory-tab.ts`**: nei componenti profondi `ctx.get('betterSidebar')` viene rifiutato in silenzio dal proxy strict (clic senza effetto né errore); il riferimento viene catturato una volta in `apply()`.
+- **Stato vuoto**: senza `memoryId` (scheda ripristinata prima della registrazione) il pannello mostra «Nessuna memoria scelta per visualizzazione in questo avvio» invece di un bianco.
+- **Corpo in Markdown**: fumetto e visore condividono `renderMd` senza dipendenze (titoli / grassetto / codice inline / liste); tutti i dati arrivano da `dsh-memory/records-meta`.
+- **Gerarchia visiva**: il titolo usa il campo `name` (13px/600/colore primario), la riga degli scenari scende a 10px — prima un `## Conclusione` del corpo veniva mostrato come nome.
+
 ## 0.9.10 — 2026-10-14 (limiti alzati in base alla misura, replay delle sessioni vecchie)
 
 - Nuovi tetti della piegatura ricerche: fonti 20→**64**, query 20→**48**, URL del turno corrente 20→**64**

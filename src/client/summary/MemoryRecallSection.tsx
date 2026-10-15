@@ -54,6 +54,7 @@ import { useConfigFlag } from './use-config-flag'
 import { useProjectionValue } from '../use-projection'
 import { expandCount } from '../locales'
 import { FoldToggle, GroupHeader } from './FoldToggle'
+import { openMemoryTab } from '../memory-tab'
 
 export interface MemoryRecallSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
@@ -123,15 +124,16 @@ const TYPE_STYLE: CSSProperties = {
 
 const TITLE_STYLE: CSSProperties = {
   minWidth: 0,
-  color: 'var(--dsw-alias-label-secondary)',
+  color: 'var(--dsw-alias-label-primary)',
+  fontWeight: 600,
   // Two lines, always the same height whatever the body says — the row keeps
   // its shape and the whole text rides the hover bubble instead.
   display: '-webkit-box',
   WebkitLineClamp: 2,
   WebkitBoxOrient: 'vertical',
   overflow: 'hidden',
-  fontSize: 12,
-  lineHeight: '17px',
+  fontSize: 13,
+  lineHeight: '18px',
 }
 
 /**
@@ -148,8 +150,8 @@ const SCENARIO_STYLE: CSSProperties = {
   minWidth: 0,
   overflowWrap: 'anywhere',
   color: 'var(--dsw-alias-label-tertiary)',
-  fontSize: 11,
-  lineHeight: '16px',
+  fontSize: 10,
+  lineHeight: '14px',
 }
 
 const META_STYLE: CSSProperties = {
@@ -253,7 +255,9 @@ export function RatingStrip(props: {
   obsoleteLabel: string
   confirmLabel: string
   whyLabel: string
+  viewLabel: string
   onScore(score: FeedbackScore): void
+  onViewMemory?(): void
 }): ReactNode {
   const { current, pending, armed } = props
   // Clicks landing on the strip's gaps/padding count too: anything inside here
@@ -296,6 +300,20 @@ export function RatingStrip(props: {
       },
       String(score),
     )),
+    props.onViewMemory !== undefined && createElement(
+      'button',
+      {
+        type: 'button',
+        style: VIEW_MEM_STYLE,
+        disabled: pending,
+        title: props.viewLabel,
+        onClick: (e: { stopPropagation(): void }) => {
+          e.stopPropagation()
+          props.onViewMemory?.()
+        },
+      },
+      props.viewLabel,
+    ),
   )
 }
 
@@ -319,6 +337,7 @@ function RecallRow(props: {
   t: (key: string) => string
   onSelect(): void
   onScore(score: FeedbackScore): void
+  onViewMemory?(id: string): void
   onEnter(el: HTMLElement): void
   onLeave(): void
 }): ReactNode {
@@ -383,11 +402,21 @@ function RecallRow(props: {
         obsoleteLabel: t('recall.obsolete'),
         confirmLabel: t('recall.obsoleteConfirm'),
         whyLabel: t('recall.obsoleteWhy'),
+        viewLabel: t('recall.viewDetail'),
         onScore: props.onScore,
+        onViewMemory: props.onViewMemory !== undefined ? () => { props.onViewMemory!(item.id) } : undefined,
       }),
     ),
     createElement('span', { style: META_STYLE }, `P${item.priority}`),
   )
+}
+
+/** “查看详情”跳转按钮（打分行右侧）。 */
+const VIEW_MEM_STYLE: CSSProperties = {
+  ...SCORE_BUTTON_STYLE,
+  minWidth: 0,
+  whiteSpace: 'nowrap',
+  marginLeft: 'auto',
 }
 
 /** How long the `-1` button stays armed before reverting to its plain label. */
@@ -465,6 +494,11 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
   const onSelect = useCallback((id: string): void => {
     setArmed(false)
     setSelectedId(current => (current === id ? undefined : id))
+  }, [])
+
+  // “查看详情”跳转：经模块级 openMemoryTab 走 betterSidebar.openTab，完全绕过文件系统。
+  const onViewMemory = useCallback((id: string): void => {
+    openMemoryTab(id)
   }, [])
 
   // One bubble at a time, and it opens on a delay: sweeping the mouse down the
@@ -582,6 +616,7 @@ export function MemoryRecallSection(props: MemoryRecallSectionProps): ReactNode 
         t,
         onSelect: () => { onSelect(item.id) },
         onScore: (score: FeedbackScore) => { rate(item.id, score) },
+        onViewMemory: onViewMemory,
         onEnter: (el: HTMLElement) => { onEnter(item.id, el) },
         onLeave,
       })),
