@@ -2,6 +2,11 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.12 — 2026-10-15 (leere memoryId nach Neustart ist kein Fehler mehr)
+
+- `⚠️ [object Object]` behoben: nach dem Neustart stellt better-sidebar die persistierten Tabs wieder her, `tab.path` ist dann leer — der alte Code sandte trotzdem `{ids:['']}`, was serverseitig als „ids nach Filterung leer" abgewiesen wird. Die Fehlerhülle des Host-RPC ist ein **Objekt** `error:{code,message}`, als String interpoliert ergibt das `[object Object]`. Leere Id geht jetzt direkt auf den Hinweistext „In diesem Startzyklus kein Memory zum Ansehen gewählt", **ohne Request**.
+- Fehlertexte werden lesbar: `error.message` hat Vorrang, Nicht-2xx zeigt `HTTP <status>`, erst danach fällt es auf „nicht gefunden" zurück. Für die einzige Datenquelle des Viewers wurden Servertests ergänzt (prime-memory `tests/records-meta.test.ts`).
+
 ## 0.9.11 — 2026-10-15 (Memory-Viewer in dieses Plugin aufgenommen)
 
 - **Sprung zum Detail verdrahtet**: rechts an der Bewertungsleiste und an jeder Ref-Zeile der Slots sitzt ein Button; er öffnet über `betterSidebar.openTab` den Tab `dsh-md-memory-viewer:memory`. **Tab-Kanal, kein Dateisystem**: der frühere fileViewer-Weg (vorgetäuschter Pfad `<id>.memory`) wurde vom EditorHost als physischer Pfad gelesen und lief immer auf ENOENT.

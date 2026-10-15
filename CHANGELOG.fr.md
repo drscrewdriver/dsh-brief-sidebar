@@ -2,6 +2,11 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.12 — 2026-10-15 (un memoryId vide après redémarrage n'est plus une erreur)
+
+- Correction de `⚠️ [object Object]` : au redémarrage, better-sidebar restaure d'abord les onglets persistés, `tab.path` est alors vide, mais l'ancien code envoyait quand même `{ids:['']}`, rejeté côté serveur (« ids vide après filtrage »). L'enveloppe d'erreur du RPC hôte est un **objet** `error:{code,message}` ; interpolé en chaîne, cela donnait `[object Object]`. Un id vide va désormais droit sur le message « Aucune mémoire sélectionnée pour cette session de démarrage », **sans requête**.
+- Messages d'échec lisibles : `error.message` en priorité, `HTTP <status>` pour les non-2xx, repli sur « mémoire introuvable » seulement si rien n'est disponible. Des tests côté serveur couvrent désormais l'unique source de données de la visionneuse (prime-memory `tests/records-meta.test.ts`).
+
 ## 0.9.11 — 2026-10-15 (visionneuse de mémoire intégrée dans ce plugin)
 
 - **Accès au détail enfin câblé** : un bouton à droite de la barre de notation et sur chaque ligne `ref` des emplacements ouvre l'onglet `dsh-md-memory-viewer:memory` via `betterSidebar.openTab`. **Canal onglet, pas de système de fichiers** : l'ancienne approche fileViewer (chemin `<id>.memory` déguisé) était résolue par l'EditorHost hôte comme un fichier réel et finissait en ENOENT.

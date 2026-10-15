@@ -31,6 +31,26 @@ interface Props {
   scope: { sessionId?: string }
 }
 
+/** 宿主 RPC 信封：失败分支的 `error` 是 `{code,message,details}` **对象**，不是字符串。 */
+interface RecordsMetaEnvelope {
+  ok?: boolean
+  value?: { items?: RecordMeta[] }
+  error?: { code?: string; message?: string } | string
+}
+
+/**
+ * 把失败信封说成人话。
+ *
+ * 直接把 `error` 当字符串拼进模板会得到 `⚠️ [object Object]`——用户看不到原因，
+ * 排查只能靠猜。取 `error.message`，拿不到才给兜底文案。
+ */
+function describeEnvelopeError(env: RecordsMetaEnvelope): string {
+  const e = env.error
+  if (typeof e === 'string' && e.length > 0) return e
+  if (e !== null && typeof e === 'object' && typeof e.message === 'string' && e.message.length > 0) return e.message
+  return '未找到该记忆'
+}
+
 /* ── Styles (all --dsw-alias-* tokens) ── */
 const WRAP: CSSProperties = { padding: '12px 16px', overflow: 'auto', height: '100%', fontSize: 13, lineHeight: 1.6, color: 'var(--dsw-alias-label-primary)' }
 const HEADER: CSSProperties = { marginBottom: 12, paddingBottom: 8, borderBottom: '1px solid var(--dsw-alias-border-secondary)' }
@@ -95,6 +115,9 @@ export function MemoryViewer(props: Props): ReactNode {
   const [error, setError] = useState<string | undefined>(undefined)
 
   useEffect(() => {
+    // 空 id 不发请求：`{ids:['']}` 会被服务端拒为“ids 过滤后为空”，
+    // 把“重启后 tab 先于选择恢复”这个正常空态误报成错误。
+    if (memoryId.length === 0) return
     let cancelled = false
     setError(undefined)
     fetch('/dsh-memory/rpc/records-meta', {
@@ -102,23 +125,27 @@ export function MemoryViewer(props: Props): ReactNode {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ids: [memoryId] }),
     })
-      .then(r => r.json())
-      .then((env: { ok: boolean; value?: { items: RecordMeta[] }; error?: string }) => {
+      .then(async (r) => {
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        return (await r.json()) as RecordsMetaEnvelope
+      })
+      .then((env: RecordsMetaEnvelope) => {
         if (cancelled) return
-        if (env.ok && env.value?.items?.[0]) setRecord(env.value.items[0])
-        else setError(env.error ?? '未找到该记忆')
+        const first = env.ok === true ? env.value?.items?.[0] : undefined
+        if (first !== undefined) { setRecord(first); return }
+        setError(describeEnvelopeError(env))
       })
       .catch((e: unknown) => { if (!cancelled) setError(e instanceof Error ? e.message : String(e)) })
     return () => { cancelled = true }
   }, [memoryId])
 
-  if (error !== undefined) {
-    return createElement('div', { style: WRAP },
-      createElement('div', { style: PLACEHOLDER }, `⚠️ ${error}`))
-  }
   if (memoryId.length === 0) {
     return createElement('div', { style: WRAP },
       createElement('div', { style: PLACEHOLDER }, '未在本轮启动周期选择查看的记忆'))
+  }
+  if (error !== undefined) {
+    return createElement('div', { style: WRAP },
+      createElement('div', { style: PLACEHOLDER }, `⚠️ ${error}`))
   }
   if (record === undefined) {
     return createElement('div', { style: WRAP },

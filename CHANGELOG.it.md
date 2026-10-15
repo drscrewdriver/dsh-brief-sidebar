@@ -2,6 +2,11 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.12 — 2026-10-15 (memoryId vuoto dopo il riavvio non è più un errore)
+
+- Corretto `⚠️ [object Object]`: al riavvio better-sidebar ripristina prima le schede persistite, quindi `tab.path` è vuoto, ma il vecchio codice mandava comunque `{ids:['']}`, respinto dal server («ids vuoto dopo il filtro»). L'involucro d'errore dell'RPC host è un **oggetto** `error:{code,message}`; interpolato come stringa diventava `[object Object]`. Un id vuoto ora porta direttamente al messaggio «Nessuna memoria scelta per visualizzazione in questo avvio», **senza richiesta**.
+- Messaggi di errore leggibili: prima `error.message`, poi `HTTP <status>` per i non-2xx, e solo in ultimo «memoria non trovata». Aggiunti test lato server sull'unica fonte dati del visore (prime-memory `tests/records-meta.test.ts`).
+
 ## 0.9.11 — 2026-10-15 (visore delle memorie integrato in questo plugin)
 
 - **Apertura del dettaglio finalmente collegata**: un pulsante a destra della barra di valutazione e su ogni riga `ref` degli slot apre la scheda `dsh-md-memory-viewer:memory` tramite `betterSidebar.openTab`. **Canale scheda, niente filesystem**: il precedente approccio fileViewer (percorso `<id>.memory` fingendo un file) veniva risolto dall'EditorHost ospite come file reale e finiva sempre in ENOENT.

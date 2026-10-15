@@ -1,5 +1,10 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.9.12 — 2026-10-15（重启后的空 memoryId 不再伪装成错误）
+
+- 修 `⚠️ [object Object]`：重启后 better-sidebar 会先恢复持久 tab，此时 `tab.path` 为空，旧代码仍照发 `{ids:['']}`，被服务端拒为「ids 过滤后为空」；而宿主 RPC 的失败壳是 `{ok:false, error:{code,message}}` **对象**，当字符串拼进模板就成了 `[object Object]`。现在空 id 直接走空态文案「未在本轮启动周期选择查看的记忆」，**不发请求**。
+- 失败信息说人话：优先渲染 `error.message`，非 2xx 给 `HTTP <status>`，两者都拿不到才回落「未找到该记忆」。查看器唯一数据源的服务端契约同步补了用例（prime-memory `tests/records-meta.test.ts`）。
+
 ## 0.9.11 — 2026-10-15（记忆详情查看器内聚进本插件）
 
 - **查看入口打通**：召回列表的打分行右侧与槽位的 ref 行都给出跳转按钮，点击经 `betterSidebar.openTab` 打开 `dsh-md-memory-viewer:memory` tab。**走 tab 通道，不碰文件系统**：之前伪装成 `<id>.memory` 的 fileViewer 方案会被宿主 EditorHost 当物理路径去 fsRead，永远 ENOENT。
