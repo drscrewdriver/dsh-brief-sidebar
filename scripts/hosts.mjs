@@ -33,6 +33,8 @@ export const supportedHosts = Object.freeze([
   // 0.2.0 线（2 个 rc）
   '0.2.0-rc.1',
   '0.2.0-rc.2',
+  // 0.2.1 线（1 个 rc；alpha 不入列）
+  '0.2.1-rc.1',
 ])
 
 /** peerDependencies / engines.dsh 共用的枚举串（精确枚举无暗坑，INDEX §B）。 */
@@ -42,8 +44,13 @@ export const peerRange = supportedHosts.join(' || ')
 export const developmentHost = '0.2.0-rc.2'
 
 /**
- * peer 闸门指向的宿主子包（本插件唯一宿主契约面：注入的 `systemPrompt` 服务
- * 由 `@deepseek-ai/dsh-system-prompt` 提供；该包与宿主 `@deepseek-ai/dsh`
- * 同版本线逐版发布）。sync-hosts 据此写 peerDependencies。
+ * peer 闸门指向的宿主子包：注入的 `systemPrompt` 服务由 `@deepseek-ai/dsh-system-prompt`
+ * 提供，client 半注入的语言包由 `@deepseek-ai/dsh-client-locale`（dsh.client.inject）
+ * 提供；两包均与宿主 `@deepseek-ai/dsh` 同版本线逐版发布。sync-hosts 据此写
+ * peerDependencies —— 同存在域内各 @deepseek-ai/dsh* peer 必须与 engines.dsh 同串，
+ * 故全部纳入托管，禁止手改。
  */
-export const hostPeerPackages = Object.freeze(['@deepseek-ai/dsh-system-prompt'])
+export const hostPeerPackages = Object.freeze([
+  '@deepseek-ai/dsh-client-locale',
+  '@deepseek-ai/dsh-system-prompt',
+])

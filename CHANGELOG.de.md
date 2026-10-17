@@ -2,6 +2,11 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.13 — 2026-10-17 (Ladegrenze um 0.2.1-rc.1 ergänzt)
+
+- Reine Manifest-Arbeit: An die Enumeration von `engines.dsh` und aller `@deepseek-ai/dsh*`-Peers wurde `0.2.1-rc.1` angehängt (16 präzise Einträge, keine Intervalle/Carets), einheitlich von sync-hosts aus hosts.mjs verteilt; kein Code geändert.
+- `@deepseek-ai/dsh-client-locale` wurde in `hostPeerPackages` aufgenommen — zuvor war sein Enumerationsstring manuell abgestimmt und lag außerhalb der sync-Schreibpunkte, eine latente Drift-Falle der Zwei-Listen-Gleichstring-Disziplin.
+
 ## 0.9.12 — 2026-10-15 (leere memoryId nach Neustart ist kein Fehler mehr)
 
 - `⚠️ [object Object]` behoben: nach dem Neustart stellt better-sidebar die persistierten Tabs wieder her, `tab.path` ist dann leer — der alte Code sandte trotzdem `{ids:['']}`, was serverseitig als „ids nach Filterung leer" abgewiesen wird. Die Fehlerhülle des Host-RPC ist ein **Objekt** `error:{code,message}`, als String interpoliert ergibt das `[object Object]`. Leere Id geht jetzt direkt auf den Hinweistext „In diesem Startzyklus kein Memory zum Ansehen gewählt", **ohne Request**.

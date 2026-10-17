@@ -1,5 +1,10 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.9.13 — 2026-10-17（装载判据补 0.2.1-rc.1）
+
+- 纯清单活：`engines.dsh` 与全部 `@deepseek-ai/dsh*` peer 枚举尾加 `0.2.1-rc.1`（16 项精确枚举，禁区间/caret），由 sync-hosts 从 hosts.mjs 统一下发；代码零改动。
+- `@deepseek-ai/dsh-client-locale` 纳入 `hostPeerPackages` 托管——此前它的枚举串是手工对齐的，不在 sync 写点内，属双清单同串纪律的潜在漂移陷阱。
+
 ## 0.9.12 — 2026-10-15（重启后的空 memoryId 不再伪装成错误）
 
 - 修 `⚠️ [object Object]`：重启后 better-sidebar 会先恢复持久 tab，此时 `tab.path` 为空，旧代码仍照发 `{ids:['']}`，被服务端拒为「ids 过滤后为空」；而宿主 RPC 的失败壳是 `{ok:false, error:{code,message}}` **对象**，当字符串拼进模板就成了 `[object Object]`。现在空 id 直接走空态文案「未在本轮启动周期选择查看的记忆」，**不发请求**。

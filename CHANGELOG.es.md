@@ -2,6 +2,11 @@
 
 [简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
 
+## 0.9.13 — 2026-10-17 (criterio de carga: añadido 0.2.1-rc.1)
+
+- Solo trabajo de manifiesto: `0.2.1-rc.1` agregado al final de la enumeración de `engines.dsh` y de todos los peers `@deepseek-ai/dsh*` (16 entradas exactas, sin intervalos/caret), distribuido por sync-hosts desde hosts.mjs; cero cambios de código.
+- `@deepseek-ai/dsh-client-locale` quedó bajo `hostPeerPackages` — su cadena de enumeración se alineaba antes a mano, fuera de los puntos de escritura de sync, una trampa latente de deriva para la disciplina «misma cadena en ambas listas».
+
 ## 0.9.12 — 2026-10-15 (un memoryId vacío tras reiniciar ya no parece un error)
 
 - Corregido `⚠️ [object Object]`: al reiniciar, better-sidebar restaura primero las pestañas persistidas, así que `tab.path` está vacío, pero el código viejo enviaba igual `{ids:['']}`, y el servidor lo rechazaba («ids vacío tras el filtro»). El sobre de error del RPC del anfitrión es un **objeto** `error:{code,message}`; interpolado como texto daba `[object Object]`. Ahora un id vacío va directo al aviso «Ninguna memoria elegida para ver en este ciclo de arranque», **sin petición**.
