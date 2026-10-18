@@ -137,12 +137,12 @@ describe('manifest', () => {
       dsh?: string
     }
     expect(engines.dsh).toBeTruthy()
-    // 0.6.0 ships the full 15-rc enumeration (sync-hosts), not a single max
-    // range: every host from the first locale-bearing rc to the 0.2.0 line.
+    // sync-hosts 全量枚举（当前 17 rc：0.1.0-rc.2 → 0.2.1-rc.2），不是单一 max
+    // range: every host from the first locale-bearing rc to the 0.2.1 line.
     const range = engines.dsh ?? ''
     expect(range).toContain('0.1.0-rc.2')
     expect(range).toContain('0.2.0-rc.2')
-    expect(range.split('||')).toHaveLength(15)
+    expect(range.split('||')).toHaveLength(17)
   })
 })
 
