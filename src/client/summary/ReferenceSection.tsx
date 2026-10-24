@@ -29,7 +29,7 @@
 import { createElement } from 'react'
 import { useCallback, useState } from 'react'
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from '../use-projection'
 import { SKILL_USAGE_KEY } from '../../projection/keys'
 import { useProjectionValue } from '../use-projection'
 import { readSkillUsage } from './skill-usage'
@@ -48,7 +48,7 @@ export interface ReferenceSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
   t: (key: string) => string
   /** The client root context (the tab body's only way to reach services). */
-  ctx?: Context
+  ctx?: CtxProbe
   /** The session this tab is scoped to. */
   scope?: { readonly sessionId?: string }
   /** The rating transport, handed straight to the recall pane. */

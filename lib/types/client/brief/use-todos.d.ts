@@ -1,4 +1,4 @@
-import type { Context } from '@deepseek-ai/cordis';
+import type { CtxProbe } from '../use-projection';
 import type { TodoItem } from './board';
 /** The projection key registered by `dsh-tool-todo`. */
 export declare const TODOS_KEY = "todos";
@@ -10,4 +10,4 @@ export declare const TODOS_KEY = "todos";
  * @returns the list, `[]` for a present-but-empty projection, or `undefined`
  *   while the capability is absent.
  */
-export declare function useTodos(ctx: Context | undefined, sessionId: string | undefined): readonly TodoItem[] | undefined;
+export declare function useTodos(ctx: CtxProbe | undefined, sessionId: string | undefined): readonly TodoItem[] | undefined;

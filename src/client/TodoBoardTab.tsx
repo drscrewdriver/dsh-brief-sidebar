@@ -16,7 +16,7 @@
  */
 import { createElement } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from './use-projection'
 import { countTodos, progressLine, statusKey } from './brief/board'
 import type { TodoItem, TodoStatus } from './brief/board'
 import { useTodos } from './brief/use-todos'
@@ -30,7 +30,7 @@ export interface TodoSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
   t: (key: string) => string
   /** The client root context (the tab body's only way to reach services). */
-  ctx?: Context
+  ctx?: CtxProbe
   /** The session this tab is scoped to. */
   scope?: TodoScope
 }

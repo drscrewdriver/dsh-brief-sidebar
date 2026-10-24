@@ -31,7 +31,7 @@
  * build-time coupling to host internals, mirroring `use-projection.ts`.
  */
 import type { ReactNode } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from './use-projection'
 import type { SlotsLike } from './brief/dock-shadow'
 import { SummaryTab } from './SummaryTab'
 
@@ -68,7 +68,7 @@ const PANE_TAB_SEAT = 'sidebar.right.pane.tab'
  * "open from a button" affordance goes through the controller face.
  * @param ctx - the client root context.
  */
-export function nativeSidebarAvailable(ctx: Context): boolean {
+export function nativeSidebarAvailable(ctx: CtxProbe): boolean {
   const registry = ctx.get('sidebarRightTabs') as NativeTabRegistryLike | undefined
   const controller = ctx.get('sidebarRight') as unknown
   return (
@@ -96,7 +96,7 @@ export function nativeSidebarAvailable(ctx: Context): boolean {
  *   registry refuses opens for a type whose body is already gone).
  */
 export function registerNativeBoardTab(
-  ctx: Context,
+  ctx: CtxProbe,
   registry: NativeTabRegistryLike | undefined,
   deps: { id: string; kind: string; order: number; t: (key: string) => string },
 ): () => void {

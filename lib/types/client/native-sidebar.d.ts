@@ -1,4 +1,4 @@
-import type { Context } from '@deepseek-ai/cordis';
+import type { CtxProbe } from './use-projection';
 /** One guide-page capsule contributed by our type (structural `SidebarRightGuideEntry`). */
 interface NativeGuideEntry {
     readonly id: string;
@@ -25,7 +25,7 @@ export type { NativeTabRegistryLike };
  * "open from a button" affordance goes through the controller face.
  * @param ctx - the client root context.
  */
-export declare function nativeSidebarAvailable(ctx: Context): boolean;
+export declare function nativeSidebarAvailable(ctx: CtxProbe): boolean;
 /**
  * Register the board as a native right-sidebar tab type.
  *
@@ -42,7 +42,7 @@ export declare function nativeSidebarAvailable(ctx: Context): boolean;
  * @returns a disposer that unregisters the seat first, then the type (the
  *   registry refuses opens for a type whose body is already gone).
  */
-export declare function registerNativeBoardTab(ctx: Context, registry: NativeTabRegistryLike | undefined, deps: {
+export declare function registerNativeBoardTab(ctx: CtxProbe, registry: NativeTabRegistryLike | undefined, deps: {
     id: string;
     kind: string;
     order: number;

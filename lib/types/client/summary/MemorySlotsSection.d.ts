@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import type { Context } from '@deepseek-ai/cordis';
+import type { CtxProbe } from '../use-projection';
 export interface MemorySlotsSectionProps {
     /** The DSH locale lookup, passed down from `apply`. */
     t: (key: string) => string;
     /** The client root context (the tab body's only way to reach services). */
-    ctx?: Context;
+    ctx?: CtxProbe;
     /** The session this tab is scoped to. */
     scope?: {
         readonly sessionId?: string;
@@ -17,7 +17,7 @@ export interface MemorySlotsSectionProps {
  * @param ctx - the client root context handed to the tab body.
  * @returns whether the memory-slots section may render at all.
  */
-export declare function useShowMemorySlots(ctx: Context | undefined): boolean;
+export declare function useShowMemorySlots(ctx: CtxProbe | undefined): boolean;
 /**
  * The memory-slots section. Both hooks run unconditionally (a conditional
  * hook order would break the moment the switch flips); the switch only

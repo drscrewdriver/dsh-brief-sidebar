@@ -19,7 +19,7 @@
  */
 import { createElement, useCallback } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from '../use-projection'
 import {
   MEMORY_SLOTS_KEY,
   readSlots,
@@ -36,7 +36,7 @@ export interface MemorySlotsSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
   t: (key: string) => string
   /** The client root context (the tab body's only way to reach services). */
-  ctx?: Context
+  ctx?: CtxProbe
   /** The session this tab is scoped to. */
   scope?: { readonly sessionId?: string }
 }
@@ -227,7 +227,7 @@ function SlotRow(props: { slot: MemorySlotView; t: (key: string) => string; onVi
  * @param ctx - the client root context handed to the tab body.
  * @returns whether the memory-slots section may render at all.
  */
-export function useShowMemorySlots(ctx: Context | undefined): boolean {
+export function useShowMemorySlots(ctx: CtxProbe | undefined): boolean {
   return useConfigFlag(ctx, resolveShowMemorySlots)
 }
 

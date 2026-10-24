@@ -16,7 +16,7 @@
  * where it is absent the section renders plain rows instead of links, the same
  * graceful degradation as the deliverables projection itself.
  */
-import type { Context } from '@deepseek-ai/cordis';
+import type { CtxProbe } from './use-projection';
 /** Structural view of the right-Sidebar service this plugin needs. */
 export interface SidebarRightLike {
     openResource(url: string, options?: {
@@ -47,4 +47,4 @@ export declare function fileAddressFor(sessionId: string, cwd: string | undefine
  * @param sessionId - the session whose workspace resolves paths.
  * @returns an opener that routes a produced path to the Sidebar preview.
  */
-export declare function sidebarFileOpener(ctx: Context | undefined, sessionId: string | undefined): ((path: string) => void) | undefined;
+export declare function sidebarFileOpener(ctx: CtxProbe | undefined, sessionId: string | undefined): ((path: string) => void) | undefined;

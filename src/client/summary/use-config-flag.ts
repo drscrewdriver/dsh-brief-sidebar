@@ -11,7 +11,7 @@
  * resolver's default instead of throwing inside a render.
  */
 import { useCallback, useMemo, useSyncExternalStore } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from '../use-projection'
 import type { BriefClientConfig, ConfigFormsLike, SettingsScopeSnapshot } from '../scope-face'
 
 /**
@@ -37,7 +37,7 @@ const NO_SUBSCRIBE = (): (() => void) => () => {}
  * @returns the resolved switch value.
  */
 export function useConfigFlag(
-  ctx: Context | undefined,
+  ctx: CtxProbe | undefined,
   resolve: (snapshot: SettingsScopeSnapshot<BriefClientConfig> | undefined) => boolean,
 ): boolean {
   const scope = useMemo(() => {

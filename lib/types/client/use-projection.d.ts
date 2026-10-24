@@ -1,4 +1,16 @@
-import type { Context } from '@deepseek-ai/cordis';
+/**
+ * Structural probe face for the client root context.
+ *
+ * Widened from cordis `Context` on the 0.2.1-rc.3 dev bed: `dsh-better-sidebar`
+ * vendors its own cordis `Context` and intersects it into the tab/badge ctx it
+ * hands us, so the nominal cordis `Context` of this repo's cordis copy is NOT
+ * assignable across the two (missing symbol members). Everything this plugin
+ * reads off the context already goes through `ctx.get(...)` structural probes,
+ * so the shared minimum is exactly that one method.
+ */
+export interface CtxProbe {
+    get(key: string): any;
+}
 /** Structural view of a projection face (`ObservableSnapshot<unknown>`). */
 export interface ProjectionFace {
     getSnapshot(): unknown;
@@ -27,7 +39,7 @@ export interface SessionsLike {
  * @param key - the projection key to resolve.
  * @returns the projection face, or {@link ABSENT} when unreachable.
  */
-export declare function resolveFace(ctx: Context | undefined, sessionId: string | undefined, key: string): ProjectionFace;
+export declare function resolveFace(ctx: CtxProbe | undefined, sessionId: string | undefined, key: string): ProjectionFace;
 /**
  * Read one frame of a projection without subscribing.
  *
@@ -41,7 +53,7 @@ export declare function resolveFace(ctx: Context | undefined, sessionId: string 
  * @returns the raw snapshot: `undefined` while the capability is absent; the
  *   semantics of any other value belong to the projection's own contract.
  */
-export declare function projectionSnapshot(ctx: Context | undefined, sessionId: string | undefined, key: string): unknown;
+export declare function projectionSnapshot(ctx: CtxProbe | undefined, sessionId: string | undefined, key: string): unknown;
 /**
  * Subscribe to one session projection by key.
  *
@@ -51,4 +63,4 @@ export declare function projectionSnapshot(ctx: Context | undefined, sessionId: 
  * @returns the raw snapshot value, identity-stable across frames the host did
  *   not change. Narrowing is the caller's job.
  */
-export declare function useProjectionValue(ctx: Context | undefined, sessionId: string | undefined, key: string): unknown;
+export declare function useProjectionValue(ctx: CtxProbe | undefined, sessionId: string | undefined, key: string): unknown;

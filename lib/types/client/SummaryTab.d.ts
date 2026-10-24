@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import type { Context } from '@deepseek-ai/cordis';
+import type { CtxProbe } from './use-projection';
 import type { TodoScope } from './TodoBoardTab';
 export interface SummaryTabProps {
     /** The DSH locale lookup, passed down from `apply`. */
     t: (key: string) => string;
     /** The client root context (the tab body's only way to reach services). */
-    ctx?: Context;
+    ctx?: CtxProbe;
     /** The session this tab is scoped to. */
     scope?: TodoScope;
     /** Whether the tab is the active one AND the panel is open. */

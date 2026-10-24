@@ -5,7 +5,7 @@
  * client never folds it. Narrowing lives in `./board` (`readTodos`).
  */
 import { useMemo } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from '../use-projection'
 import { readTodos } from './board'
 import type { TodoItem } from './board'
 import { useProjectionValue } from '../use-projection'
@@ -21,7 +21,7 @@ export const TODOS_KEY = 'todos'
  * @returns the list, `[]` for a present-but-empty projection, or `undefined`
  *   while the capability is absent.
  */
-export function useTodos(ctx: Context | undefined, sessionId: string | undefined): readonly TodoItem[] | undefined {
+export function useTodos(ctx: CtxProbe | undefined, sessionId: string | undefined): readonly TodoItem[] | undefined {
   const raw = useProjectionValue(ctx, sessionId, TODOS_KEY)
   return useMemo(() => readTodos(raw), [raw])
 }

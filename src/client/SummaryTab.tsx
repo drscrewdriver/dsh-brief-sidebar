@@ -22,7 +22,7 @@
  */
 import { createElement } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from './use-projection'
 import { TodoSection } from './TodoBoardTab'
 import type { TodoScope } from './TodoBoardTab'
 import { DeliverablesSection } from './summary/DeliverablesSection'
@@ -32,7 +32,7 @@ export interface SummaryTabProps {
   /** The DSH locale lookup, passed down from `apply`. */
   t: (key: string) => string
   /** The client root context (the tab body's only way to reach services). */
-  ctx?: Context
+  ctx?: CtxProbe
   /** The session this tab is scoped to. */
   scope?: TodoScope
   /** Whether the tab is the active one AND the panel is open. */

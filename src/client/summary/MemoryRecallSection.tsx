@@ -43,7 +43,7 @@
 import { createElement } from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { CSSProperties, ReactNode } from 'react'
-import type { Context } from '@deepseek-ai/cordis'
+import type { CtxProbe } from '../use-projection'
 import { MEMORY_RECALL_KEY, readRecall } from './memory-recall'
 import type { MemoryRecallItem, MemoryRecallView } from './memory-recall'
 import { FEEDBACK_SCORES, sendRecallFeedback } from './recall-feedback'
@@ -60,7 +60,7 @@ export interface MemoryRecallSectionProps {
   /** The DSH locale lookup, passed down from `apply`. */
   t: (key: string) => string
   /** The client root context (the tab body's only way to reach services). */
-  ctx?: Context
+  ctx?: CtxProbe
   /** The session this tab is scoped to. */
   scope?: { readonly sessionId?: string }
   /**
