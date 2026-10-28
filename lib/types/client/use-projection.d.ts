@@ -1,7 +1,7 @@
 /**
  * Structural probe face for the client root context.
  *
- * Widened from cordis `Context` on the 0.2.1-rc.3 dev bed: `dsh-better-sidebar`
+ * Widened from cordis `Context` on the 0.2.1-rc.3 dev bed: the host tab library
  * vendors its own cordis `Context` and intersects it into the tab/badge ctx it
  * hands us, so the nominal cordis `Context` of this repo's cordis copy is NOT
  * assignable across the two (missing symbol members). Everything this plugin
