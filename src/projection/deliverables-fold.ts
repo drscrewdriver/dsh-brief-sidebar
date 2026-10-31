@@ -97,6 +97,27 @@ export function applyDeliverablesEvent(state: DeliverablesState, event: FoldEven
     return { ...state, calls: { ...state.calls, [call.callId]: { turn: state.turn, path } } }
   }
 
+  // PTC mode: the model's only top-level tool is `run_code`, so a mutation runs
+  // as a child dispatch and never produces its own `tool/call` + `tool/result`
+  // pair. The dispatch event carries the arguments AND the outcome, so it folds
+  // straight into the bucket instead of going through the call map.
+  if (event.type === 'tool/ptc-dispatch') {
+    const dispatch = event.data as {
+      subCallId?: unknown
+      name?: unknown
+      arguments?: unknown
+      isError?: unknown
+    }
+    if (typeof dispatch?.subCallId !== 'string') return state
+    if (dispatch.isError === true) return state
+    if (typeof dispatch.name !== 'string') return state
+    const argsRaw = typeof dispatch.arguments === 'string'
+      ? dispatch.arguments
+      : JSON.stringify(dispatch.arguments ?? null)
+    const path = mutationPath(dispatch.name, argsRaw)
+    return path === null ? state : produced(state, path, state.turn)
+  }
+
   if (event.type !== 'tool/result') return state
 
   const result = event.data as {
@@ -110,11 +131,26 @@ export function applyDeliverablesEvent(state: DeliverablesState, event: FoldEven
   const path = recorded?.path
   if (path === undefined || path === null) return state
 
-  // A path written and edited again in the same turn is one bucket entry. A
-  // stray result that settles after a LATER turn opened never rewrites the
-  // newer bucket — its path still counts session-wide below.
+  return produced(state, path, recorded.turn)
+}
+
+/**
+ * Record one produced path into the open turn's bucket and the session list.
+ *
+ * Both channels feed this, so they cannot drift on the two rules that are easy
+ * to get wrong: a path written and edited again in the same turn is ONE bucket
+ * entry, and a path already listed session-wide is not counted twice. A stray
+ * result that settles after a LATER turn opened never rewrites the newer
+ * bucket — its path still counts session-wide.
+ *
+ * @param state - the state before this produce.
+ * @param path - the produced path, exactly as supplied to the tool.
+ * @param turn - the turn this produce belongs to.
+ * @returns the next state.
+ */
+function produced(state: DeliverablesState, path: string, turn: number): DeliverablesState {
   const latest = state.latest
-  const sameTurn = latest !== null && latest.turn === recorded.turn
+  const sameTurn = latest !== null && latest.turn === turn
   const nextLatest: DeliverablesTurnBucket | null = sameTurn && !latest.paths.includes(path)
     ? { turn: latest.turn, paths: [...latest.paths, path].slice(-CAPS.latest) }
     : latest
@@ -134,8 +170,9 @@ export function applyDeliverablesEvent(state: DeliverablesState, event: FoldEven
  * Extract the path from a supported first-party mutation call.
  *
  * Ported from the harness deliverables fold so both carriers agree on what a
- * "produced file" is. Session `tool/call` events are root calls; PTC dispatch
- * children do not enter this fold independently.
+ * "produced file" is. Both channels reach it with their own wire shape — a root
+ * `tool/call` carries JSON-string arguments, a PTC dispatch child carries an
+ * object — so every caller normalises to a string before asking.
  *
  * @param name - wire tool name.
  * @param argsRaw - model-produced JSON arguments.

@@ -105,9 +105,13 @@ UI 挂在 `conversation.chat.turnTail` 上、只在回合尾渲染；而侧栏 t
 turn data（`SessionFace` 不暴露事件窗口，`IConversation` 不暴露回合数据）。所以本插件 host 半部
 通过 `ctx.sessionProjections.register()` 贡献自己的 unit：
 
-- **fold 口径**与官方 `turn-deliverables.ts` 完全一致：只认成功 `write` / `edit` /
+- **fold 口径**与官方 `turn-deliverables.ts` 同源：只认成功 `write` / `edit` /
   `str_replace_editor`（create/str_replace/insert 变体）的路径，去重、失败不计、读类不计；
   回合内先写后改只算一个条目（`src/projection/deliverables-fold.ts`，纯函数，测试锁定）。
+- **PTC 通道**：PTC 模式下模型的顶层工具只有 `run_code`，改动以子调用派发落成
+  `tool/ptc-dispatch` 事件（自带参数与结果，没有配对的 `tool/call` + `tool/result`）。
+  这个通道同样计入——否则 PTC 会话的产物分区永远是空态。两条通道共用同一个去重入口，
+  同一文件的根调用与派发不会重复计数。
 - **回合内实时**：注册表每条提交事件驱动所有 unit 的 `apply`，每次成功的改动文件落定即推送一帧。
 - **可选贡献**：`ctx.inject(['sessionProjections'], …)` 等待服务，注册表缺席的部署照常加载本插件
   （产物分区静默隐藏）；注册是 effect，卸载即 key 消失、客户端读作能力缺席。
