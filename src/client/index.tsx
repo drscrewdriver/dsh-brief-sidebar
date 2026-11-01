@@ -306,15 +306,16 @@ export function apply(ctx: Context): void {
   //    settings module, which may start after this apply; the callback simply
   //    never fires on a host without it (the gate then reads its default).
   const slots = ctx.get('slots') as SlotsLike | undefined
-  /** 探针：宿主执行过我们的 tab 工厂 == 有人声明了 `dsh-family.tab`。这是插件侧
-   * 唯一合法的「容器在不在」判据（槽门面不暴露 spec 查询，entriesOfSlot 也不区分
-   * 「已声明但空」与「未声明」）。 */
-  let familyTabHeld = false
+  // configForms 句柄惰性化：接管在 apply 顶层触发，早于/独立于 configForms 的
+  // deferred inject；捕获解出的句柄供 ownTab 现取 scope（未解出时 BriefSettingsCard
+  // 自行降级为 unavailable 提示而非空白）。
+  let configFormsHandle: ConfigFormsLike | undefined
   ;(ctx as unknown as {
     inject: (deps: string[], cb: (scope: { configForms?: ConfigFormsLike }) => void) => void
   }).inject(['configForms'], (scope) => {
     const configForms = scope.configForms
     if (slots === undefined || configForms === undefined || typeof configForms.get !== 'function') return
+    configFormsHandle = configForms
 
     /** Same face for both seats: the entry scope plus the applied-time binder. */
     const injectFactory = (): BriefSettingsCardProps => ({
@@ -324,10 +325,7 @@ export function apply(ctx: Context): void {
     /** The slot core hands the component `unknown` props (registry typing). */
     const component = BriefSettingsCard as unknown as (props: unknown) => ReactNode
 
-    slots.inject('dsh-family.tab', () => {
-      // 工厂被调用即说明子席位已有人声明：本插件只做成员，不上位。
-      familyTabHeld = true
-      return slots.register(
+    slots.inject('dsh-family.tab', () => slots.register(
         {
           name: 'dsh-family.tab',
           id: 'brief-sidebar',
@@ -336,8 +334,7 @@ export function apply(ctx: Context): void {
           inject: injectFactory,
         },
         component,
-      )
-    })
+      ))
     slots.inject('plugins.bundle.config', () =>
       slots.register(
         {
@@ -358,10 +355,23 @@ export function apply(ctx: Context): void {
     ctx.effect(
       () => claimFamilyHostIfOrphaned(
         slots as unknown as FamilyHostSlots,
-        () => familyTabHeld,
+        // 判据：有没有一个实际在位的家族容器（id=dsh-family 的 settings.section），
+        // 而非「我的 inject 有没有触发」——后者在自宣子槽时恒 false（本 bug 成因）。
+        () => {
+          try {
+            return (slots as unknown as FamilyHostSlots).entries('settings.section')
+              .some(e => String((((e.options ?? {}) as { id?: unknown }).id) ?? '') === 'dsh-family')
+          } catch { return false }
+        },
         // 家族共享节标题，不是本插件名：接管的是别人的那一节。
         () => '起子插件设置',
         LOG,
+        // 接管态内联直挂本卡：own 卡组件 + 惰性 scope（configForms 未解出时卡自行降级为非空白）。
+        {
+          id: 'brief-sidebar',
+          component: BriefSettingsCard as unknown,
+          inject: () => ({ t, scope: configFormsHandle?.get<BriefClientConfig>('dsh-brief-sidebar') }),
+        },
       ),
       'brief: family host backstop',
     )

@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import type { JSX, ReactNode } from 'react';
 /** 账本条目（id/order/label，label 已解析成字符串）。 */
 export interface FamilyTabEntry {
     id: string;
@@ -33,6 +33,11 @@ export interface FamilyHostSectionProps {
         tabs: HostObservable<readonly FamilyTabEntry[]>;
     };
     renderContributor?: (id: string) => JSX.Element | null;
+    /** 接管态内联直挂本插件自己的卡：自宣子槽不触发自身 inject（账本恒无己卡），
+     * 故不能靠 renderSlot/renderContributor 取回。缺省（未传）时行为与旧一致。 */
+    renderOwn?: () => ReactNode;
+    /** 内联 own 行的账本 id（与账本条目去重用）；仅 renderOwn 存在时生效。 */
+    ownId?: string;
 }
 /** 通用容器渲染：按 order 依次画出账本里每张贡献卡，不含任何"本插件特例"。 */
 export declare function FamilyHostSection(props: FamilyHostSectionProps): JSX.Element;
@@ -46,5 +51,9 @@ export declare function projectLedger(slots: FamilyHostSlots): readonly FamilyTa
  * @param log - console 前缀（带插件名）。
  * @returns 取消定时器与撤销接管注册的 disposer。
  */
-export declare function claimFamilyHostIfOrphaned(slots: FamilyHostSlots, isHeld: () => boolean, label: () => string, log: string): () => void;
+export declare function claimFamilyHostIfOrphaned(slots: FamilyHostSlots, isHeld: () => boolean, label: () => string, log: string, ownTab?: {
+    id: string;
+    component: unknown;
+    inject?: () => Record<string, unknown>;
+}): () => void;
 export {};

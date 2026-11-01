@@ -9,9 +9,12 @@
  *    不允许出现「不带 children 的第二次尝试」。
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createElement } from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
 import {
   FAMILY_CLAIM_DELAY_MS,
   FAMILY_CLAIM_RANK,
+  FamilyHostSection,
   claimFamilyHostIfOrphaned,
   projectLedger,
 } from '../src/client/family-host'
@@ -114,5 +117,63 @@ describe('projectLedger', () => {
       entries: [{ options: { id: 'bad', order: 1, label: () => { throw new Error('locale not bound') } } }],
     })
     expect(projectLedger(slots)).toEqual([{ id: 'bad', order: 1, label: 'bad' }])
+  })
+})
+
+// 孤儿接管时 own 卡必须内联直挂（自宣子槽不触发自身 inject、账本恒无本卡）——
+// 这三条钉住本轮修复的核心，缺任一即退化回「容器出现但 own 卡空白」。
+describe('family host own-tab inline (orphan takeover mounts own card)', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+
+  function OwnCard() {
+    return createElement('span', null, 'OWN-CARD')
+  }
+
+  it('claim exposes renderOwn/ownId so the takeover section can mount the own card', () => {
+    const { slots, registered } = fakeSlots()
+    claimFamilyHostIfOrphaned(slots, () => false, () => 'x', '[test]', { id: 'brief-sidebar', component: OwnCard, inject: () => ({}) })
+    vi.advanceTimersByTime(FAMILY_CLAIM_DELAY_MS + 10)
+    expect(registered).toHaveLength(1)
+    const face = (registered[0]!.options['inject'] as () => Record<string, unknown>)()
+    expect(face['ownId']).toBe('brief-sidebar')
+    expect(typeof face['renderOwn']).toBe('function')
+    const el = (face['renderOwn'] as () => { type: unknown })()
+    expect(el.type).toBe(OwnCard)
+  })
+
+  it('FamilyHostSection renders the own card even when the ledger is empty', () => {
+    const html = renderToStaticMarkup(
+      createElement(FamilyHostSection, {
+        hooks: { tabs: { getSnapshot: () => [], subscribe: () => () => {} } },
+        renderOwn: () => createElement('span', null, 'OWN-CARD'),
+        ownId: 'brief-sidebar',
+      } as never),
+    )
+    expect(html).toContain('OWN-CARD')
+  })
+
+  it('dedups: own id already seated in the ledger is inlined once, never via renderSlot', () => {
+    const slotCalls: string[] = []
+    const html = renderToStaticMarkup(
+      createElement(FamilyHostSection, {
+        hooks: { tabs: { getSnapshot: () => [{ id: 'brief-sidebar', order: 30, label: 'b' }, { id: 'other', order: 40, label: 'o' }], subscribe: () => () => {} } },
+        renderSlot: (_k: string, _o: unknown, opts?: { only?: string }) => {
+          slotCalls.push(String(opts?.only))
+          return createElement('span', null, 'LEDGER:' + String(opts?.only))
+        },
+        renderOwn: () => createElement('span', null, 'OWN-CARD'),
+        ownId: 'brief-sidebar',
+      } as never),
+    )
+    expect((html.match(/OWN-CARD/g) || []).length).toBe(1)
+    expect(slotCalls).not.toContain('brief-sidebar')
+    expect(slotCalls).toContain('other')
   })
 })
