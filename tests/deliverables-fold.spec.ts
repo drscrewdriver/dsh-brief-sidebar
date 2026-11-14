@@ -181,3 +181,64 @@ describe('deliverables fold: caps and no-op discipline', () => {
     expect(state.sessionTotal).toBe(2)
   })
 })
+
+/** 一条 PTC 子调用派发事件（`run_code` 里调的工具，arguments 是对象而非 JSON 串）。 */
+const dispatch = (
+  subCallId: string,
+  name: string,
+  args: Record<string, unknown>,
+  isError = false,
+): FoldEvent => ({ type: 'tool/ptc-dispatch', data: { subCallId, name, arguments: args, isError } })
+
+describe('deliverables fold: PTC child dispatches', () => {
+  it('counts a mutation dispatched inside run_code', () => {
+    const state = fold([turnStart(1), dispatch('c:ptc:1', 'write', { file_path: 'out/a.md', content: 'x' })])
+    expect(state.latest).toEqual({ turn: 1, paths: ['out/a.md'] })
+    expect(state.sessionPaths).toEqual(['out/a.md'])
+    expect(state.sessionTotal).toBe(1)
+  })
+
+  it('counts an edit and a mutating str_replace_editor the same way', () => {
+    const state = fold([
+      turnStart(1),
+      dispatch('c:ptc:1', 'edit', { file_path: 'out/a.md', old_string: 'a', new_string: 'b' }),
+      dispatch('c:ptc:2', 'str_replace_editor', { path: 'out/b.md', command: 'create', file_text: 'x' }),
+    ])
+    expect(state.latest?.paths).toEqual(['out/a.md', 'out/b.md'])
+    expect(state.sessionTotal).toBe(2)
+  })
+
+  it('drops a failed dispatch and ignores read-class children', () => {
+    const state = fold([
+      turnStart(1),
+      dispatch('c:ptc:1', 'write', { file_path: 'out/a.md', content: 'x' }, true),
+      dispatch('c:ptc:2', 'read', { file_path: 'out/b.md' }),
+    ])
+    expect(state.latest).toEqual({ turn: 1, paths: [] })
+    expect(state.sessionTotal).toBe(0)
+  })
+
+  it('dedupes across the root-call and dispatch channels in one turn', () => {
+    const state = fold([
+      turnStart(1),
+      writeCall('c1', 'out/a.md'),
+      result('c1'),
+      dispatch('c:ptc:1', 'edit', { file_path: 'out/a.md', old_string: 'a', new_string: 'b' }),
+    ])
+    expect(state.latest?.paths).toEqual(['out/a.md'])
+    expect(state.sessionTotal).toBe(1)
+  })
+
+  it('accepts stringified dispatch arguments too', () => {
+    const event: FoldEvent = {
+      type: 'tool/ptc-dispatch',
+      data: {
+        subCallId: 'c:ptc:1',
+        name: 'write',
+        arguments: JSON.stringify({ file_path: 'out/a.md', content: 'x' }),
+        isError: false,
+      },
+    }
+    expect(fold([turnStart(1), event]).sessionTotal).toBe(1)
+  })
+})

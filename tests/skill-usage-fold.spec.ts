@@ -175,3 +175,39 @@ describe('applySkillUsageEvent', () => {
     expect(state.latest).toEqual({ turn: 5, names: ['pptx'] })
   })
 })
+
+/** 一条 `turn/start` 事件。 */
+function turnStart(turn: number): SkillUsageEventLike {
+  return { type: 'turn/start', data: { turn } }
+}
+
+/** 一条 PTC 子调用派发事件（`run_code` 里调的工具，arguments 是对象而非 JSON 串）。 */
+function dispatchEvent(subCallId: string, name: string, args: unknown, isError = false): SkillUsageEventLike {
+  return { type: 'tool/ptc-dispatch', data: { subCallId, name, arguments: args, isError } }
+}
+
+describe('applySkillUsageEvent: PTC child dispatches', () => {
+  it('把 run_code 里载入的技能记成一次引用', () => {
+    const state = [turnStart(1), dispatchEvent('c:ptc:1', 'skill', { name: 'dsh-kits' })]
+      .reduce(applySkillUsageEvent, initSkillUsageState())
+    expect(state.items).toEqual([{ name: 'dsh-kits', count: 1, lastTurn: 1 }])
+    expect(state.callTotal).toBe(1)
+  })
+
+  it('失败的派发不算引用', () => {
+    const state = [turnStart(1), dispatchEvent('c:ptc:1', 'skill', { name: 'dsh-kits' }, true)]
+      .reduce(applySkillUsageEvent, initSkillUsageState())
+    expect(state.items).toEqual([])
+    expect(state.callTotal).toBe(0)
+  })
+
+  it('非技能工具与畸形参数一律不计', () => {
+    const state = [
+      turnStart(1),
+      dispatchEvent('c:ptc:1', 'write', { name: 'dsh-kits' }),
+      dispatchEvent('c:ptc:2', 'skill', {}),
+      dispatchEvent('c:ptc:3', 'skill', { name: '   ' }),
+    ].reduce(applySkillUsageEvent, initSkillUsageState())
+    expect(state.items).toEqual([])
+  })
+})

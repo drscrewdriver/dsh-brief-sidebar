@@ -5,6 +5,9 @@
  *
  * Two channels feed "referenced", and both are the host's own words:
  *
+ * 0. In PTC mode there is no root `tool/call` at all: the loader runs as a
+ *    child dispatch, whose single `tool/ptc-dispatch` event carries the
+ *    arguments and the outcome together (see the dispatch branch in `apply`).
  * 1. `tool/call` on the skill loader plus a successful `tool/result`. The
  *    loader is registered as `skill` with a single `name` argument, and that
  *    registration is byte-identical on every supported line — verified per tag
@@ -212,6 +215,20 @@ export function applySkillUsageEvent(state: SkillUsageState, event: FoldEvent): 
     }
 
     return state
+  }
+
+  // PTC mode: `skill` runs as a child dispatch, so there is no root `tool/call`
+  // to pair with a later `tool/result`. The dispatch is one self-contained
+  // fact — arguments plus outcome — and the same success gate applies.
+  if (event.type === 'tool/ptc-dispatch') {
+    const dispatch = event.data as { name?: unknown; arguments?: unknown; isError?: unknown }
+    if (dispatch?.isError === true) return state
+    if (typeof dispatch?.name !== 'string') return state
+    const argsRaw = typeof dispatch.arguments === 'string'
+      ? dispatch.arguments
+      : JSON.stringify(dispatch.arguments ?? null)
+    const skill = skillNameFromArgs(dispatch.name, argsRaw)
+    return skill === null ? state : tally(state, skill, state.turn)
   }
 
   if (event.type !== 'tool/result') return state
