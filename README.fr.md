@@ -29,7 +29,7 @@ Affichage en lecture seule : pas d'édition, pas d'écriture en retour, pas d'ag
 **Frontière de nommage** : l'identité de ce plugin (nom de paquet / id de plugin / id de bundle cordis / espace de noms locale / hook DOM
 `data-dsh-brief-sidebar`) utilise toujours `brief` ; en revanche, la projection `todos`, l'outil `todo_write`, la cellule de dock officielle `{ id: 'todo' }` et `dsh-tool-todo` relèvent du domaine amont de DSH : le terme original `todo` est conservé, sans renommage par ce plugin.
 
-**Système de mémoire** : la troisième section du brief (rappel de mémoire) n'est pour l'instant qu'un **emplacement de mise en page réservé** ; elle est **en cours de planification** et n'est pas rendue dans cette version — voir R11 / K4.
+**Mémoire, références et écho** : la troisième section « Références » porte **Compétences / Mémoire / Recherche / Écho** sous forme d'onglets. La page Mémoire contient le rappel de session et les slots résidents (chacun avec son interrupteur) ainsi que « Détails ▾ » (Entrées / 2D / 3D ; le « Détails ▾ » d'une ligne ouvre le même menu), qui ouvre par lien profond la bibliothèque de `dsh-prime-memory`. La page Écho lit `spiritEcho` de `dsh-spirit` et montre l'injection/le saut ; « Voir → » mène à « Memory Sea → Parcourir → Écho ».
 
 ## Correspondance des exigences
 
@@ -45,9 +45,11 @@ Affichage en lecture seule : pas d'édition, pas d'écriture en retour, pas d'ag
 | R8 | Section 1 « Progression » : le contrat des trois états de todos descendu au niveau de la section | `src/client/TodoBoardTab.tsx` |
 | R9 | Section 2 « Livrables » : liste en temps réel du dernier tour + cumul de la session, la partie hôte enregistre la projection | `src/projection/*` + `src/client/summary/*` |
 | R10 | Les livrables codeplan sont un sous-ensemble annoté de la section livrables (pastille « Planification » en ligne), pas une section indépendante | `src/client/summary/deliverables.ts` + `DeliverablesSection.tsx` |
-| R11 | Rappel de mémoire : simple emplacement de mise en page réservé (tout en bas de la séquence de sections), **en cours de planification**, non rendu dans cette version | Commentaire de l'emplacement dans `src/client/SummaryTab.tsx` / K4 |
+| R11 | Références : quatre onglets (Compétences / Mémoire / Recherche / Écho) ; la page Mémoire contient le rappel de session + les slots résidents (chacun avec interrupteur) | `src/client/summary/ReferenceSection.tsx` |
 | R12 | Préservation du comportement : masquage, badge, pause via `visible`, contrat de hauteur, adaptation 0.1.5 | Un peu partout, voir ci-dessous |
 | R13 | La partie hôte ne fait pas d'E/S synchrone ; la projection est une contribution optionnelle (attente via `ctx.inject`) | `src/index.ts` + `src/projection/register.ts` |
+| R14 | Onglet Écho (dans Références) : lit `spiritEcho`, affiche le nombre de la session et le dernier motif injection/saut ; « Voir → » ouvre l'écho | `src/client/summary/SpiritEchoSection.tsx` + `spirit-open.ts` |
+| R15 | « Détails ▾ » (section et ligne) : Entrées / 2D / 3D ouvrent la bibliothèque prime-memory via le lien profond `open-explorer` (ligne avec recordId) | `src/client/summary/MemoryViewMenu.tsx` + `memory-open.ts` |
 
 ## Installation
 
@@ -163,7 +165,7 @@ Quand `visible === false`, la carte entière (shell compris) n'est pas rendue, p
   On pourrait ensuite conditionner sur `prefs.tabsEnabled` ; pas fait cette fois (l'utilisateur a choisi « tout masquer »).
 - **K2** Les tâches sont invisibles quand le panneau/la barre latérale better-sidebar est fermé(e) (acceptation confirmée).
 - **K3** L'amont renomme la cellule `todo` → le masquage tombe en panne silencieusement (fail-open, voir le tableau ci-dessus).
-- **K4** La section de rappel de mémoire n'a qu'un emplacement de mise en page (**en cours de planification**) : le système n'a pas de mémoire par défaut ; la chaîne de données sera raccordée quand un plugin de mémoire enregistrera une clé de projection.
+- **K4** Mémoire et écho dépendent du plugin partenaire : sans `dsh-prime-memory` la page Mémoire est masquée, sans `dsh-spirit` la section Écho disparaît ; si l'entrée partenaire est désactivée/non montée, « Détails » affiche la raison (ni retry ni polling).
 - **K5** La pastille « Planification » est un simple critère de préfixe de chemin (segment `.agents/plans/`), sans vérification de l'auteur de l'écriture : les fichiers écrits dans ce répertoire par des sources autres que codeplan sont aussi annotés ; si codeplan change sa convention de répertoire de livrables, la constante de `summary/deliverables.ts` devra être synchronisée.
 - **K6** L'ouverture des lignes de chemin au clic dépend du service hôte `sidebarRight` (consommation optionnelle) ; sur les déploiements qui en sont dépourvus, les lignes de livrables ne sont pas cliquables et restent en texte brut.
 

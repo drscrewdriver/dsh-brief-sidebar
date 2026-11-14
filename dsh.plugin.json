@@ -1,10 +1,10 @@
 {
   "id": "dsh-external/dsh-brief-sidebar",
-  "version": "0.9.20",
+  "version": "0.9.25-local.7",
   "main": "./lib/index.mjs",
-  "description": "会话简报侧栏页（brief）：把会话的 todo 列表（`todos` 投影的进展看板）、产物列表（`dshSummaryDeliverables` 投影的实时产出文件）与记忆槽位（`memorySlots` 投影，来自 dsh-prime-memory，开关可关）一起渲染成右侧栏的一个「概要」tab，并遮蔽 DSH 官方那条 composer 上方的 todo 面板。只读展示，不做写回。",
+  "description": "会话简报侧栏页（brief）：把会话的 todo 列表（`todos` 投影的进展看板）、产物列表（`dshSummaryDeliverables` 投影的实时产出文件）、引用页签（技能 / 本会话召回 / 常驻槽位 / 回响，附「详细展示 ▾」与行内「查看详情 ▾」经深链打开 dsh-prime-memory 记忆库；回响页签列出本会话被 dsh-spirit 召回的回响段，并可经深链跳到星图与条目）一起渲染成右侧栏的一个「概要」tab，并遮蔽 DSH 官方那条 composer 上方的 todo 面板。只读展示，不做写回。",
   "engines": {
-    "dsh": ">=0.1.1-rc.2 <0.3.0"
+    "dsh": ">=0.1.0-rc.2 <0.3.0-0"
   },
   "contributes": {
     "tools": [],

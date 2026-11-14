@@ -29,7 +29,7 @@ Visualización de solo lectura: sin edición, sin escritura de vuelta, sin agreg
 **Frontera de nombres**: la identidad de este plugin (nombre de paquete / plugin id / cordis bundle id / namespace de locale / hook de DOM
 `data-dsh-brief-sidebar`) usa siempre `brief`; en cambio, la proyección `todos`, la herramienta `todo_write`, la celda de dock oficial `{ id: 'todo' }` y `dsh-tool-todo` pertenecen al dominio upstream de DSH: se conserva la palabra original `todo`, sin renombrado por parte de este plugin.
 
-**Sistema de memoria**: la tercera sección del brief (recuperación de memoria) es por ahora solo un **hueco de layout reservado**, está **en planificación** y en esta versión no se renderiza — ver R11 / K4.
+**Memoria, referencias y eco**: la tercera sección «Referencias» organiza **Habilidades / Memoria / Búsqueda / Eco** en pestañas. La pestaña Memoria muestra el recuerdo de la sesión y los slots residentes (cada uno con interruptor) y «Detalles ▾» (Entradas / 2D / 3D; el «Detalles ▾» de una fila abre el mismo menú), que abre por enlace profundo la biblioteca de `dsh-prime-memory`. La pestaña Eco lee `spiritEcho` de `dsh-spirit` y muestra la inyección/omisión; «Ver →» lleva a «Memory Sea → Explorar → Eco».
 
 ## Mapa de requisitos
 
@@ -45,9 +45,11 @@ Visualización de solo lectura: sin edición, sin escritura de vuelta, sin agreg
 | R8 | Sección 1 «Progreso»: el contrato de los tres estados de todos baja a nivel de sección | `src/client/TodoBoardTab.tsx` |
 | R9 | Sección 2 «Entregables»: lista en tiempo real del último turno + acumulado de sesión, la parte host registra la proyección | `src/projection/*` + `src/client/summary/*` |
 | R10 | Los entregables de codeplan son un subconjunto anotado de la sección de entregables (pill «Planificación» en línea), no una sección independiente | `src/client/summary/deliverables.ts` + `DeliverablesSection.tsx` |
-| R11 | Recuperación de memoria: solo hueco de layout reservado (al final de la secuencia de secciones), **en planificación**, sin renderizar en esta versión | Comentario del hueco en `src/client/SummaryTab.tsx` / K4 |
+| R11 | Referencias: cuatro pestañas (Habilidades / Memoria / Búsqueda / Eco); la pestaña Memoria contiene recuerdo de sesión + slots residentes (cada uno con interruptor) | `src/client/summary/ReferenceSection.tsx` |
 | R12 | Conservación del comportamiento: ocultamiento, badge, pausa vía `visible`, contrato de altura, adaptación 0.1.5 | En varios puntos, ver abajo |
 | R13 | La parte host no hace E/S síncrona; la proyección es una contribución opcional (espera vía `ctx.inject`) | `src/index.ts` + `src/projection/register.ts` |
+| R14 | Pestaña Eco (en Referencias): lee `spiritEcho`, muestra el conteo de la sesión y el último motivo de inyección/omisión; «Ver →» abre el eco | `src/client/summary/SpiritEchoSection.tsx` + `spirit-open.ts` |
+| R15 | «Detalles ▾» (sección y fila): Entradas / 2D / 3D abren la biblioteca prime-memory mediante el enlace profundo `open-explorer` (fila con recordId) | `src/client/summary/MemoryViewMenu.tsx` + `memory-open.ts` |
 
 ## Instalación
 
@@ -163,7 +165,7 @@ Con `visible === false` toda la tarjeta (incluida la carcasa) no se renderiza, p
   Más adelante se podría condicionar con `prefs.tabsEnabled`; esta vez no se hizo (el usuario eligió «ocultar por completo»).
 - **K2** Con el panel/barra lateral de better-sidebar cerrados, las tareas son invisibles (aceptación confirmada).
 - **K3** El upstream renombra la celda `todo` → el ocultamiento falla en silencio (fail-open, ver la tabla de arriba).
-- **K4** La sección de recuperación de memoria tiene solo un hueco de layout (**en planificación**): el sistema no tiene memoria por defecto; la cadena de datos se conectará cuando un plugin de memoria registre una key de proyección.
+- **K4** Memoria y eco dependen del plugin asociado: sin `dsh-prime-memory` la pestaña Memoria se oculta, sin `dsh-spirit` la sección Eco desaparece; si la entrada del socio está desactivada/no montada, «Detalles» muestra el motivo (sin reintentos ni sondeo).
 - **K5** La pill «Planificación» es un juicio puro de prefijo de path (segmento `.agents/plans/`) y no verifica quién escribe: los archivos escritos en ese directorio por fuentes distintas de codeplan también quedan anotados; si codeplan cambia su convención de directorio de entregables, habrá que sincronizar la constante de `summary/deliverables.ts`.
 - **K6** La apertura de las líneas de path al hacer clic depende del servicio host `sidebarRight` (consumo opcional); en deployments sin él, las líneas de entregables no son clicables y se muestran como texto plano.
 

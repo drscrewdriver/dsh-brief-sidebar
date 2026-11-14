@@ -29,7 +29,7 @@ Rein lesende Anzeige: kein Editieren, kein Zurückschreiben, keine Multi-Session
 **Namensgrenze**: Die Identität dieses Plugins (Paketname / Plugin-ID / cordis-Bundle-ID / Locale-Namespace / DOM-Hook
 `data-dsh-brief-sidebar`) verwendet durchweg `brief`; die `todos`-Projektion, das `todo_write`-Tool, die offizielle dock cell `{ id: 'todo' }` und `dsh-tool-todo` gehören dagegen zur DSH-Upstream-Domäne — der Originalbegriff `todo` bleibt erhalten, das Plugin benennt nichts um.
 
-**Gedächtnissystem**: Der dritte Abschnitt des Briefings (Memory-Recall) ist derzeit nur ein **reservierter Layout-Slot**, befindet sich **in Planung** und wird in dieser Version nicht gerendert — siehe R11 / K4.
+**Gedächtnis, Referenzen und Echo**: Der dritte Abschnitt „Referenzen“ trägt **Skills / Gedächtnis / Suche / Echo** als Tabs. Die Gedächtnis-Seite zeigt Session-Recall und residente Slots (je mit Schalter) sowie „Details ▾“ (Einträge / 2D / 3D; „Details ▾“ in der Zeile öffnet dasselbe Menü), das per Deep-Link die Bibliothek von `dsh-prime-memory` öffnet. Die Echo-Seite liest `spiritEcho` von `dsh-spirit` und zeigt Injektion/Übersprungen; „Ansehen →“ springt zu „Memory Sea → Durchblättern → Echo“.
 
 ## Anforderungsmapping
 
@@ -45,9 +45,11 @@ Rein lesende Anzeige: kein Editieren, kein Zurückschreiben, keine Multi-Session
 | R8 | Abschnitt 1 „Fortschritt“: der Drei-Zustände-Vertrag von todos wird auf Abschnittsebene abgesenkt | `src/client/TodoBoardTab.tsx` |
 | R9 | Abschnitt 2 „Deliverables“: Echtzeitliste des letzten Turns + Sitzungskumulation; die Host-Hälfte registriert die Projektion | `src/projection/*` + `src/client/summary/*` |
 | R10 | codeplan-Deliverables sind eine annotierte Teilmenge des Deliverables-Abschnitts (Inline-„Planung“-Pill), kein eigenständiger Abschnitt | `src/client/summary/deliverables.ts` + `DeliverablesSection.tsx` |
-| R11 | Memory-Recall: nur reservierter Layout-Slot (ganz unten in der Abschnittsfolge), **in Planung**, wird in dieser Version nicht gerendert | Slot-Kommentar in `src/client/SummaryTab.tsx` / K4 |
+| R11 | Referenzen: vier Tabs (Skills / Gedächtnis / Suche / Echo); die Gedächtnis-Seite enthält Session-Recall + residente Slots (je mit Schalter) | `src/client/summary/ReferenceSection.tsx` |
 | R12 | Verhaltensbewahrung: Überdeckung, badge, `visible`-Pause, Höhenvertrag, 0.1.5-Adaption | An verschiedenen Stellen, siehe unten |
 | R13 | Die Host-Hälfte macht keine synchrone I/O; die Projektion ist ein optionaler Beitrag (Warten via `ctx.inject`) | `src/index.ts` + `src/projection/register.ts` |
+| R14 | Echo-Tab (in Referenzen): liest `spiritEcho`, zeigt Session-Anzahl und letzten Injektions-/Skip-Grund; „Ansehen →“ springt zum Echo | `src/client/summary/SpiritEchoSection.tsx` + `spirit-open.ts` |
+| R15 | „Details ▾“ (Abschnitt und Zeile): Einträge / 2D / 3D öffnen per `open-explorer`-Deep-Link die prime-memory-Bibliothek (Zeile mit recordId) | `src/client/summary/MemoryViewMenu.tsx` + `memory-open.ts` |
 
 ## Installation
 
@@ -163,7 +165,7 @@ Bei `visible === false` wird die ganze Karte (inklusive Hülle) nicht gerendert,
   Später möglich: gate on `prefs.tabsEnabled`; diesmal nicht getan (der Nutzer hat „vollständig verstecken“ gewählt).
 - **K2** better-sidebar-Panel/Seitenleiste geschlossen → Aufgaben unsichtbar (als akzeptiert bestätigt).
 - **K3** Der Upstream benennt die `todo`-cell um → Überdeckung versagt still (fail-open, siehe Tabelle oben).
-- **K4** Der Memory-Recall-Abschnitt hat nur einen Layout-Slot (**in Planung**): Das System hat kein Default-Gedächtnis; die Datenkette wird angedockt, sobald ein Gedächtnis-Plugin einen Projektions-key registriert.
+- **K4** Gedächtnis und Echo hängen am jeweiligen Partner-Plugin: ohne `dsh-prime-memory` wird die Gedächtnis-Seite ausgeblendet, ohne `dsh-spirit` der Echo-Abschnitt; ist der Partner-Eingang deaktiviert/nicht gemountet, zeigt „Details“ den Grund an (kein Retry, kein Polling).
 - **K5** Die „Planung“-Pill ist eine reine Pfadpräfix-Entscheidung (Segment `.agents/plans/`) und prüft den Schreiber nicht: auch Dateien, die andere Quellen als codeplan in dieses Verzeichnis schreiben, werden markiert; wechselt codeplan seine Deliverables-Verzeichniskonvention, muss die Konstante in `summary/deliverables.ts` nachgezogen werden.
 - **K6** Das Klick-Öffnen der Pfadzeilen hängt vom Host-Service `sidebarRight` ab (optionale Nutzung); auf Deployments ohne diesen Service sind die Deliverables-Zeilen nicht klickbar und werden nur als reiner Text angezeigt.
 

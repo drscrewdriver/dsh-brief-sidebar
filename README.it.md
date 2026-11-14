@@ -29,7 +29,7 @@ Visualizzazione in sola lettura: niente modifica, niente riscrittura, niente agg
 **Confine di denominazione**: l'identità di questo plugin (nome del pacchetto / id del plugin / id del bundle cordis / namespace della locale / hook DOM
 `data-dsh-brief-sidebar`) usa sempre `brief`; invece la proiezione `todos`, lo strumento `todo_write`, la cella di dock ufficiale `{ id: 'todo' }` e `dsh-tool-todo` appartengono al dominio upstream di DSH: il termine originale `todo` resta invariato, senza rinomina da parte di questo plugin.
 
-**Sistema di memoria**: la terza sezione del brief (richiamo della memoria) è per ora solo uno **slot di layout riservato**, è **in pianificazione** e in questa versione non viene renderizzata — si veda R11 / K4.
+**Memoria, riferimenti ed eco**: la terza sezione «Riferimenti» organizza **Competenze / Memoria / Ricerca / Eco** in schede. La scheda Memoria mostra richiamo di sessione e slot residenti (ognuno con interruttore) e «Dettagli ▾» (Voci / 2D / 3D; il «Dettagli ▾» di riga apre lo stesso menu), che apre via deep link la libreria di `dsh-prime-memory`. La scheda Eco legge `spiritEcho` di `dsh-spirit` e mostra iniezione/salto; «Vedi →» porta a «Memory Sea → Sfoglia → Eco».
 
 ## Mappa dei requisiti
 
@@ -45,9 +45,11 @@ Visualizzazione in sola lettura: niente modifica, niente riscrittura, niente agg
 | R8 | Sezione 1 «Avanzamento»: il contratto dei tre stati di todos scende a livello di sezione | `src/client/TodoBoardTab.tsx` |
 | R9 | Sezione 2 «Deliverable»: lista in tempo reale dell'ultimo turno + cumulo di sessione, la parte host registra la proiezione | `src/projection/*` + `src/client/summary/*` |
 | R10 | I deliverable di codeplan sono un sottoinsieme annotato della sezione deliverable (pill «Pianificazione» inline), non una sezione indipendente | `src/client/summary/deliverables.ts` + `DeliverablesSection.tsx` |
-| R11 | Richiamo della memoria: solo slot di layout riservato (in fondo alla sequenza delle sezioni), **in pianificazione**, non renderizzato in questa versione | Commento dello slot in `src/client/SummaryTab.tsx` / K4 |
+| R11 | Riferimenti: quattro schede (Competenze / Memoria / Ricerca / Eco); la scheda Memoria contiene richiamo di sessione + slot residenti (ognuno con interruttore) | `src/client/summary/ReferenceSection.tsx` |
 | R12 | Conservazione del comportamento: occlusione, badge, pausa via `visible`, contratto di altezza, adattamento 0.1.5 | In vari punti, si veda sotto |
 | R13 | La parte host non fa I/O sincrono; la proiezione è un contributo opzionale (attesa via `ctx.inject`) | `src/index.ts` + `src/projection/register.ts` |
+| R14 | Scheda Eco (in Riferimenti): legge `spiritEcho`, mostra conteggio di sessione e ultimo motivo iniezione/salto; «Vedi →» apre l'eco | `src/client/summary/SpiritEchoSection.tsx` + `spirit-open.ts` |
+| R15 | «Dettagli ▾» (sezione e riga): Voci / 2D / 3D aprono la libreria prime-memory via deep link `open-explorer` (riga con recordId) | `src/client/summary/MemoryViewMenu.tsx` + `memory-open.ts` |
 
 ## Installazione
 
@@ -163,7 +165,7 @@ Con `visible === false` l'intera scheda (incluso il guscio) non viene renderizza
   In seguito si potrà condizionare su `prefs.tabsEnabled`; per questa volta non fatto (l'utente ha scelto «nascondere del tutto»).
 - **K2** Le attività sono invisibili quando il pannello/la barra laterale better-sidebar è chiuso/a (accettazione confermata).
 - **K3** L'upstream rinomina la cella `todo` → l'occlusione fallisce in silenzio (fail-open, si veda la tabella sopra).
-- **K4** La sezione di richiamo della memoria ha solo uno slot di layout (**in pianificazione**): il sistema non ha una memoria predefinita; la catena dei dati verrà agganciata quando un plugin di memoria registrerà una key di proiezione.
+- **K4** Memoria ed eco dipendono dal plugin partner: senza `dsh-prime-memory` la scheda Memoria è nascosta, senza `dsh-spirit` la sezione Eco scompare; se l'ingresso del partner è disattivato/non montato, «Dettagli» mostra il motivo (nessun retry, nessun polling).
 - **K5** La pill «Pianificazione» è un puro giudizio di prefisso di percorso (segmento `.agents/plans/`) e non verifica chi scrive: anche i file scritti in quella directory da fonti diverse da codeplan vengono annotati; se codeplan cambia la sua convenzione di directory dei deliverable, occorrerà sincronizzare la costante di `summary/deliverables.ts`.
 - **K6** L'apertura al clic delle righe di percorso dipende dal servizio host `sidebarRight` (consumo opzionale); sui deployment che ne sono privi le righe dei deliverable non sono cliccabili e restano in testo semplice.
 
