@@ -42,6 +42,14 @@ const SECTION_STYLE: CSSProperties = {
   borderBottom: '1px solid var(--dsw-alias-border-secondary)',
 }
 
+/**
+ * How many earlier-change rows a reloaded session shows before the reader asks
+ * for more. Five fills the visible slice of a narrow sidebar without turning
+ * the section into a scroll well — the preview exists to prove "this session
+ * produced files", not to be the full history.
+ */
+const HISTORY_PREVIEW = 5
+
 const HEADER_STYLE: CSSProperties = {
   padding: '10px 12px 0',
   color: 'var(--dsw-alias-label-secondary)',
@@ -134,11 +142,21 @@ function PathRow(props: {
  * 分层:本回合改动(latest)与全会话更早改动分成两组各自计数——前者直列,后者
  * 折叠在开关行后面(与活跃文件按归一化路径去重),展开后是与活跃区相同的可点击
  * 文件行。列表有上限时,开关行说折叠区条数、附注说会话真数,两个数不混为一谈。
+ *
+ * **重载语义**:重新打开一个历史会话时,`latest` 要么是空的(还没跑新回合),
+ * 要么指向上一回合——两种情况下「本回合改动」都读不出东西,而历史改动全被
+ * 折叠收起,整节看起来像"没有产物"。所以本回合为空时历史区**默认展开并只
+ * 预览前 {@link HISTORY_PREVIEW} 条**:读者一进来就能看见这个会话改过什么,
+ * 又不至于把侧栏塞满;点「还有 N 条」看全量,点折叠行收起。
  * @param props - translation, client context, session scope.
  */
 export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode {
   const { t, ctx, scope } = props
-  const [historyOpen, setHistoryOpen] = useState(false)
+  // `undefined` = the reader has not expressed a preference yet, so the
+  // default below still applies. A live projection can flip the turn from
+  // empty to populated mid-session, and a plain `useState(defaultOpen)` would
+  // freeze whichever state the first render happened to see.
+  const [historyOverride, setHistoryOverride] = useState<boolean | undefined>(undefined)
 
   const view = readDeliverables(useProjectionValue(ctx, scope?.sessionId, DELIVERABLES_KEY))
 
@@ -151,6 +169,17 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
 
   const latestPaths = view.latest?.paths ?? []
   const history = historyPaths(view.sessionPaths, latestPaths)
+
+  // No current-turn rows means this is a reload of a finished turn: show the
+  // earlier changes instead of an apparently empty section.
+  const historyOpen = historyOverride ?? latestPaths.length === 0
+  // Previewing = open because the section defaulted open, not because the
+  // reader asked for everything. Only a preview offers the "N more" entry.
+  const previewing = historyOpen && historyOverride !== true
+  const shownHistory = !historyOpen
+    ? []
+    : previewing ? history.slice(0, HISTORY_PREVIEW) : history
+  const hiddenHistory = history.length - shownHistory.length
 
   if (latestPaths.length === 0 && view.sessionTotal === 0) {
     return createElement(
@@ -185,7 +214,7 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
       text: expandCount(t('deliverables.currentTurn'), latestPaths.length),
       marker: 'deliverables-current-group',
     }),
-    createElement(
+    latestPaths.length > 0 && createElement(
       'ul',
       { style: LIST_STYLE },
       latestPaths.map(path => createElement(PathRow, { key: path, path, t, open })),
@@ -194,17 +223,25 @@ export function DeliverablesSection(props: DeliverablesSectionProps): ReactNode 
       label: expandCount(t('deliverables.history'), history.length),
       open: historyOpen,
       marker: 'deliverables-history-toggle',
-      onToggle: () => { setHistoryOpen(current => !current) },
+      onToggle: () => { setHistoryOverride(!historyOpen) },
     }),
     // 列表有上限：开关行说的是折叠区收了多少条，附注说会话一共改过多少个。
     history.length > 0 && view.sessionTotal > view.sessionPaths.length && createElement(GroupCaption, {
       text: expandTotal(t('deliverables.historyCapped'), view.sessionTotal),
       marker: 'deliverables-history-capped',
     }),
-    historyOpen && createElement(
+    shownHistory.length > 0 && createElement(
       'ul',
       { style: LIST_STYLE },
-      history.map(path => createElement(PathRow, { key: path, path, t, open })),
+      shownHistory.map(path => createElement(PathRow, { key: path, path, t, open })),
     ),
+    // 预览模式下把"还有多少条"交回读者：一行可点的补充入口，不靠滚动。
+    // 只在预览态出现——收起态已经有折叠开关，全展开态没有剩余可给。
+    previewing && hiddenHistory > 0 && createElement(FoldToggle, {
+      label: expandCount(t('deliverables.historyMore'), hiddenHistory),
+      open: false,
+      marker: 'deliverables-history-more',
+      onToggle: () => { setHistoryOverride(true) },
+    }),
   )
 }

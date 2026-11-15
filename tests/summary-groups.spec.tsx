@@ -150,6 +150,97 @@ describe('DeliverablesSection turn/history grouping', () => {
   })
 })
 
+/**
+ * 重载一个已完成的历史会话时，「本回合改动」读不出东西（latest 为空）。
+ * 折叠收起会让整节看起来像"没有产物"，所以历史区必须默认展开并预览若干条。
+ */
+describe('DeliverablesSection reload semantics', () => {
+  /** 会话已结束：latest 为空，全部产物都在历史里。 */
+  const RELOADED = {
+    latest: null,
+    sessionPaths: ['a.md', 'b.md', 'c.md', 'd.md', 'e.md', 'f.md', 'g.md'],
+    sessionTotal: 7,
+  }
+
+  it('previews the earlier changes when the turn is empty', () => {
+    const markup = renderToStaticMarkup(
+      createElement(DeliverablesSection, { t, ctx: ctxWith({ [DELIVERABLES_KEY]: RELOADED }), scope: { sessionId: SESSION } }),
+    )
+    // 标题仍在，且前 5 条直接可见——读者不必先点一次才知道有产物。
+    expect(markup).toContain(label('deliverables.history', 7))
+    for (const path of ['a.md', 'b.md', 'c.md', 'd.md', 'e.md']) expect(markup).toContain(path)
+    // 预览只给前 5 条，剩下 2 条交给"还有 N 条"。
+    expect(markup).not.toContain('f.md')
+    expect(markup).toContain(label('deliverables.historyMore', 2))
+    // 空回合不画「本回合改动 · 0」这种要读者解释的标题。
+    expect(markup).not.toContain(label('deliverables.currentTurn', 0))
+  })
+
+  it('reveals every earlier change when the preview is expanded', () => {
+    let root: Root | undefined
+    const host = document.createElement('div')
+    document.body.append(host)
+    try {
+      act(() => {
+        root = createRoot(host)
+        root.render(createElement(DeliverablesSection, {
+          t,
+          ctx: ctxWith({ [DELIVERABLES_KEY]: RELOADED }),
+          scope: { sessionId: SESSION },
+        }))
+      })
+      expect(host.textContent).not.toContain('g.md')
+      const more = host.querySelector('[data-dsh-brief-sidebar="deliverables-history-more"]')
+      expect(more).not.toBeNull()
+      act(() => {
+        more?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      })
+      expect(host.textContent).toContain('f.md')
+      expect(host.textContent).toContain('g.md')
+      // 全量展开后不再有"还有 N 条"入口。
+      expect(host.querySelector('[data-dsh-brief-sidebar="deliverables-history-more"]')).toBeNull()
+    } finally {
+      act(() => { root?.unmount() })
+      host.remove()
+    }
+  })
+
+  it('folds the preview away again when the reader closes it', () => {
+    let root: Root | undefined
+    const host = document.createElement('div')
+    document.body.append(host)
+    try {
+      act(() => {
+        root = createRoot(host)
+        root.render(createElement(DeliverablesSection, {
+          t,
+          ctx: ctxWith({ [DELIVERABLES_KEY]: RELOADED }),
+          scope: { sessionId: SESSION },
+        }))
+      })
+      expect(host.textContent).toContain('a.md')
+      const toggle = host.querySelector('[data-dsh-brief-sidebar="deliverables-history-toggle"]')
+      act(() => {
+        toggle?.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+      })
+      expect(host.textContent).not.toContain('a.md')
+    } finally {
+      act(() => { root?.unmount() })
+      host.remove()
+    }
+  })
+
+  it('keeps a populated turn folded by default', () => {
+    // 本回合有产物时，历史区仍按老规矩收起：本回合才是读者要看的。
+    const markup = renderToStaticMarkup(
+      createElement(DeliverablesSection, { t, ctx: ctxWith({ [DELIVERABLES_KEY]: DELIVERABLES }), scope: { sessionId: SESSION } }),
+    )
+    expect(markup).toContain('now.md')
+    expect(markup).not.toContain('old-a.md')
+    expect(markup).not.toContain(label('deliverables.historyMore', 2))
+  })
+})
+
 const RECALL = {
   rev: 4,
   sessionId: SESSION,

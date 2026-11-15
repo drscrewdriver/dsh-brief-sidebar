@@ -33,6 +33,7 @@ export declare const zh: {
     'deliverables.empty': string;
     'deliverables.emptyHint': string;
     'deliverables.history': string;
+    'deliverables.historyMore': string;
     'deliverables.currentTurn': string;
     'deliverables.historyCapped': string;
     'deliverable.codeplanTag': string;
