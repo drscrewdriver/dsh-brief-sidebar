@@ -127,6 +127,11 @@ function buttonByText(scope: Element, text: string): HTMLButtonElement | undefin
   return buttons(scope).find((b) => (b.textContent ?? '').trim() === text)
 }
 
+/** The row-level view trigger carries a caret, so match by prefix. */
+function buttonContaining(scope: Element, text: string): HTMLButtonElement | undefined {
+  return buttons(scope).find((b) => (b.textContent ?? '').includes(text))
+}
+
 describe('选中一行才出打分条，且打分条不吃掉选中态', () => {
   it('点行 → 出打分条；打分条还在时行仍是选中态', async () => {
     const sent: Sent[] = []
@@ -137,20 +142,47 @@ describe('选中一行才出打分条，且打分条不吃掉选中态', () => {
     const strip = host.querySelector('[data-dsh-brief-sidebar="recall-rating-strip"]')
     expect(strip).not.toBeNull()
     expect(buttons(strip as Element)).toHaveLength(8)
-    // 第 8 枚是「查看详情」跳转，不属于打分档位。
-    expect(buttonByText(strip as Element, zh['recall.viewDetail'])).toBeDefined()
+    // 第 8 枚是「查看详情 ▾」：它现在弹类型选单（条目 / 2D / 3D），不再是直跳。
+    expect(buttonContaining(strip as Element, zh['recall.viewDetail'])).toBeDefined()
   })
 
-  it('点「查看详情」不发打分请求、也不把行取消选中（同 -1 那个 bug 的面）', async () => {
+  it('点「查看详情 ▾」弹三项选单、不发打分、也不把行取消选中', async () => {
     const sent: Sent[] = []
     mount(transport(sent))
     await press(rows()[0])
-    const view = buttonByText(host, zh['recall.viewDetail'])
+    const view = buttonContaining(host, zh['recall.viewDetail'])
     expect(view).toBeDefined()
 
     await press(view)
     expect(sent).toHaveLength(0)
     expect(host.querySelector('[data-dsh-brief-sidebar="recall-rating-strip"]')).not.toBeNull()
+    expect(host.querySelector('[data-dsh-brief-sidebar="memory-view-entry"]')?.textContent).toBe(zh['memoryView.entry'])
+    expect(host.querySelector('[data-dsh-brief-sidebar="memory-view-2d"]')?.textContent).toBe(zh['memoryView.graph2d'])
+    expect(host.querySelector('[data-dsh-brief-sidebar="memory-view-3d"]')?.textContent).toBe(zh['memoryView.graph3d'])
+  })
+
+  it('行内选单带上该行 recordId（2D 派发的 detail 含 recordId）', async () => {
+    const sent: Sent[] = []
+    mount(transport(sent))
+    // 引擎与 App 同源：只是监听同页事件，不碰网络。
+    const seen: Array<Record<string, unknown>> = []
+    const onOpen = (event: Event): void => {
+      const detail = (event as CustomEvent<Record<string, unknown>>).detail
+      seen.push(detail)
+      detail['ack'] = { ok: true }
+      event.preventDefault()
+    }
+    window.addEventListener('dsh-prime-memory:open-explorer', onOpen)
+    try {
+      await press(rows()[0])
+      await press(buttonContaining(host, zh['recall.viewDetail']))
+      await press(host.querySelector('[data-dsh-brief-sidebar="memory-view-2d"]'))
+    } finally {
+      window.removeEventListener('dsh-prime-memory:open-explorer', onOpen)
+    }
+    expect(seen).toHaveLength(1)
+    expect(seen[0]).toMatchObject({ mode: '2d', recordId: 'm1' })
+    expect(sent).toHaveLength(0)
   })
 
   it('回归护栏：点 -1 不再把行取消选中（这条就是那个 bug）', async () => {

@@ -1,8 +1,20 @@
 # 计划：brief-sidebar 接入 dsh-spirit 0.8.0 —— 检视活跃 echo 条目（指路 + 可选完整列表）
 
-> 状态：待决策（建议先做 A 的「指路行」，B 按需）· 面向 dsh-spirit 0.8.0（npm latest 已验证）
-> 关联仓库：`dsh-brief-sidebar`（0.9.20）、`dsh-spirit`（0.8.0，commit c8af8d3）
+> 状态：已实施（2026-11-10，v0.9.21-local.5）· 方案 B（spirit 投影 `spiritEcho` ）+ 双向深链
+> 关联仓库：`dsh-brief-sidebar`（0.9.21-local.5）、`dsh-spirit`（0.8.1-local.3，新增投影与 `dsh-spirit:open-sea`）、`dsh-prime-memory`（0.26.39-local.3，新增记忆库深链）
 > 本文只描述 brief-sidebar 侧的改动与所需契约；不要求跨仓直接 import 对方模块（与 `docs/plan-memory-slots-section.md` 同一条纪律）。
+
+## 0. 实施记录（与原文的偏差）
+
+最终选择 **方案 B**（spirit 注册服务端投影），并把它做成双向深链，而不是只读文案：
+
+1. **取数**：spirit 新增 `spiritEcho` 投影（`stateVersion: 1`）；brief 走既有 `useProjectionValue(ctx, sessionId, 'spiritEcho')`，不引入 RPC/超时耦合。§3.1 的 `inject-echo` 仍是 RPC 事实源，星海回响页继续用它。
+2. **行内计数用本会话**：侧栏显示 `本会话 N 条`（`items.length`），全局缓冲 `total` 放进 section tooltip —— 原文的 `total` 是全局口径，直接当行内主数字会与“本会话”语义打架。
+3. **投影只带 preview**：wire item 不含全文，只带首 160 字符 `preview` + `bytes`/`fingerprint`/`segments`，避免每轮把 20 张全文卡推给客户端；隐私边界与原文一致（不落盘、不打日志）。
+4. **「查看 →」是真跳转**：`dsh-spirit:open-sea` 可取消事件 + 同步 ack，由 spirit 调 `layout.selectPanel('dsh-spirit-sea')` 并切到“翻阅 → 回响”；失败时行内显示降级文案。
+5. **回响归属**：回响是「引用」的一部分，作为 `ReferenceSection` 的第 4 个页签（技能 / 记忆 / 搜索 / 回响），不再单占概要行；记忆的「详细展示 ▾」与行内「查看详 情 ▾」都弹选单：速览（旧侧栏查看器）/ 条目 / 2D / 3D，后三者经 `dsh-prime-memory:open-explorer` 打开记忆库整页（行内带 recordId）。行内选单用 fixed 浮层，避免被行高裁掉底框。
+6. **布局服务必须四路解析（2026-11-10 实机回归）**：宿主 0.2.2-rc.1 的严格代理下，直接 `ctx.get('layout')` 拿不到布局服务，回执永远是 `unregistered`。spirit 与 prime-memory 两端统一改成：`ctx.inject(['layout'])` 捕获 → `ctx.layout` 属性 → `ctx.get('layout')` → `ctx.reflect.get('layout')`，并在回执里加 `detail`（试过哪几路、抛了什么），brief 把 `detail` 挂到失败行的 `title` 上做 tooltip。修前：`打开回响失败（unregistered）`；修后实机 `ack={ok:true}`、星海「翻阅 → 回响」真打开。
+7. **速览只在行内菜单**：文档菜单（无 recordId）保持 条目/2D/3D 三项；行内「查看详情 ▾」才有第 4 项「速览」，因为它需要那条记忆的 id 才能开旧查看器。
 
 ## 1. 目标 / 非目标
 

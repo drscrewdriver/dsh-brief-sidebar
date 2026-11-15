@@ -149,14 +149,28 @@ const SEARCH_TOOLS: Readonly<Record<string, 'query' | 'queries'>> = {
  * @returns the non-blank queries in published order, or null when this call is not a search.
  */
 export function queriesFromArgs(name: string, argsRaw: string): readonly string[] | null {
-  const shape = SEARCH_TOOLS[name]
-  if (shape === undefined) return null
   let args: unknown
   try {
     args = JSON.parse(argsRaw) as unknown
   } catch {
     return null
   }
+  return queriesOf(name, args)
+}
+
+/**
+ * Extract the query list from a call whose arguments are ALREADY parsed — the
+ * shape `tool/ptc-dispatch` carries. A non-object argument (the host's static
+ * type is `unknown`; failure dispatches have been observed to carry a bare
+ * string) yields null rather than an exception.
+ *
+ * @param name - wire tool name.
+ * @param args - parsed call arguments.
+ * @returns the non-blank queries in published order, or null when this call is not a search.
+ */
+export function queriesOf(name: string, args: unknown): readonly string[] | null {
+  const shape = SEARCH_TOOLS[name]
+  if (shape === undefined) return null
   if (typeof args !== 'object' || args === null || Array.isArray(args)) return null
   const record = args as Record<string, unknown>
   const keep = (value: unknown, out: string[]): void => {
@@ -249,6 +263,21 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
     return { ...state, calls: { ...state.calls, [call.callId]: { turn: state.turn, tool: call.name, queries } } }
   }
 
+  if (event.type === 'tool/ptc-dispatch') {
+    // PTC sub-dispatch settle: same two facts as the native channel — the
+    // queries come from the (already-parsed) arguments, the sources come from
+    // `meta.sources`, which the host preserves on dispatch events exactly as
+    // `tool/result` carries them. A dispatch without meta still folds its
+    // queries with zero sources; a failed dispatch counts nothing.
+    const d = event.data as { subCallId?: unknown; name?: unknown; arguments?: unknown; isError?: unknown; meta?: unknown }
+    if (typeof d?.subCallId !== 'string') return state
+    if (d.isError === true) return state
+    if (typeof d.name !== 'string') return state
+    const queries = queriesOf(d.name, d.arguments)
+    if (queries === null) return state
+    return settle(state, { tool: d.name, queries, turn: state.turn }, readSources(d.meta))
+  }
+
   if (event.type !== 'tool/result') return state
 
   const result = event.data as {
@@ -261,9 +290,25 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
 
   const recorded = state.calls[callId]
   if (recorded === undefined) return state
-  const { tool, queries: asked, turn } = recorded
+  return settle(state, recorded, readSources(result.meta))
+}
 
-  const sources = readSources(result.meta)
+/**
+ * Settle one successful search: fold its returned sources into the item rows
+ * and its queries into the query rows. Shared by the native
+ * `tool/call`+`tool/result` channel and the PTC `tool/ptc-dispatch`
+ * channel — both carry the same `meta.sources` shape.
+ *
+ * With zero sources the state's `latest` reference is preserved unchanged so
+ * the registry's `Object.is` drive does not republish on every frame (PTC
+ * searches without meta would otherwise touch the reference per settle).
+ */
+function settle(
+  state: SearchRefState,
+  ask: { readonly tool: string; readonly queries: readonly string[]; readonly turn: number },
+  sources: readonly { url: string; title?: string; snippet?: string }[],
+): SearchRefState {
+  const { tool, queries: asked, turn } = ask
 
   // Sources: front-insert per published order, so the last one published ends
   // up first. A repeat of a known URL updates that row instead of adding one.
@@ -311,6 +356,12 @@ export function applySearchRefEvent(state: SearchRefState, event: FoldEvent): Se
   const nextLatest = latest !== null && latest.turn === turn
     ? { turn: latest.turn, urls: [...urls.reverse(), ...latest.urls].slice(0, CAPS.latest) }
     : latest
+
+  if (urls.length === 0) {
+    // No sources came back: keep every settled query row, but do NOT rebuild
+    // the state object — the unchanged reference keeps the wire quiet.
+    return { ...state, queries: queries.slice(0, CAPS.queries), queryTotal, latest }
+  }
 
   return {
     ...state,

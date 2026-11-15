@@ -49,6 +49,8 @@ import type { BetterSidebarService, TabComponentProps } from 'dsh-better-sidebar
 import { registerNativeBoardTab } from './native-sidebar'
 import type { NativeTabRegistryLike } from './native-sidebar'
 import { setOpenTab } from './memory-tab'
+import { ECHO_VIEWER_TAB } from './memory-tab'
+import { EchoViewer } from './echo-viewer/echo-viewer'
 import { MemoryViewer } from './memory-viewer/viewer'
 import { SummaryTab } from './SummaryTab'
 import { BriefIcon } from './BriefIcon'
@@ -269,6 +271,22 @@ export function apply(ctx: Context): void {
     } catch { /* already registered or service busy */ }
   }
 
+  /** Register the echo（回响原文）viewer tab (hidden, opened via openEchoTab). */
+  const registerEchoTab = (bar: BetterSidebarService): void => {
+    try {
+      ;(bar as unknown as { registerTab(desc: Record<string, unknown>): unknown }).registerTab({
+        id: ECHO_VIEWER_TAB,
+        title: 'Echo',
+        description: '查看回响条目当时的注入原文',
+        hidden: true,
+        order: 201,
+        dedupeKey: (tab: { path?: string }) => tab.path ? `echo:${tab.path}` : undefined,
+        component: (props: { ctx: Context; tab?: { path?: string }; scope?: { sessionId?: string } }) =>
+          createElement(EchoViewer, { tab: props.tab, ctx: props.ctx }),
+      })
+    } catch { /* already registered or service busy */ }
+  }
+
   // Arm 1: better-sidebar, immediate read first (the common case where the
   // sidebar started before us), deferred retry otherwise.
   let bar: BetterSidebarService | undefined
@@ -281,11 +299,12 @@ export function apply(ctx: Context): void {
     registerOnBar(bar)
     setOpenTab((seed) => bar!.openTab(seed))
     registerMemoryTab(bar)
+    registerEchoTab(bar)
   } else {
     ;(ctx as unknown as {
       inject: (deps: string[], cb: (scope: { betterSidebar?: BetterSidebarService }) => void) => void
     }).inject(['betterSidebar'], (scope) => {
-      if (scope.betterSidebar !== undefined) { registerOnBar(scope.betterSidebar); setOpenTab((seed) => scope.betterSidebar!.openTab(seed)); registerMemoryTab(scope.betterSidebar) }
+      if (scope.betterSidebar !== undefined) { registerOnBar(scope.betterSidebar); setOpenTab((seed) => scope.betterSidebar!.openTab(seed)); registerMemoryTab(scope.betterSidebar); registerEchoTab(scope.betterSidebar) }
     })
   }
 

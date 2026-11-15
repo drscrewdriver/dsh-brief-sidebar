@@ -137,12 +137,12 @@ describe('manifest', () => {
       dsh?: string
     }
     expect(engines.dsh).toBeTruthy()
-    // sync-hosts 全量枚举（当前 20 rc：0.1.0-rc.2 → 0.2.1-rc.5），不是单一 max
-    // range: every host from the first locale-bearing rc to the 0.2.1 line.
+    // 现行契约是一条范围（peer 双清单后 sync-hosts 不再全量枚举 rc）：
+    // 下限 = 第一个可承载本插件 client 的 locale rc，上限 = 0.3.0 之前。
+    // 旧的 "20 段 ||" 断言是枚举时代的遗留，已与 manifest 脱钩。
     const range = engines.dsh ?? ''
-    expect(range).toContain('0.1.0-rc.2')
-    expect(range).toContain('0.2.0-rc.2')
-    expect(range.split('||')).toHaveLength(20)
+    expect(range).toMatch(/>=\d+\.\d+\.\d+(?:-rc\.\d+)?/)
+    expect(range).toContain('<0.3.0')
   })
 })
 

@@ -51,7 +51,9 @@ describe('search unit registration', () => {
     // cluster shape is the bug, so the number itself is the regression guard.
     // 2 is 0.9.10's capacity raise: a checkpoint written under 20/20/20 has
     // already dropped sources, and only a discarded row gets re-folded.
-    expect(unit?.stateVersion).toBe(2)
+    // 3 is the PTC channel: dispatch-event searches now fold, so old rows
+    // without them are discarded and replayed.
+    expect(unit?.stateVersion).toBe(3)
   })
 
   it('would empty a pre-cluster checkpoint row, which is why the version had to move', () => {

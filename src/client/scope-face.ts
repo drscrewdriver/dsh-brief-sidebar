@@ -44,6 +44,8 @@ export interface BriefClientConfig {
   showMemorySlots?: boolean
   /** Whether the summary tab renders the session-recall section (default: on). */
   showMemoryRecall?: boolean
+  /** Whether the reference pane keeps the echo tab (default: on). */
+  showSpiritEcho?: boolean
 }
 
 /**
@@ -81,4 +83,19 @@ export function resolveShowMemoryRecall(
 ): boolean {
   if (snapshot === undefined || snapshot.status !== 'ready') return DEFAULT_SHOW_MEMORY_RECALL
   return snapshot.value?.showMemoryRecall !== false
+}
+
+/** The echo tab's default (on: it is the honest view of this session's recall). */
+export const DEFAULT_SHOW_SPIRIT_ECHO = true
+
+/**
+ * Resolve the echo-tab switch from one snapshot (pure; testable). Any
+ * cannot-answer shape falls back to {@link DEFAULT_SHOW_SPIRIT_ECHO}; an
+ * explicit `false` is the only off — same rule as the two memory switches.
+ */
+export function resolveShowSpiritEcho(
+  snapshot: SettingsScopeSnapshot<BriefClientConfig> | undefined,
+): boolean {
+  if (snapshot === undefined || snapshot.status !== 'ready') return DEFAULT_SHOW_SPIRIT_ECHO
+  return snapshot.value?.showSpiritEcho !== false
 }

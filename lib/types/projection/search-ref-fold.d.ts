@@ -138,6 +138,17 @@ export declare function initSearchRefState(): SearchRefState;
  */
 export declare function queriesFromArgs(name: string, argsRaw: string): readonly string[] | null;
 /**
+ * Extract the query list from a call whose arguments are ALREADY parsed — the
+ * shape `tool/ptc-dispatch` carries. A non-object argument (the host's static
+ * type is `unknown`; failure dispatches have been observed to carry a bare
+ * string) yields null rather than an exception.
+ *
+ * @param name - wire tool name.
+ * @param args - parsed call arguments.
+ * @returns the non-blank queries in published order, or null when this call is not a search.
+ */
+export declare function queriesOf(name: string, args: unknown): readonly string[] | null;
+/**
  * The dedupe key. Host case and a trailing slash are not meaningful for
  * identity; path case IS, so it is left alone. Exported because the client
  * matches a row against the latest-turn bucket with the same algorithm.

@@ -40,6 +40,8 @@ export interface BriefClientConfig {
     showMemorySlots?: boolean;
     /** Whether the summary tab renders the session-recall section (default: on). */
     showMemoryRecall?: boolean;
+    /** Whether the reference pane keeps the echo tab (default: on). */
+    showSpiritEcho?: boolean;
 }
 /**
  * The slots switch's default. Flipped to OFF alongside prime-memory's
@@ -64,3 +66,11 @@ export declare function resolveShowMemorySlots(snapshot: SettingsScopeSnapshot<B
  * an explicit `false` is the only off.
  */
 export declare function resolveShowMemoryRecall(snapshot: SettingsScopeSnapshot<BriefClientConfig> | undefined): boolean;
+/** The echo tab's default (on: it is the honest view of this session's recall). */
+export declare const DEFAULT_SHOW_SPIRIT_ECHO = true;
+/**
+ * Resolve the echo-tab switch from one snapshot (pure; testable). Any
+ * cannot-answer shape falls back to {@link DEFAULT_SHOW_SPIRIT_ECHO}; an
+ * explicit `false` is the only off — same rule as the two memory switches.
+ */
+export declare function resolveShowSpiritEcho(snapshot: SettingsScopeSnapshot<BriefClientConfig> | undefined): boolean;

@@ -56,6 +56,9 @@ export const name = 'dsh-brief-sidebar'
 export const Config = z.object({
   showMemorySlots: z.boolean().default(false).volatile(),
   showMemoryRecall: z.boolean().default(true).volatile(),
+  // 回响页签：默认开（它是本会话被召回段落的诚实面）；关掉 ⇒ 页签整页不出现，
+  // 与记忆两个分区同一种控制方式（同一个开关面，不另造第二套）。
+  showSpiritEcho: z.boolean().default(true).volatile(),
 })
 
 /**

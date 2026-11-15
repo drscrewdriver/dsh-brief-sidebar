@@ -53,9 +53,11 @@ export declare const name = "dsh-brief-sidebar";
 export declare const Config: z<Schemastery.ObjectS<NoInfer<{
     showMemorySlots: z<boolean, boolean, "volatile-defined">;
     showMemoryRecall: z<boolean, boolean, "volatile-defined">;
+    showSpiritEcho: z<boolean, boolean, "volatile-defined">;
 }>>, Schemastery.ObjectT<NoInfer<{
     showMemorySlots: z<boolean, boolean, "volatile-defined">;
     showMemoryRecall: z<boolean, boolean, "volatile-defined">;
+    showSpiritEcho: z<boolean, boolean, "volatile-defined">;
 }>>, "plain">;
 /**
  * Node-face apply. The loader hands the resolved entry config as the second

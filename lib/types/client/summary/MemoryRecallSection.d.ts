@@ -37,9 +37,10 @@ export declare function RatingStrip(props: {
     obsoleteLabel: string;
     confirmLabel: string;
     whyLabel: string;
-    viewLabel: string;
+    /** Row identity: when present, 「查看详情」 opens the memory-view menu for it. */
+    recordId?: string;
+    t: (key: string) => string;
     onScore(score: FeedbackScore): void;
-    onViewMemory?(): void;
 }): ReactNode;
 /**
  * The session-recall section. All hooks run unconditionally (a conditional hook

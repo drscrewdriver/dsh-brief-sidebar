@@ -99,7 +99,11 @@ export function registerDeliverablesProjection(ctx: Context): void {
       init: () => initDeliverablesState(),
       apply: applyDeliverablesEvent,
       wire: { viewSchema, view },
-      stateVersion: 0,
+      // 1 = the PTC channel: `tool/ptc-dispatch` events now fold into this
+      // unit. Checkpoints written by the pre-PTC fold are missing every path
+      // produced through sub-dispatch (measured: 158 of 158 lost across 9 real
+      // PTC sessions), so the row must be discarded and re-folded from the log.
+      stateVersion: 1,
     })
   })
 }
@@ -168,7 +172,9 @@ export function registerSkillUsageProjection(ctx: Context): void {
       wire: { viewSchema: skillViewSchema, view: skillView },
       // 1 = the shape gained the catalog fields (`catalog`/`catalogCount`); the
       // state schema defaults them so a version-0 state still replays.
-      stateVersion: 1,
+      // 2 = the PTC channel: `tool/ptc-dispatch` skill loads now fold. Old
+      // checkpoints never recorded PTC references; discard and re-fold.
+      stateVersion: 2,
     })
   })
 }
@@ -278,7 +284,9 @@ export function registerSearchRefProjection(ctx: Context): void {
       // away, and only a discarded row gets re-folded from the event log. Without
       // this bump the fix would apply to new sessions only, and the sessions that
       // motivated it — the ones already reading "0 results" — would stay broken.
-      stateVersion: 2,
+      // 3 = the PTC channel: `tool/ptc-dispatch` searches (query + meta.sources)
+      // now fold. Old checkpoints lack both for PTC sessions; discard and re-fold.
+      stateVersion: 3,
     })
   })
 }

@@ -103,6 +103,17 @@ export declare function initSkillUsageState(): SkillUsageState;
  */
 export declare function skillNameFromArgs(name: string, argsRaw: string): string | null;
 /**
+ * Extract the skill name from a call whose arguments are ALREADY parsed — the
+ * shape `tool/ptc-dispatch` carries. A non-object argument (the host's static
+ * type is `unknown`; failure dispatches have been observed to carry a bare
+ * string) yields null rather than an exception.
+ *
+ * @param name - wire tool name; only the host's `skill` loader counts.
+ * @param args - parsed call arguments.
+ * @returns the non-blank skill name, or null when this call is not a skill load.
+ */
+export declare function skillNameOf(name: string, args: unknown): string | null;
+/**
  * The next state after one committed event. Events this fold does not own
  * return the SAME reference — an unchanged reference produces zero downstream
  * work in the registry's `Object.is` drive.

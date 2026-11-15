@@ -53,6 +53,7 @@ dock cell、`dsh-tool-todo` 属于 DSH 上游领域，沿用 `todo` 原词，不
 | R13 | host 半部不做同步 IO，投影为可选贡献（`ctx.inject` 等待） | `src/index.ts` + `src/projection/register.ts` |
 | R14 | 回响页签（引用内）：读 `spiritEcho` 投影显示本会话条数与最近注入/跳过门名，「查看 →」深链到星海回响 | `src/client/summary/SpiritEchoSection.tsx` + `spirit-open.ts` |
 | R15 | 记忆「详细展示 ▾」与行内「查看详情 ▾」：条目 / 2D 图 / 3D 图经 `open-explorer` 深链打开 prime-memory 记忆库（行内带 recordId） | `src/client/summary/MemoryViewMenu.tsx` + `memory-open.ts` |
+| R16 | PTC 感知：`tool/ptc-dispatch` 子派发折入产物 / 技能 / 搜索三个 unit（与原生通道并列，不双计）；`stateVersion` 随之 1/2/3，存量 PTC 会话经 checkpoint 重折补回条目 | `src/projection/*-fold.ts` + `register.ts` |
 
 ## 安装
 
@@ -107,9 +108,13 @@ UI 挂在 `conversation.chat.turnTail` 上、只在回合尾渲染；而侧栏 t
 turn data（`SessionFace` 不暴露事件窗口，`IConversation` 不暴露回合数据）。所以本插件 host 半部
 通过 `ctx.sessionProjections.register()` 贡献自己的 unit：
 
-- **fold 口径**与官方 `turn-deliverables.ts` 完全一致：只认成功 `write` / `edit` /
-  `str_replace_editor`（create/str_replace/insert 变体）的路径，去重、失败不计、读类不计；
-  回合内先写后改只算一个条目（`src/projection/deliverables-fold.ts`，纯函数，测试锁定）。
+- **fold 口径**：原生通道（`tool/call`+`tool/result`）与官方 `turn-deliverables.ts` 完全一致——
+  只认成功 `write` / `edit` / `str_replace_editor`（create/str_replace/insert 变体）的路径，
+  去重、失败不计、读类不计；回合内先写后改只算一个条目
+  （`src/projection/deliverables-fold.ts`，纯函数，测试锁定）。
+  **PTC 通道是本插件的主动扩展**：`tool/ptc-dispatch` 结算事件（`run_code` 内的子派发）同样折入，
+  而官方 `turn-deliverables.ts:52` 明确不折子派发——PTC 会话下官方回合尾产物行为空，本侧栏不为空。
+  搜索与技能两个 unit 的 PTC 通道同理（查询+来源、技能加载），派发事件的 `meta` 与原生 `tool/result` 同构。
 - **回合内实时**：注册表每条提交事件驱动所有 unit 的 `apply`，每次成功的改动文件落定即推送一帧。
 - **可选贡献**：`ctx.inject(['sessionProjections'], …)` 等待服务，注册表缺席的部署照常加载本插件
   （产物分区静默隐藏）；注册是 effect，卸载即 key 消失、客户端读作能力缺席。

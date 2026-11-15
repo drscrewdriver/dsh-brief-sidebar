@@ -103,16 +103,30 @@ export function initSkillUsageState(): SkillUsageState {
  * @returns the non-blank skill name, or null when this call is not a skill load.
  */
 export function skillNameFromArgs(name: string, argsRaw: string): string | null {
-  // The name is the version-pinned fact: `defineTool({ name: 'skill', … })` on
-  // all six lines. Anything else — even a `write` that happens to carry a
-  // `name` argument — is not a skill reference.
-  if (name !== 'skill') return null
   let args: unknown
   try {
     args = JSON.parse(argsRaw) as unknown
   } catch {
     return null
   }
+  return skillNameOf(name, args)
+}
+
+/**
+ * Extract the skill name from a call whose arguments are ALREADY parsed — the
+ * shape `tool/ptc-dispatch` carries. A non-object argument (the host's static
+ * type is `unknown`; failure dispatches have been observed to carry a bare
+ * string) yields null rather than an exception.
+ *
+ * @param name - wire tool name; only the host's `skill` loader counts.
+ * @param args - parsed call arguments.
+ * @returns the non-blank skill name, or null when this call is not a skill load.
+ */
+export function skillNameOf(name: string, args: unknown): string | null {
+  // The name is the version-pinned fact: `defineTool({ name: 'skill', … })` on
+  // all six lines. Anything else — even a `write` that happens to carry a
+  // `name` argument — is not a skill reference.
+  if (name !== 'skill') return null
   if (typeof args !== 'object' || args === null || Array.isArray(args)) return null
   const skill = (args as Record<string, unknown>)['name']
   // Blank-but-present names are a model slip, not a reference; the exact
@@ -212,6 +226,20 @@ export function applySkillUsageEvent(state: SkillUsageState, event: FoldEvent): 
     }
 
     return state
+  }
+
+  if (event.type === 'tool/ptc-dispatch') {
+    // Channel 3 (PTC): the model calling `tools.skill()` inside `run_code`.
+    // The settle event carries its own `name` + parsed `arguments`, so like
+    // the dispatch folds above, no `calls` map entry is needed. Failed
+    // dispatches do not count — the skill never loaded.
+    const d = event.data as { subCallId?: unknown; name?: unknown; arguments?: unknown; isError?: unknown }
+    if (typeof d?.subCallId !== 'string') return state
+    if (d.isError === true) return state
+    if (typeof d.name !== 'string') return state
+    const skill = skillNameOf(d.name, d.arguments)
+    if (skill === null) return state
+    return tally(state, skill, state.turn)
   }
 
   if (event.type !== 'tool/result') return state

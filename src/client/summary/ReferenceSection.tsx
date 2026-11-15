@@ -36,12 +36,15 @@ import { readSkillUsage } from './skill-usage'
 import { SEARCH_REFS_KEY, readSearchRefs } from './search-refs'
 import { MEMORY_RECALL_KEY, readRecall } from './memory-recall'
 import { MEMORY_SLOTS_KEY, readSlots } from './memory-slots'
-import { resolveShowMemoryRecall, resolveShowMemorySlots } from '../scope-face'
+import { resolveShowMemoryRecall, resolveShowMemorySlots, resolveShowSpiritEcho } from '../scope-face'
 import { useConfigFlag } from './use-config-flag'
 import { SkillUsageSection } from './SkillUsageSection'
 import { SearchRefSection } from './SearchRefSection'
 import { MemoryRecallSection } from './MemoryRecallSection'
 import { MemorySlotsSection } from './MemorySlotsSection'
+import { MemoryViewMenu } from './MemoryViewMenu'
+import { SpiritEchoSection } from './SpiritEchoSection'
+import { SPIRIT_ECHO_KEY, readSpiritEcho } from '../spirit-echo'
 import type { FeedbackFetch } from './recall-feedback'
 
 export interface ReferenceSectionProps {
@@ -55,8 +58,8 @@ export interface ReferenceSectionProps {
   fetchImpl?: FeedbackFetch
 }
 
-/** Which pane is showing. Three values, no fourth tab by design. */
-export type ReferenceTab = 'skills' | 'memory' | 'search'
+/** Which pane is showing. Echo is a reference fact too (what spirit injected). */
+export type ReferenceTab = 'skills' | 'memory' | 'search' | 'echo'
 
 const SECTION_STYLE: CSSProperties = {
   flexShrink: 0,
@@ -96,7 +99,7 @@ const TAB_ACTIVE_STYLE: CSSProperties = {
   fontWeight: 600,
 }
 
-const ORDER: readonly ReferenceTab[] = ['skills', 'memory', 'search']
+const ORDER: readonly ReferenceTab[] = ['skills', 'memory', 'search', 'echo']
 
 /**
  * The references section. All hooks run before any early return, so the tab
@@ -114,10 +117,14 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
   const searchLive = readSearchRefs(useProjectionValue(ctx, scope?.sessionId, SEARCH_REFS_KEY)) !== undefined
   const recallFrame = readRecall(useProjectionValue(ctx, scope?.sessionId, MEMORY_RECALL_KEY))
   const slotsFrame = readSlots(useProjectionValue(ctx, scope?.sessionId, MEMORY_SLOTS_KEY))
+  const echoFrame = readSpiritEcho(useProjectionValue(ctx, scope?.sessionId, SPIRIT_ECHO_KEY))
   const recallOn = useConfigFlag(ctx, resolveShowMemoryRecall) !== false
   const slotsOn = useConfigFlag(ctx, resolveShowMemorySlots) === true
+  const echoOn = useConfigFlag(ctx, resolveShowSpiritEcho) !== false
   const memoryLive = (recallFrame !== undefined && recallOn) || (slotsFrame !== undefined && slotsOn)
-  const live: Record<ReferenceTab, boolean> = { skills: skillsLive, memory: memoryLive, search: searchLive }
+  // 回响页签与记忆同一种控制：能力在 + 开关开。关掉就整页签消失（不留空壳）。
+  const echoLive = echoFrame !== undefined && echoOn
+  const live: Record<ReferenceTab, boolean> = { skills: skillsLive, memory: memoryLive, search: searchLive, echo: echoLive }
   // 记住的选择可能因能力变化而消失（例如关掉记忆开关）：退到第一个可用页签。
   const active: ReferenceTab = live[tab] ? tab : ORDER.find(id => live[id]) ?? 'skills'
 
@@ -132,8 +139,8 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
     setTab(shown[(at + step) % shown.length])
   }, [live, active])
 
-  // Nothing to reference — no provider in the composition, or both switched off.
-  if (!skillsLive && !memoryLive && !searchLive) return null
+  // Nothing to reference — no provider in the composition, or everything switched off.
+  if (!skillsLive && !memoryLive && !searchLive && !echoLive) return null
 
   const tabButton = (id: ReferenceTab, label: string): ReactNode => createElement(
     'button',
@@ -168,6 +175,7 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
       // 每个页签各自条件化：只有一侧能力时不该留个点了就空的页签。
       memoryLive && tabButton('memory', t('references.tabMemory')),
       searchLive && tabButton('search', t('references.tabSearch')),
+      echoLive && tabButton('echo', t('references.tabEcho')),
     ),
     skillsLive && createElement(
       'div',
@@ -191,6 +199,9 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
         style: active === 'memory' ? undefined : { display: 'none' },
         'data-dsh-brief-sidebar': 'reference-pane-memory',
       },
+      // 记忆库指路：条目 / 2D / 3D 由 dsh-prime-memory 的整页渲染，这里只做深链。
+      // 能力缺席时整节已隐藏，菜单不会单独出现。
+      createElement(MemoryViewMenu, { key: 'memory-view', t }),
       // 两条记忆链各有自己的标题：召回与常驻槽位是不同事实，合成一节会糊掉。
       createElement(MemoryRecallSection, { t, ctx, scope, fetchImpl }),
       createElement(MemorySlotsSection, { t, ctx, scope }),
@@ -206,6 +217,19 @@ export function ReferenceSection(props: ReferenceSectionProps): ReactNode {
         'data-dsh-brief-sidebar': 'reference-pane-search',
       },
       createElement(SearchRefSection, { t, ctx, scope, hideHeader: true }),
+    ),
+    echoLive && createElement(
+      'div',
+      {
+        role: 'tabpanel',
+        id: 'dsh-brief-reference-pane-echo',
+        'aria-labelledby': 'dsh-brief-reference-tab-echo',
+        hidden: active !== 'echo',
+        style: active === 'echo' ? undefined : { display: 'none' },
+        'data-dsh-brief-sidebar': 'reference-pane-echo',
+      },
+      // 回响是引用的一部分：它回答“这轮引用/跳过了什么”，与技能、记忆同列。
+      createElement(SpiritEchoSection, { t, ctx, scope, hideHeader: true }),
     ),
   )
 }

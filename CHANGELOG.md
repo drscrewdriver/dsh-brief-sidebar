@@ -1,5 +1,89 @@
 # Changelog — dsh-brief-sidebar
 
+## 0.9.26-local.1 (2026-11-15)
+
+- **PTC 会话可见性补齐**（此前 PTC 会话的产物 / 技能 / 搜索三区全空）：`tool/ptc-dispatch`
+  结算事件折入三个投影 unit，与原生 `tool/call`+`tool/result` 通道并列，同一路径/技能/查询不双计。
+  真机回归：9 个真实 PTC 会话（1250 次子派发）产物 **0 → 158**（含 codeplan 13 条，plan pill 恢复点亮），双计 0。
+- 搜索区：PTC 派发带 `meta`（与原生 `tool/result` 同构），`web_search`/`advanced_search` 的查询与来源都折；
+  无 meta 的派发只折查询（来源 0），`advance_fetch` 不折。降级文案零改动。
+- 技能区：PTC `skill` 工具调用通道补齐（用户手打的 `skill-invocation` 通道本就正常）。
+- **checkpoint 重折**：三个 unit 的 `stateVersion` 升至 1 / 2 / 3——不升版本的话，已跑过 PTC 的存量会话
+  的旧 checkpoint（`ver` 匹配）会被前向套用，缺口永久固化。首次打开旧会话会多一次全量重放。
+- 新增 `tests/ptc-dispatch-fold.spec.ts`（25 用例：三单元 PTC 契约 + 双计守卫 + 对象入口边界 + 版本断言）。
+
+
+## 0.9.25-local.7 (2026-11-11)
+
+- **回响页签接 v7 编号模型**（配套 spirit 0.8.4-local.11：记录持 echo-<uuid>、回响持 recall-<uuid>）：
+  - 行文字 = 记录标题；副行 = `echo-xxxx · 11/9 02:46 ×N`（记录时间 + echo 短号 + 被想起次数），全 UUID 只进 tooltip。
+  - 行点击按 `lastRecallId` 开那一轮注入卡；兼容 v6 帧的 `refs/refId/lastEchoStepId`（旧帧仍可读）。
+  - 「最近」行 = 最近一条记录 + echo 短号。
+
+## 0.9.25-local.6 (2026-11-11)
+
+- **「最近」行改以引用为准**：有 `refs` 时显示最近一条引用（`title`，无标题退 `memId`），不再用段落截断；无 refs 老帧仍退回段落口径。
+- 新增断言：`最近：plugin-9lang-five-dim` 直接命中（防止回退成段落截断）。
+
+## 0.9.25-local.5 (2026-11-11)
+
+- **回响页签改记忆引用行**（配套 spirit 0.8.4-local.8 的 echo-id ≡ memid）：
+  - 优先读投影 v6 的 `refs[]`：每行=一条被想起的记忆，行文字=`title`（如 `plugin-9lang-five-dim`），`×N` 为召回次数；`refId`（`echo:<kind>:<id>`）只进 tooltip，不当行文字。
+  - 行点击开原文（按该行 `lastEchoStepId`）；`sessionId` 取行内值（跨会话也正确）。
+  - 无 `refs` 的老帧退到 `steps` 行为（不伪装新形状）；语气 `tone` 不在侧栏展示（属于星海观测面）。
+  - 新增两条断言：refs 行标题/×N/无 `echo-…`；refs 空退 steps。
+
+## 0.9.25-local.4 (2026-11-11)
+
+- **回响行文字改成内容优先**（用户实报：行首显示的是 `echo-…127843` 编号，期望的是 `plugin-9lang-five-dim` 这种内容，并且要能指向条目/星图）：
+  - 读投影新字段 `steps[].title`（spirit 0.8.4-local.7 起提供：线程任务名 > 反馈 > 交付句 > …）作为行文字；老帧没有 title 才退回 preview。**`echo-<ts>` 不再当条目名**，只留在 tooltip 与「原文」查看里。
+  - 读 `steps[].refs`（memid 引用：task/delivery/experience/memory/goal）——回响从此能挂回具体记忆条目（等价于 memid），供后续条目/星图深链使用。
+  - 新增两条断言：有 title 时渲染内容名且不含 `echo-…`；无 title 老帧退回 preview 不编造。
+
+## 0.9.25-local.3 (2026-11-10)
+
+- **注入行被跳过挤出去时的假空态**：帧里 `steps` 只有最近 5 条，连走几轮「跳过」会把真正的注入行挤到 `lastStep`，按 `steps` 判定就会得出「本会话还没有回响段」。现在把 `lastStep` 兑回列表（去重），实测本会话从 0 行变 2 行。
+- **选单改成行内锚定**：用按钮的 viewport 坐标去摆 `fixed` 弹层，实测会落到视口外（trigger(1613,926) → 弹层(1692,1730)）；改成在行包裹器内 `absolute`，不量坐标就不会错位。实机复核：popover(1474,928) 在视口内、`elementFromPoint` 命中菜单项、星图跳转成功。
+
+## 0.9.25-local.1..2 (2026-11-10)
+
+- **回响行级选单（与 memory 行同款）**：每条回响行右侧多一个 `查看 ▾`，展开三项：**原文**（本插件查看器 tab）/ **条目**（spirit 翻阅 → 回响）/ **星图**（spirit 星海星图）；两条跳转仍走同一条 `dsh-spirit:open-sea` 深链，回执失败时降级文案挂在触发器 title 上。行本身的点击仍直接开原文，底部两个跳转链接保留（空态需要它们）。
+- **早期条目显示时间**：查看器无原文时改成「早期落档（YYYY/MM/DD HH:mm:ss）：这条当时只存了摘要、没存原文。」，不再只给一句无时间的说明。
+
+## 0.9.23-local.1 (2026-11-10)
+
+- **回响条目带编号，可开原文**：每行显示 `echo-…<末6位>`（完整编号 + 时间进 title），点击行 → 新开右侧栏 tab「原文查看器」，按编号向 spirit 的 `echo-detail` 取当时注入的整张卡（同会话定位；早期无原文的条目回退显示摘要）。
+
+## 0.9.22-local.4 (2026-11-10)
+
+- **旧数据也剥干净**：未清洗的历史摘要（`<system-reminder>` 开头、后面跟免责声明）在侧栏渲染前从第一个分段行（`状态：`/`线程：`/`想起：`…）开切，旧数据不会因为新版本重写。
+
+## 0.9.22-local.3 (2026-11-10)
+
+- **列表只列「真注入了什么」**：注入行保留（带摘要，最多三条），跳过行不再逐条刷屏，收成一句 `另有 N 轮未注入（门名 ×次数）`；无摘要的旧注入行不再占位。
+
+## 0.9.22-local.2 (2026-11-10)
+
+- **回响页签改成条目列表**：不再只列「被想起的段落」（大多数轮次为空，看起来像坏了），改为逐条列出本会话的回响：`本会话 N 条回响` + 每行 `注入 · <卡摘要>` / `跳过 · <门名>`（时间进 title），有「想起」时额外一行。
+- **与记忆同一种控制**：新增 `showSpiritEcho` 开关（设置面，默认开），关掉后「回响」页签整页不出现——和「本会话召回 / 常驻槽位」两个开关同一机制。
+
+## 0.9.22-local.1 (2026-11-10)
+
+- **回响页签改为持久召回段**：读 `spiritEcho` 的新帧 `{token, total, segments, lastStep}`——列出**本会话被 dsh-spirit 召回过的回响段**（spirit 0.8.2 起落库，重启不归零），行内给「本会话 N 段回响 + 最近一段」，并把「上一轮：注入/跳过（门名）」单列为观测行，不再冒充回忆。
+- **两个跳转**：「星图 →」直达 spirit 星海图，「条目 →」直达翻阅 → 回响；两者共用同一可取消事件 + 同步回执，失败仍给可读文案。空态也保留跳转（导航不依赖数据）。
+- 九语字典同步：`echo.segmentCount` / `echo.lastStep` / `echo.gotoGraph`，并改写空态文案（不再说「重启归零」）。
+
+## 0.9.21-local.5 (2026-11-10)
+
+- 深链失败时把 owner 回执的 `detail`（试过哪几路布局解析 / 抛了什么）挂到失败行的 `title` 上，`data-dsh-brief-sidebar="memory-view-fail"` / `"spirit-echo-fail"` 可直接取证；`打开回响失败（unregistered）` 这类三个字的回执不再无解可查。
+- 行内「查看详情 ▾ → 速览」打开旧侧栏查看器（带该行 recordId）；文档级「详细展示 ▾」保持条目/2D/3D 三项。
+
+## 0.9.21-local.4 (2026-11-10)
+
+- 概要 tab：「引用」新增第 4 个页签「回响」（读 `dsh-spirit` 的 `spiritEcho` 投影：本会话条数 + 最近注入/跳过门名），点「查看 →」经 `dsh-spirit:open-sea` 深链直达「记忆星海 → 翻阅 → 回响」；spirit 缺席整页隐藏，重启归零走空态文案。
+- 「引用 → 记忆」的「详细展示 ▾」与行内「查看详情 ▾」都弹类型选单：速览（旧侧栏查看器）/ 条目 / 2D 图 / 3D 图；后三者经 `dsh-prime-memory:open-explorer` 深链打开记忆库整页（行内带 recordId），入口关闭/未挂载按 ack 给可读降级文案。行内选单改为 fixed 浮层，不再被行高裁掉底框。
+- 九份语言字典同步补 `echo.*` / `memoryView.*`；`purity.spec` 的宿主范围断言改随现行 `engines.dsh` 区间（旧的 20 段枚举断言已与 manifest 脱钩）。
+
 0.9.15: host enumeration addendum for DSH 0.2.1-rc.3 (declaration-only bump; contract plane zero diff).
 
 ## 0.9.14 (2026-10-18)

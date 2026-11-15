@@ -97,6 +97,24 @@ export function applyDeliverablesEvent(state: DeliverablesState, event: FoldEven
     return { ...state, calls: { ...state.calls, [call.callId]: { turn: state.turn, path } } }
   }
 
+  if (event.type === 'tool/ptc-dispatch') {
+    // PTC sub-dispatch settle: the child call itself carries its own
+    // `name` + `arguments`, so no `calls` map entry is needed. The event's
+    // `arguments` is already a parsed JSON object (the host normalizes it
+    // before logging), NOT the string the `tool/call` contract carries — so
+    // the object entry `mutationPathOf` is used directly, never `JSON.parse`.
+    const d = event.data as { subCallId?: unknown; name?: unknown; arguments?: unknown; isError?: unknown }
+    if (typeof d?.subCallId !== 'string') return state
+    if (d.isError === true) return state
+    if (typeof d.name !== 'string') return state
+    const path = mutationPathOf(d.name, d.arguments)
+    if (path === null) return state
+    // Sub-dispatches settle before the outer `run_code` result (the host
+    // aborts then drains in its `finally`), and `run_code` itself is not a
+    // mutation call, so the current turn is the correct bucket.
+    return recordPath(state, path, state.turn)
+  }
+
   if (event.type !== 'tool/result') return state
 
   const result = event.data as {
@@ -112,9 +130,20 @@ export function applyDeliverablesEvent(state: DeliverablesState, event: FoldEven
 
   // A path written and edited again in the same turn is one bucket entry. A
   // stray result that settles after a LATER turn opened never rewrites the
-  // newer bucket — its path still counts session-wide below.
+  // newer bucket — its path still counts session-wide below. Both the native
+  // and the PTC channels land here.
+  return recordPath(state, path, recorded.turn)
+}
+
+/**
+ * Record one produced path: latest-turn bucket membership plus the session-wide
+ * distinct set. Shared by the native `tool/call`+`tool/result` channel and
+ * the PTC `tool/ptc-dispatch` channel, so a path counts once no matter which
+ * carrier produced it — that is the no-double-counting guard in code.
+ */
+function recordPath(state: DeliverablesState, path: string, turn: number): DeliverablesState {
   const latest = state.latest
-  const sameTurn = latest !== null && latest.turn === recorded.turn
+  const sameTurn = latest !== null && latest.turn === turn
   const nextLatest: DeliverablesTurnBucket | null = sameTurn && !latest.paths.includes(path)
     ? { turn: latest.turn, paths: [...latest.paths, path].slice(-CAPS.latest) }
     : latest
@@ -134,8 +163,8 @@ export function applyDeliverablesEvent(state: DeliverablesState, event: FoldEven
  * Extract the path from a supported first-party mutation call.
  *
  * Ported from the harness deliverables fold so both carriers agree on what a
- * "produced file" is. Session `tool/call` events are root calls; PTC dispatch
- * children do not enter this fold independently.
+ * "produced file" is. The native channel's contract stays byte-identical; the
+ * PTC channel folds through the object entry instead.
  *
  * @param name - wire tool name.
  * @param argsRaw - model-produced JSON arguments.
@@ -148,6 +177,20 @@ export function mutationPath(name: string, argsRaw: string): string | null {
   } catch {
     return null
   }
+  return mutationPathOf(name, args)
+}
+
+/**
+ * Extract the path from a supported first-party mutation call whose arguments
+ * are ALREADY parsed — the shape `tool/ptc-dispatch` carries. A non-object
+ * argument (the host's static type is `unknown`; failure dispatches have been
+ * observed to carry a bare string) yields null rather than an exception.
+ *
+ * @param name - wire tool name.
+ * @param args - parsed call arguments.
+ * @returns the mutation path, or null when the call is not a supported mutation.
+ */
+export function mutationPathOf(name: string, args: unknown): string | null {
   if (!isRecord(args)) return null
   switch (name) {
     case 'write':

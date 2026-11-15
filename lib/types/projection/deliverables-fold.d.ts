@@ -75,11 +75,22 @@ export declare function applyDeliverablesEvent(state: DeliverablesState, event: 
  * Extract the path from a supported first-party mutation call.
  *
  * Ported from the harness deliverables fold so both carriers agree on what a
- * "produced file" is. Session `tool/call` events are root calls; PTC dispatch
- * children do not enter this fold independently.
+ * "produced file" is. The native channel's contract stays byte-identical; the
+ * PTC channel folds through the object entry instead.
  *
  * @param name - wire tool name.
  * @param argsRaw - model-produced JSON arguments.
  * @returns the mutation path, or null when the call is not a supported mutation.
  */
 export declare function mutationPath(name: string, argsRaw: string): string | null;
+/**
+ * Extract the path from a supported first-party mutation call whose arguments
+ * are ALREADY parsed — the shape `tool/ptc-dispatch` carries. A non-object
+ * argument (the host's static type is `unknown`; failure dispatches have been
+ * observed to carry a bare string) yields null rather than an exception.
+ *
+ * @param name - wire tool name.
+ * @param args - parsed call arguments.
+ * @returns the mutation path, or null when the call is not a supported mutation.
+ */
+export declare function mutationPathOf(name: string, args: unknown): string | null;
