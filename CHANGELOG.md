@@ -23,6 +23,7 @@
 - 新增 `deliverables.historyMore`（9 语）。
 - 新增 `tests/ptc-dispatch-fold.spec.ts`（25 用例：三单元 PTC 契约 + 双计守卫 + 对象入口边界 + 版本断言）
   与 `tests/summary-groups.spec.tsx` 的 4 条重载语义用例。
+- i18n：新增**葡萄牙语（pt-BR）** locale——运行时字典 `pt`（101 key，以 `zh` 键集为真源）、包元数据 `locale/pt.json`、文档镜像 `README.pt.md` / `CHANGELOG.pt.md`；既有各语镜像的导航行补上 pt 链接与语言说明条目。`lib/` 重新生成。
 
 ## 0.9.26-local.2 (2026-11-16)
 

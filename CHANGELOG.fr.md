@@ -1,6 +1,6 @@
 # Changelog — dsh-brief-sidebar
 
-[简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md)
+[简体中文](CHANGELOG.md) | [Français](CHANGELOG.fr.md) | [Deutsch](CHANGELOG.de.md) | [Italiano](CHANGELOG.it.md) | [Русский](CHANGELOG.ru.md) | [Español](CHANGELOG.es.md) | [Português](CHANGELOG.pt.md)
 
 ## 0.9.13 — 2026-10-17 (critère de chargement : ajout de 0.2.1-rc.1)
 

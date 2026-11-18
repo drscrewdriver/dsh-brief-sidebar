@@ -1,6 +1,6 @@
 # dsh-brief-sidebar
 
-[简体中文](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Italiano](README.it.md) | [Русский](README.ru.md) | [Español](README.es.md)
+[简体中文](README.md) | [Français](README.fr.md) | [Deutsch](README.de.md) | [Italiano](README.it.md) | [Русский](README.ru.md) | [Español](README.es.md) | [Português](README.pt.md)
 
 DSH-Web-Plugin (Verbraucher von `dsh-better-sidebar`), Repo-/Paketname **`dsh-brief-sidebar`** (Sitzungs-Briefing-Seitenleiste).
 Es rendet das **Briefing („brief“)** der Sitzung als Tab „Übersicht“ in der rechten Seitenleiste; das Briefing besteht aus zwei Listen:
@@ -198,3 +198,4 @@ Das ursprüngliche README ist auf Chinesisch verfasst; dieses Dokument ist seine
 - **Русский** — требуется DSH 0.2.0 (`>=0.1.0-rc.2 <0.3.0-0`), протестировано на DSH 0.2.0-rc.1. dist-tag по линии хоста: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 и ранее не поддерживаются. Не используйте `latest` вслепую на старых хостах (плагин молча отключается стартовой предпроверкой). Таблица: раздел «Диапазон совместимости».
 - **Español** — requiere DSH 0.2.0 (`>=0.1.0-rc.2 <0.3.0-0`), probado con DSH 0.2.0-rc.1. dist-tag según la línea del host: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 y anteriores no están soportados. No use `latest` a ciegas en hosts antiguos (la preverificación de arranque lo desactiva en silencio). Tabla: sección «Alcance de compatibilidad».
 - **Italiano** — richiede DSH 0.2.0 (`>=0.1.0-rc.2 <0.3.0-0`), testato su DSH 0.2.0-rc.1. dist-tag in base alla linea dell'host: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 e precedenti non sono supportati. Niente `latest` alla cieca su host vecchi (la preverifica di avvio lo disattiva in silenzio). Tabella: sezione «Perimetro di compatibilità».
+- **Português** — requer DSH 0.2.0 (`>=0.1.0-rc.2 <0.3.0-0`), testado contra o DSH 0.2.0-rc.1. dist-tag pela linha do host: `dsh plugin --profile web add dsh-brief-sidebar@dsh-0.2.0` (0.2.0 → 0.4.0), `…@dsh-0.1.7` (0.1.7 → 0.3.1), `…@dsh-0.1.5` (0.1.5 → 0.3.1); DSH 0.1.2 e anteriores não são suportados. Não use `latest` nu em hosts antigos (a pré-verificação de inicialização o desativa em silêncio). Tabela: seção «Escopo de compatibilidade».

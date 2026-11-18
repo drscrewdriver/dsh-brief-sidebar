@@ -7,7 +7,7 @@
  * `LocaleNamespaceMap` merge table, which is exactly what the untyped
  * `register(ns, dicts)` overload is for — but the dictionaries themselves stay
  * strictly paired: `zh` is the key-set source of truth and every other language
- * (`en`, plus the fr/de/it/ru/es pack) is typed as
+ * (`en`, plus the fr/de/it/ru/es/pt pack) is typed as
  * `Record<keyof typeof zh, string>`, so a missing or extra key is a COMPILE
  * error rather than a runtime fallback to the raw key.
  *
@@ -993,11 +993,119 @@ export const es: Record<BriefKey, string> = {
   'memoryView.failUnregistered': 'El host no ha registrado la página de la biblioteca de memoria',
 }
 
+/** Brazilian Portuguese dictionary, checked complete against the zh key set. */
+export const pt: Record<BriefKey, string> = {
+  'tab.title': 'Resumo',
+  'tab.desc': 'Tarefas, arquivos produzidos e artefatos de planejamento desta sessão (somente leitura)',
+  'section.progress': 'Progresso',
+  'section.deliverables': 'Arquivos produzidos',
+  'board.empty': 'Nenhuma tarefa ainda',
+  'board.emptyHint': 'As tarefas aparecem aqui quando o modelo chama todo_write.',
+  'board.unavailable': 'Tarefas indisponíveis',
+  'board.unavailableHint':
+    'Esta sessão ainda não recebeu dados de todo; o painel se preenche no primeiro quadro.',
+  'status.pending': 'Pendente',
+  'status.inProgress': 'Em andamento',
+  'status.completed': 'Concluída',
+  'deliverables.empty': 'Nenhum arquivo alterado neste turno',
+  'deliverables.emptyHint': 'Arquivos gravados ou editados com sucesso na sessão aparecem aqui em tempo real.',
+  'deliverables.history': 'Alterações anteriores · {count}',
+  'deliverables.historyMore': 'Mais {count}',
+  'deliverables.currentTurn': 'Este turno · {count}',
+  'deliverables.historyCapped': '(a sessão produziu {total} arquivos; a lista está truncada)',
+  'deliverable.codeplanTag': 'Planejamento',
+  'section.memorySlots': 'Memória',
+  'slots.empty': 'Nenhum slot de memória ativo',
+  'slots.emptyHint': 'Os slots aparecem aqui em tempo real quando o dsh-prime-memory os ativa.',
+  'slots.openCount': '{count} slots abertos',
+    'slots.viewMemory': 'Ver',
+  'slots.status.open': 'Ativo',
+  'slots.status.done': 'Concluído',
+  'slots.status.dropped': 'Descartado',
+  'slots.status.expired': 'Expirado',
+  'section.memoryRecall': 'Recordação desta sessão',
+  'recall.empty': 'Nenhuma memória recordada nesta sessão ainda',
+  'recall.count': '{count} injetadas · as substituídas por resumo ficam recolhidas (limpas só ao limpar a sessão)',
+  'recall.rateHint': 'Selecione uma memória para marcá-la: relevância 0–5; -1 declara obsoleta e a retira (recuperável).',
+  'recall.obsolete': 'Obsoleta',
+  'recall.obsoleteConfirm': 'Retirar?',
+  'recall.obsoleted': 'Marcada como obsoleta',
+  'recall.rated': 'Avaliada com {count}/5',
+  'recall.failed': 'Falha ao marcar: ',
+  'recall.obsoleteWhy': 'Declará-la obsoleta retira o registro (recuperável) e avisa o modelo no próximo turno',
+    'recall.viewDetail': 'Ver',
+  'recall.strikeHint': '; uma entrada marcada como obsoleta continua na lista, riscada (removida só quando você limpa a sessão)',
+  'recall.supersededHidden': '{count} recordações antigas ocultas — o texto foi substituído por um resumo',
+  'recall.activeGroup': 'Recordações ativas · {count}',
+  'recall.historyGroup': 'Recordações anteriores · {count}',
+  'recall.supersededTag': 'substituída por resumo',
+  'recall.noBody': '(este quadro não traz o texto completo deste registro)',
+  'section.skillUsage': 'Referências de skills',
+  'section.references': 'Referências',
+  'references.tabSkills': 'Skills',
+  'references.tabMemory': 'Memória',
+  'skillUsage.empty': 'Nenhuma skill carregada nesta sessão',
+  'skillUsage.emptyHint': 'As skills aparecem aqui quando o modelo carrega uma com a ferramenta `skill`, ou quando você invoca uma diretamente.',
+  'skillUsage.uses': '{count}x',
+  'skillUsage.count': '{count} carregamentos - {total} skills',
+  'skillUsage.latestTag': 'este turno',
+  'skillUsage.invokedGroup': 'Referenciadas · {count}',
+  'skillUsage.availableGroup': 'Disponíveis nesta sessão · {count}',
+  'skillUsage.availableCapped': '({count} skills no catálogo; a lista está truncada)',
+  'section.searchRefs': 'Buscas na web',
+  'references.tabSearch': 'Buscas',
+  'references.tabEcho': 'Eco',
+  'searchRefs.empty': 'Nenhuma busca nesta sessão',
+  'searchRefs.emptyHint': 'As consultas e as fontes retornadas aparecem aqui quando o modelo chama web_search ou advanced_search.',
+  'searchRefs.queryGroup': 'Consultas · {count}',
+  'searchRefs.sourceGroup': 'Fontes · {count}',
+  'searchRefs.hits': '{count} retornadas',
+  'searchRefs.latestTag': 'Este turno',
+  'searchRefs.noSourcesHint': '(esta compilação do dsh-free-search não devolve a lista de fontes; atualize para vê-las)',
+  'searchRefs.capped': '({total} na sessão; a lista está truncada)',
+  'settings.title': 'Barra lateral de resumo',
+  'settings.desc': 'Interruptores de seção da aba de resumo na barra lateral direita (visões somente leitura).',
+  'settings.memorySlots': 'Seção de slots de memória',
+  'settings.memorySlotsHint': 'Quando ativa, a aba de resumo lista os slots de memória ativos do dsh-prime-memory abaixo de progresso e arquivos produzidos (somente leitura).',
+  'settings.memoryRecall': 'Seção de recordação da sessão',
+  'settings.memoryRecallHint': 'Quando ativa, a aba Resumo lista as memórias injetadas nesta sessão e permite avaliá-las (0–5; -1 declara uma obsoleta e a retira). Entradas que um resumo substituiu ficam recolhidas.',
+  'settings.spiritEcho': 'Aba Eco',
+  'settings.spiritEchoHint': 'Quando ativa, o painel de referências mantém a aba Eco, que lista as entradas ecoadas e os trechos recordados desta sessão (persistidos entre reinícios). Desligar esconde a aba inteira.',
+  'settings.unavailable': 'A superfície de configuração está indisponível; a seção de memória usa o padrão (ativa).',
+  'settings.readonly': 'Esta configuração é somente leitura aqui; não há como editá-la.',
+  'section.spiritEcho': 'Eco',
+  'echo.segmentCount': '{count} trechos recordados nesta sessão',
+  'echo.stepCount': '{count} entradas de eco nesta sessão',
+  'echo.openOriginal': 'Abrir original',
+  'echo.skippedSummary': '{count} rodadas não injetaram nada ({reasons})',
+  'echo.injectedEmpty': '(sem resumo)',
+  'echo.totalHint': 'Trechos nesta sessão: {count} (mantidos entre reinícios)',
+  'echo.latest': 'Mais recente:',
+  'echo.lastStep': 'Rodada anterior:',
+  'echo.injected': 'injetado',
+  'echo.skipped': 'pulado',
+  'echo.empty': 'Nenhum trecho de eco recordado nesta sessão ainda',
+  'echo.emptyHint': 'Os trechos que o dsh-spirit recordou para esta sessão serão listados aqui.',
+  'echo.goto': 'Entradas →',
+  'echo.gotoGraph': 'Mapa estelar →',
+  'echo.gotoFail': 'Não foi possível abrir a página do eco',
+  'echo.viewMenu': 'Ver',
+  'memoryView.button': 'Detalhes',
+  'memoryView.preview': 'Visão rápida',
+  'memoryView.entry': 'Entradas',
+  'memoryView.graph2d': 'Gráfico 2D',
+  'memoryView.graph3d': 'Gráfico 3D',
+  'memoryView.failAbsent': 'Biblioteca de memória indisponível (o dsh-prime-memory não está instalado)',
+  'memoryView.failDisabled': 'A entrada da biblioteca de memória está desativada nas configurações de memória',
+  'memoryView.failUnmounted': 'Este host não monta a página inteira da biblioteca de memória',
+  'memoryView.failUnregistered': 'O host não registrou a página da biblioteca de memória',
+}
+
 /**
  * All locales in the shape the locale service consumes. Registered in ONE call:
  * the registry rejects a duplicate `(namespace, locale)` pair and the
  * per-locale form would leave a half-registered namespace if a later call
- * threw. `zh`/`en` are the host built-ins; the fr/de/it/ru/es pack rides the
+ * threw. `zh`/`en` are the host built-ins; the fr/de/it/ru/es/pt pack rides the
  * same map form (every id is a valid BCP 47-style tag, so the registry accepts
  * it as-is).
  */
@@ -1011,6 +1119,7 @@ export const dictionaries: Record<string, Record<string, string>> = {
   it,
   ru,
   es,
+  pt,
 }
 
 /**

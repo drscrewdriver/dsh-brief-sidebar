@@ -7,7 +7,7 @@
  * `LocaleNamespaceMap` merge table, which is exactly what the untyped
  * `register(ns, dicts)` overload is for — but the dictionaries themselves stay
  * strictly paired: `zh` is the key-set source of truth and every other language
- * (`en`, plus the fr/de/it/ru/es pack) is typed as
+ * (`en`, plus the fr/de/it/ru/es/pt pack) is typed as
  * `Record<keyof typeof zh, string>`, so a missing or extra key is a COMPILE
  * error rather than a runtime fallback to the raw key.
  *
@@ -141,11 +141,13 @@ export declare const it: Record<BriefKey, string>;
 export declare const ru: Record<BriefKey, string>;
 /** Spanish dictionary, checked complete against the zh key set. */
 export declare const es: Record<BriefKey, string>;
+/** Brazilian Portuguese dictionary, checked complete against the zh key set. */
+export declare const pt: Record<BriefKey, string>;
 /**
  * All locales in the shape the locale service consumes. Registered in ONE call:
  * the registry rejects a duplicate `(namespace, locale)` pair and the
  * per-locale form would leave a half-registered namespace if a later call
- * threw. `zh`/`en` are the host built-ins; the fr/de/it/ru/es pack rides the
+ * threw. `zh`/`en` are the host built-ins; the fr/de/it/ru/es/pt pack rides the
  * same map form (every id is a valid BCP 47-style tag, so the registry accepts
  * it as-is).
  */
