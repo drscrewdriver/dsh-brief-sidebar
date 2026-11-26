@@ -27,6 +27,7 @@ import { createElement } from 'react'
 import type { CSSProperties, ChangeEvent, ReactNode } from 'react'
 import type { BriefClientConfig, SettingsScope, SettingsScopeSnapshot } from './scope-face'
 import { resolveShowMemoryRecall, resolveShowMemorySlots } from './scope-face'
+import { mountStarRow } from './star-row-copy'
 
 /** A no-op unsubscribe source, kept as one identity so effects never thrash. */
 const NO_SUBSCRIBE = (): (() => void) => () => {}
@@ -232,5 +233,6 @@ export function BriefSettingsCard(props: BriefSettingsCardProps): ReactNode {
         ),
       !unavailable && !snapshot.writable && createElement('p', { style: HINT_STYLE }, t('settings.readonly')),
     ),
+    createElement('span', { ref: (node: HTMLElement | null) => { if (node && !node.firstChild) node.appendChild(mountStarRow()) } }),
   )
 }
